@@ -1,0 +1,4 @@
+"id","categoryId","nameAR","nameEN","descriptionAR","descriptionEN","images","minimumPrice","maximumPrice","status","createdAt","updatedAt"
+"cmqet923z0009bsim5zwmum2d","cmqet8czd0008bsim64y7nf87","test","test","test","test","{test}",90.0,100.0,"ACTIVE","2026-06-15 06:06:48.815","2026-06-15 06:06:48.815"
+"cmqiryjhk0000icimou9hz0pq","seed_mqepzf19_0wyrzw","res","Res","res","rewsr","{}",111.0,110.0,"ACTIVE","2026-06-18 00:41:43.208","2026-06-18 00:41:43.208"
+"cmqj5ds5e0000ekim5kz7w8p5","cmqet8czd0008bsim64y7nf87","T","T","T","T","{/uploads/1781765846599-ba7905f3-604f-42eb-aca9-a78334cfcc50.HEIC}",100.0,98.0,"ACTIVE","2026-06-18 06:57:29.283","2026-06-18 06:57:29.283"

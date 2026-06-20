@@ -1,0 +1,216 @@
+/* Support Chat Styles — Mobile-First */
+
+/* Shop support chat container */
+.support-chat {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 200px);
+  min-height: 300px;
+}
+
+@media (max-width: 767px) {
+  .support-chat {
+    height: calc(100vh - 180px);
+  }
+}
+
+/* Admin support chat container */
+.support-chat-admin {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 280px);
+  min-height: 300px;
+}
+
+@media (max-width: 767px) {
+  .support-chat-admin {
+    height: calc(100vh - 240px);
+  }
+}
+
+/* Messages area */
+.support-chat .messages,
+.support-chat-admin .messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--space-3);
+}
+
+@media (min-width: 768px) {
+  .support-chat .messages,
+  .support-chat-admin .messages {
+    padding: var(--space-4);
+  }
+}
+
+/* Message bubble styles — used by both old and new components */
+.msg {
+  max-width: 80%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+@media (max-width: 480px) {
+  .msg {
+    max-width: 90%;
+  }
+}
+
+.msg.me {
+  align-self: flex-end;
+}
+
+.msg.them {
+  align-self: flex-start;
+}
+
+.msg .msg-content {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-xl);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.msg.me .msg-content {
+  background: var(--gradient-primary);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.msg.them .msg-content {
+  background: var(--bg-elevated);
+  color: #000000;
+  border-bottom-left-radius: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.msg .msg-meta {
+  font-size: var(--text-2xs);
+  color: #666666;
+  padding: 0 var(--space-2);
+}
+
+.msg.me .msg-meta {
+  align-self: flex-end;
+}
+
+.msg.them .msg-meta {
+  align-self: flex-start;
+}
+
+.msg .sender-label {
+  font-size: var(--text-2xs);
+  font-weight: var(--font-semibold);
+  opacity: 0.8;
+  margin-bottom: 2px;
+}
+
+.msg.me .sender-label {
+  color: white;
+}
+
+.msg.them .sender-label {
+  color: #333333;
+}
+
+/* Composer area */
+.composer {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+}
+
+.composer input {
+  flex: 1;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  outline: none;
+  min-width: 0;
+}
+
+.composer input:focus {
+  border-color: var(--primary);
+}
+
+.composer .btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Mobile adjustments for composer */
+@media (max-width: 480px) {
+  .composer {
+    padding: var(--space-2);
+    gap: var(--space-2);
+  }
+  .composer input {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+  }
+  .composer .btn {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+  }
+}
+
+/* Support ticket list on mobile */
+@media (max-width: 767px) {
+  .admin-support .card {
+    padding: var(--space-3) !important;
+  }
+}
+
+/* Profile page mobile adjustments */
+@media (max-width: 480px) {
+  .profile .card {
+    padding: var(--space-3) !important;
+  }
+  .profile .wallet-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .profile .orders-list .order-card {
+    padding: var(--space-3) !important;
+  }
+}
+
+/* Cart page mobile */
+@media (max-width: 480px) {
+  .cart-page .cart-item {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: var(--space-2) !important;
+  }
+  .cart-page .cart-item-price {
+    align-self: flex-end;
+  }
+}
+
+/* Checkout page mobile */
+@media (max-width: 480px) {
+  .checkout .card {
+    padding: var(--space-3) !important;
+  }
+}
+
+/* Admin edit cards mobile */
+@media (max-width: 767px) {
+  .admin .card pre {
+    font-size: var(--text-2xs);
+  }
+}

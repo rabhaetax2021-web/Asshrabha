@@ -1,0 +1,616 @@
+// ─── Asshrabha Marketplace – Prisma Schema ────────────────────────────────────
+// This is the single source of truth for the database structure.
+// Run `npx prisma migrate dev` to apply changes.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ─────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ROOT_ADMIN
+  SUB_ADMIN
+  PROVIDER
+  CUSTOMER
+}
+
+enum AccountStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+  DISABLED
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum ProviderProductStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum SuggestionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  MERGED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum WalletTxType {
+  ORDER_CREDIT
+  WITHDRAWAL
+  REFUND
+  ADJUSTMENT
+  PLATFORM_FEE
+  DEPOSIT
+}
+
+enum WalletTxStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+enum WithdrawStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSING
+  COMPLETED
+  FROZEN
+}
+
+enum NotificationType {
+  ACCOUNT_APPROVED
+  ACCOUNT_REJECTED
+  ORDER_PLACED
+  ORDER_STATUS_CHANGED
+  PRODUCT_APPROVED
+  PRODUCT_REJECTED
+  PRICE_CHANGE_APPROVED
+  WITHDRAWAL_APPROVED
+  WITHDRAWAL_REJECTED
+  NEW_CHAT_MESSAGE
+  SUGGESTION_STATUS
+  OTP_CODE
+  SYSTEM
+}
+
+enum AdminPermissionType {
+  MANAGE_PROVIDERS
+  MANAGE_CUSTOMERS
+  MANAGE_CATALOG
+  MANAGE_CATEGORIES
+  MANAGE_ORDERS
+  MANAGE_WALLETS
+  MANAGE_SETTINGS
+  MANAGE_SUPPORT
+  VIEW_ANALYTICS
+  MANAGE_APPROVALS
+  VIEW_LOGS
+}
+
+enum UnitType {
+  PIECE
+  BOX
+  PACK
+}
+
+// ─── Models ────────────────────────────────────────────────────────────────────
+
+model User {
+  id                 String        @id @default(cuid())
+  mobile             String        @unique
+  email              String?
+  passwordHash       String
+  nameAR             String?
+  nameEN             String?
+  avatar             String?
+  role               UserRole
+  status             AccountStatus @default(PENDING)
+  forcePasswordReset Boolean       @default(false)
+  locale             String        @default("ar")
+  lastLoginAt        DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  providerProfile ProviderProfile?
+  wallet          Wallet?
+  permissions     AdminPermission[]
+  customerOrders  Order[]           @relation("CustomerOrders")
+  addresses       Address[]
+  reviews         Review[]
+  notifications   Notification[]
+  chatParticipants ChatParticipant[]
+  chatMessages    ChatMessage[]
+  otpCodes        OTPCode[]
+  auditLogs       AuditLog[]
+  profileEditRequests ProviderProfileEdit[]
+  customerProfileEdits CustomerProfileEdit[] @relation("CustomerProfileEdit_user")
+  customerProfileEditRequestsMade CustomerProfileEdit[] @relation("CustomerProfileEdit_requester")
+
+  @@index([role, status])
+  @@index([mobile])
+}
+
+model AdminPermission {
+  id         String              @id @default(cuid())
+  userId     String
+  permission AdminPermissionType
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, permission])
+}
+
+model OTPCode {
+  id        String   @id @default(cuid())
+  userId    String
+  code      String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, code])
+}
+
+model ProviderProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  shopNameAR      String
+  shopNameEN      String
+  descriptionAR   String?
+  descriptionEN   String?
+  logo            String?
+  banner          String?
+  locationPhoto   String?
+  locationLat     Float?
+  locationLng     Float?
+  locationAddress String?
+  rating          Float    @default(0)
+  reviewCount     Int      @default(0)
+  isVisible       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user          User                @relation(fields: [userId], references: [id])
+  products      ProviderProduct[]
+  deliveryZones DeliveryZone[]
+  orders        Order[]             @relation("ProviderOrders")
+  suggestions   ProductSuggestion[]
+  reviews       Review[]
+  edits         ProviderProfileEdit[]
+
+  @@index([isVisible])
+}
+
+model ProviderProfileEdit {
+  id          String          @id @default(cuid())
+  providerId  String
+  requestedBy String
+  changes     Json
+  status      SuggestionStatus @default(PENDING)
+  adminNote   String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  provider ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  requester User @relation(fields: [requestedBy], references: [id])
+
+  @@index([providerId])
+  @@index([status])
+}
+
+model CustomerProfileEdit {
+  id          String    @id @default(cuid())
+  userId      String
+  requestedBy String
+  changes     Json
+  status      SuggestionStatus @default(PENDING)
+  adminNote   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user      User @relation("CustomerProfileEdit_user", fields: [userId], references: [id], onDelete: Cascade)
+  requester User @relation("CustomerProfileEdit_requester", fields: [requestedBy], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+model DeliveryZone {
+  id         String  @id @default(cuid())
+  providerId String
+  nameAR     String?
+  nameEN     String?
+  locationId String?
+  shippingPrice Float @default(0)
+  isActive   Boolean @default(true)
+
+  provider ProviderProfile @relation(fields: [providerId], references: [id])
+  location Location? @relation(fields: [locationId], references: [id])
+
+  @@index([providerId])
+}
+
+model Location {
+  id      String @id @default(cuid())
+  nameAR  String
+  nameEN  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  zones DeliveryZone[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  nameAR    String
+  nameEN    String
+  slug      String   @unique
+  icon      String?
+  image     String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products CatalogProduct[]
+}
+
+model CatalogProduct {
+  id            String        @id @default(cuid())
+  categoryId    String
+  nameAR        String
+  nameEN        String
+  descriptionAR String?
+  descriptionEN String?
+  images        String[]
+  minimumPrice  Float
+  maximumPrice  Float
+  wholesaleMinPrice Float @default(0)
+  wholesaleMaxPrice Float @default(0)
+  retailMinPrice Float @default(0)
+  retailMaxPrice Float @default(0)
+  status        ProductStatus @default(ACTIVE)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  category         Category          @relation(fields: [categoryId], references: [id])
+  providerProducts ProviderProduct[]
+  unitRanges       CatalogProductUnitRange[]
+
+  @@index([categoryId, status])
+  @@index([status])
+}
+
+model ProviderProduct {
+  id               String                @id @default(cuid())
+  providerId       String
+  catalogProductId String
+  sellingPrice     Float
+  wholesalePrice   Float                 @default(0)
+  retailPrice      Float                 @default(0)
+  stockQuantity    Int                   @default(0)
+  status           ProviderProductStatus @default(PENDING_APPROVAL)
+  priceApproved    Boolean               @default(false)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  provider       ProviderProfile @relation(fields: [providerId], references: [id])
+  catalogProduct CatalogProduct  @relation(fields: [catalogProductId], references: [id])
+  orderItems     OrderItem[]
+  providerProductOptions ProviderProductOption[]
+
+  @@unique([providerId, catalogProductId])
+  @@index([providerId, status])
+  @@index([catalogProductId])
+}
+
+model ProviderProductOption {
+  id                String     @id @default(cuid())
+  providerProductId String
+  unitType          UnitType
+  price             Float
+  minQuantity       Int        @default(1)
+  maxQuantity       Int?
+  stockQuantity     Int        @default(0)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  providerProduct ProviderProduct @relation(fields: [providerProductId], references: [id], onDelete: Cascade)
+
+  @@index([providerProductId])
+  @@index([unitType])
+}
+
+model CatalogProductUnitRange {
+  id              String   @id @default(cuid())
+  catalogProductId String
+  unitType        UnitType
+  minPrice        Float
+  maxPrice        Float
+
+  catalogProduct CatalogProduct @relation(fields: [catalogProductId], references: [id], onDelete: Cascade)
+
+  @@index([catalogProductId])
+  @@unique([catalogProductId, unitType])
+}
+
+model ProductSuggestion {
+  id                 String           @id @default(cuid())
+  providerId         String
+  nameAR             String
+  nameEN             String
+  descriptionAR      String?
+  descriptionEN      String?
+  images             String[]
+  categorySuggestion String?
+  status             SuggestionStatus @default(PENDING)
+  adminNote          String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  provider ProviderProfile @relation(fields: [providerId], references: [id])
+
+  @@index([status])
+}
+
+model Address {
+  id          String   @id @default(cuid())
+  userId      String
+  label       String
+  fullName    String
+  mobile      String
+  addressLine String
+  city        String
+  area        String?
+  landmark    String?
+  lat         Float?
+  lng         Float?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id])
+  orders Order[]
+
+  @@index([userId])
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  orderNumber    String      @unique
+  customerId     String
+  providerId     String
+  addressId      String?
+  totalAmount    Float
+  platformFee    Float       @default(0)
+  status         OrderStatus @default(PENDING)
+  customerNote   String?
+  trackingNumber String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  customer      User             @relation("CustomerOrders", fields: [customerId], references: [id])
+  provider      ProviderProfile  @relation("ProviderOrders", fields: [providerId], references: [id])
+  address       Address?         @relation(fields: [addressId], references: [id])
+  items         OrderItem[]
+  statusHistory OrderStatusHistory[]
+
+  @@index([customerId])
+  @@index([providerId])
+  @@index([status])
+  @@index([orderNumber])
+}
+
+model OrderItem {
+  id                String @id @default(cuid())
+  orderId           String
+  providerProductId String
+  quantity          Int
+  unitPrice         Float
+  totalPrice        Float
+
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  providerProduct ProviderProduct @relation(fields: [providerProductId], references: [id])
+
+  @@index([orderId])
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  status    OrderStatus
+  note      String?
+  changedBy String?
+  createdAt DateTime    @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model Wallet {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  pendingBalance   Float    @default(0)
+  availableBalance Float    @default(0)
+  totalPaid        Float    @default(0)
+  isFrozen         Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user             User                @relation(fields: [userId], references: [id])
+  transactions     WalletTransaction[]
+  withdrawRequests WithdrawRequest[]
+}
+
+model WalletTransaction {
+  id        String         @id @default(cuid())
+  walletId  String
+  amount    Float
+  type      WalletTxType
+  status    WalletTxStatus @default(PENDING)
+  reference String?
+  note      String?
+  createdAt DateTime       @default(now())
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, type])
+}
+
+model WithdrawRequest {
+  id          String         @id @default(cuid())
+  walletId    String
+  amount      Float
+  status      WithdrawStatus @default(PENDING)
+  adminNote   String?
+  processedBy String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, status])
+}
+
+model Slider {
+  id        String   @id @default(cuid())
+  image     String?
+  type      String
+  targetId  String?
+  caption   String?
+  position  Int      @default(0)
+  visible   Boolean  @default(true)
+  amount    Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([position])
+}
+
+model Review {
+  id               String   @id @default(cuid())
+  userId           String
+  providerId       String?
+  catalogProductId String?
+  rating           Int
+  comment          String?
+  isVisible        Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider ProviderProfile? @relation(fields: [providerId], references: [id])
+
+  @@index([providerId])
+  @@index([catalogProductId])
+}
+
+model ChatRoom {
+  id        String   @id @default(cuid())
+  subject   String?
+  isClosed  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants ChatParticipant[]
+  messages     ChatMessage[]
+
+  @@index([isClosed, updatedAt])
+}
+
+model ChatParticipant {
+  id         String    @id @default(cuid())
+  chatRoomId String
+  userId     String
+  joinedAt   DateTime  @default(now())
+  lastReadAt DateTime?
+
+  chatRoom ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([chatRoomId, userId])
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  chatRoomId String
+  senderId   String
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  chatRoom ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  sender   User     @relation(fields: [senderId], references: [id])
+
+  @@index([chatRoomId, createdAt])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  titleAR   String
+  titleEN   String
+  bodyAR    String?
+  bodyEN    String?
+  data      Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+}
+
+model SystemSetting {
+  key         String   @id
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  details   Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([entity, entityId])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}

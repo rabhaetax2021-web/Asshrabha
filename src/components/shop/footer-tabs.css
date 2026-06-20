@@ -1,0 +1,65 @@
+.footer-tabs{
+  display:flex;
+  position:fixed;
+  /* use full-bleed fixed positioning without translate to avoid mobile viewport quirks */
+  left:0;
+  right:0;
+  bottom:0;
+  width:100%;
+  transform:none;
+  min-height:64px;
+  height:auto;
+  background:var(--bg-elevated);
+  border-top:1px solid var(--border-color);
+  gap:6px;
+  /* allow content to shrink and to scroll horizontally on very small screens */
+  flex-wrap:nowrap;
+  overflow-x:auto;
+  -webkit-overflow-scrolling: touch;
+  /* respect left/right safe areas and add a small buffer so floating icons don't cover tabs */
+  padding:8px calc(12px + env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) calc(12px + env(safe-area-inset-left, 0px));
+  justify-content:space-around;
+  align-items:center;
+  z-index:9999;
+  box-shadow: var(--shadow-sm);
+  box-sizing:border-box;
+}
+.footer-tabs .tab{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-muted);text-decoration:none;font-size:12px;flex:1 1 0;min-width:48px;padding:4px 6px;box-sizing:border-box}
+.footer-tabs .tab svg{display:block;margin-bottom:4px;color:var(--text-muted);width:1.25rem;height:1.25rem;flex-shrink:0}
+.footer-tabs .tab span{display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+.footer-tabs .tab.active{color:var(--primary)}
+.footer-tabs .tab.active svg{color:var(--primary)}
+.shop-main{padding-bottom:calc(88px + env(safe-area-inset-bottom, 0px))}
+
+/* On very wide screens, reduce footer height and increase spacing */
+@media (min-width: 1200px){
+  .footer-tabs{height:56px;padding:8px 28px}
+  .footer-tabs .tab span{font-size:13px}
+}
+
+@media (min-width: 769px){
+  .footer-tabs .tab svg{width:26px;height:26px}
+  .footer-tabs .tab span{font-size:13px}
+}
+
+/* Make tabs more compact on small viewports so all items remain visible */
+@media (max-width: 420px){
+  .footer-tabs{padding:6px calc(8px + env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) calc(8px + env(safe-area-inset-left, 0px));gap:4px}
+  .footer-tabs .tab{padding:2px 6px}
+  .footer-tabs .tab svg{width:18px;height:18px;margin-bottom:2px}
+  .footer-tabs .tab span{font-size:10px}
+}
+
+/* On very narrow screens hide labels to preserve space (icons remain) */
+@media (max-width: 360px){
+  .footer-tabs .tab span{display:none}
+}
+
+/* On small screens, hide the header logo text for compactness */
+@media (max-width: 768px){
+  .shop-header .logo-text{display:none}
+}
+
+.shop-header .logo{display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit}
+.shop-header .logo svg{width:28px;height:28px}
+

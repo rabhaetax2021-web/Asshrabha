@@ -1,0 +1,321 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { registerAction } from '@/lib/actions/auth.actions';
+import Link from 'next/link';
+
+type AccountType = 'CUSTOMER' | 'PROVIDER' | null;
+type Step = 'type' | 'info' | 'provider-info';
+
+export default function RegisterPage() {
+  const t = useTranslations('auth');
+  const tc = useTranslations('common');
+  const router = useRouter();
+
+  const [step, setStep] = useState<Step>('type');
+  const [accountType, setAccountType] = useState<AccountType>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Form fields
+  const [mobile, setMobile] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [nameAR, setNameAR] = useState('');
+  const [nameEN, setNameEN] = useState('');
+  const [shopNameAR, setShopNameAR] = useState('');
+  const [shopNameEN, setShopNameEN] = useState('');
+  const [locationAddress, setLocationAddress] = useState('');
+  const [locations, setLocations] = useState<{ id: string; nameEN?: string; nameAR?: string }[]>([]);
+  const [locationId, setLocationId] = useState<string>('');
+
+  useEffect(() => {
+    let mounted = true;
+    fetch('/api/admin/locations')
+      .then((r) => r.json())
+      .then((j) => {
+        if (!mounted) return;
+        setLocations(j?.ok ? j.locations : []);
+      })
+      .catch(() => { if (mounted) setLocations([]) });
+    return () => { mounted = false };
+  }, []);
+
+  const handleTypeSelect = (type: AccountType) => {
+    setAccountType(type);
+    setStep('info');
+  };
+
+  const handleInfoSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setError(t('passwordMatch') || 'Passwords do not match');
+      return;
+    }
+    if (password.length < 8) {
+      setError(t('passwordRequirements'));
+      return;
+    }
+    // Require location for customers (either free-text address or selected government)
+    if (accountType === 'CUSTOMER' && !locationAddress.trim() && !locationId) {
+      setError('الرجاء إدخال موقعك / Please enter your location');
+      return;
+    }
+    setError('');
+    if (accountType === 'PROVIDER') {
+      setStep('provider-info');
+    } else {
+      handleSubmit();
+    }
+  };
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await registerAction({
+        mobile,
+        password,
+        nameAR,
+        nameEN,
+        role: accountType!,
+        shopNameAR: accountType === 'PROVIDER' ? shopNameAR : undefined,
+        shopNameEN: accountType === 'PROVIDER' ? shopNameEN : undefined,
+        // include location for both providers and customers
+        locationAddress: locationAddress || undefined,
+        locationId: locationId || undefined,
+      });
+
+      if (result.success && result.data) {
+        router.push(`/verify-otp?userId=${result.data.userId}`);
+      } else {
+        switch (result.error) {
+          case 'MOBILE_EXISTS':
+            setError('رقم الجوال مسجل مسبقاً / Mobile number already registered');
+            break;
+          case 'MISSING_LOCATION':
+            setError('الرجاء إدخال موقعك / Please enter your location');
+            break;
+          case 'REGISTRATION_DISABLED':
+            setError('التسجيل معطل حالياً / Registration is currently disabled');
+            break;
+          default:
+            setError('فشل التسجيل / Registration failed');
+        }
+      }
+    } catch {
+      setError('حدث خطأ / An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStepNumber = () => {
+    switch (step) {
+      case 'type': return 1;
+      case 'info': return 2;
+      case 'provider-info': return 3;
+      default: return 1;
+    }
+  };
+
+  const totalSteps = accountType === 'PROVIDER' ? 3 : 2;
+
+  return (
+    <div className="login-page">
+      <div className="login-card glass" style={{ animation: 'scaleIn var(--transition-slow) ease-out', maxWidth: '480px' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 'var(--space-6)' }}>
+          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--font-bold)', marginBottom: 'var(--space-2)' }}>
+            {t('registerTitle')}
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+            {t('registerSubtitle')}
+          </p>
+        </div>
+
+        {/* Step Indicator */}
+        <div className="register-steps" style={{ marginBottom: 'var(--space-6)' }}>
+          {Array.from({ length: totalSteps }, (_, i) => (
+            <div
+              key={i}
+              className={`register-step ${i + 1 <= getStepNumber() ? 'register-step-active' : ''} ${i + 1 < getStepNumber() ? 'register-step-completed' : ''}`}
+            >
+              <div className="register-step-circle">{i + 1}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div style={{
+            padding: 'var(--space-3) var(--space-4)',
+            borderRadius: 'var(--radius-md)',
+            background: 'hsla(0, 84%, 60%, 0.1)',
+            border: '1px solid hsla(0, 84%, 60%, 0.3)',
+            color: 'var(--error)',
+            fontSize: 'var(--text-sm)',
+            marginBottom: 'var(--space-4)',
+            animation: 'shake 0.5s ease-in-out',
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* Step: Choose Account Type */}
+        {step === 'type' && (
+          <div style={{ display: 'grid', gap: 'var(--space-4)' }}>
+            <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', textAlign: 'center' }}>
+              {t('chooseAccountType')}
+            </h2>
+
+            <button
+              onClick={() => handleTypeSelect('CUSTOMER')}
+              className="card card-interactive"
+              style={{ padding: 'var(--space-6)', textAlign: 'center', cursor: 'pointer', border: '2px solid transparent' }}
+            >
+              <div style={{ fontSize: 'var(--text-3xl)', marginBottom: 'var(--space-3)' }}>🛍️</div>
+              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-2)' }}>
+                {t('customerAccount')}
+              </h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+                {t('customerDescription')}
+              </p>
+            </button>
+
+            <button
+              onClick={() => handleTypeSelect('PROVIDER')}
+              className="card card-interactive"
+              style={{ padding: 'var(--space-6)', textAlign: 'center', cursor: 'pointer', border: '2px solid transparent' }}
+            >
+              <div style={{ fontSize: 'var(--text-3xl)', marginBottom: 'var(--space-3)' }}>🏪</div>
+              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-2)' }}>
+                {t('providerAccount')}
+              </h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+                {t('providerDescription')}
+              </p>
+            </button>
+          </div>
+        )}
+
+        {/* Step: Personal Info */}
+        {step === 'info' && (
+          <form onSubmit={handleInfoSubmit}>
+            <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-4)' }}>
+              {t('personalInfo')}
+            </h2>
+
+            <div style={{ display: 'grid', gap: 'var(--space-4)' }}>
+              <div>
+                <label className="label" htmlFor="nameAR">الاسم (عربي) *</label>
+                <input id="nameAR" className="input" value={nameAR} onChange={(e) => setNameAR(e.target.value)} required dir="rtl" />
+              </div>
+              <div>
+                <label className="label" htmlFor="nameEN">Name (English) *</label>
+                <input id="nameEN" className="input" value={nameEN} onChange={(e) => setNameEN(e.target.value)} required dir="ltr" />
+              </div>
+              <div>
+                <label className="label" htmlFor="reg-mobile">{t('mobileNumber')} *</label>
+                <input id="reg-mobile" type="tel" className="input" value={mobile} onChange={(e) => setMobile(e.target.value)} required dir="ltr" placeholder="01XXXXXXXXX" />
+              </div>
+              {accountType === 'CUSTOMER' && (
+                <div>
+                  <label className="label" htmlFor="locationAddress">{t('locationAddress')} *</label>
+                  <input id="locationAddress" className="input" value={locationAddress} onChange={(e) => setLocationAddress(e.target.value)} required />
+                  <div style={{ marginTop: 8 }}>
+                    <label className="label" htmlFor="locationId">{t('government') || 'Government'}</label>
+                    <select id="locationId" className="input" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
+                      <option value="">-- {t('select') || 'Select'} --</option>
+                      {locations.map((l) => (
+                        <option key={l.id} value={l.id}>{l.nameAR || l.nameEN || l.id}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+              <div>
+                <label className="label" htmlFor="reg-password">{t('password')} *</label>
+                <input id="reg-password" type="password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+              </div>
+              <div>
+                <label className="label" htmlFor="reg-confirm">{t('confirmPassword')} *</label>
+                <input id="reg-confirm" type="password" className="input" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={8} />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-6)' }}>
+              <button type="button" className="btn-secondary" onClick={() => { setStep('type'); setAccountType(null); }} style={{ flex: 1 }}>
+                {tc('back')}
+              </button>
+              <button type="submit" className="btn-primary" style={{ flex: 2 }}>
+                {accountType === 'PROVIDER' ? tc('next') : tc('submit')}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Step: Provider Store Info */}
+        {step === 'provider-info' && (
+          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+            <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-4)' }}>
+              {t('storeInfo')}
+            </h2>
+
+            <div style={{ display: 'grid', gap: 'var(--space-4)' }}>
+              <div>
+                <label className="label" htmlFor="shopNameAR">{t('storeNameAR')} *</label>
+                <input id="shopNameAR" className="input" value={shopNameAR} onChange={(e) => setShopNameAR(e.target.value)} required dir="rtl" />
+              </div>
+              <div>
+                <label className="label" htmlFor="shopNameEN">{t('storeNameEN')} *</label>
+                <input id="shopNameEN" className="input" value={shopNameEN} onChange={(e) => setShopNameEN(e.target.value)} required dir="ltr" />
+              </div>
+              <div>
+                <label className="label" htmlFor="locationAddress">{t('locationAddress')}</label>
+                <input id="locationAddress" className="input" value={locationAddress} onChange={(e) => setLocationAddress(e.target.value)} />
+                <div style={{ marginTop: 8 }}>
+                  <label className="label" htmlFor="locationId">{t('government') || 'Government'}</label>
+                  <select id="locationId" className="input" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
+                    <option value="">-- {t('select') || 'Select'} --</option>
+                    {locations.map((l) => (
+                      <option key={l.id} value={l.id}>{l.nameAR || l.nameEN || l.id}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="label">{t('locationPhoto')}</label>
+                <div className="file-upload-zone" style={{ padding: 'var(--space-6)', textAlign: 'center', cursor: 'pointer' }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+                    📷 {t('locationPhotoHint')}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-6)' }}>
+              <button type="button" className="btn-secondary" onClick={() => setStep('info')} style={{ flex: 1 }}>
+                {tc('back')}
+              </button>
+              <button type="submit" className="btn-primary" disabled={loading} style={{ flex: 2 }}>
+                {loading ? <span className="spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }} /> : tc('submit')}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Login Link */}
+        <div style={{ textAlign: 'center', marginTop: 'var(--space-6)', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
+          {t('hasAccount')}{' '}
+          <Link href="/login" style={{ color: 'var(--primary)', fontWeight: 'var(--font-semibold)', textDecoration: 'none' }}>
+            {t('signIn')}
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
