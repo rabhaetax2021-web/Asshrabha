@@ -1,5 +1,6 @@
 import React from "react";
 import ProviderSidebar from "@/components/layout/ProviderSidebar";
+import Topbar from '@/components/ui/Topbar'
 import { cookies, headers } from 'next/headers'
 
 export const metadata = {
@@ -10,8 +11,9 @@ export default async function ProviderRootLayout({ children }: { children: React
   let initialLocale: 'ar' | 'en' = 'ar'
   try {
     const cookieStore = await cookies()
-    if (cookieStore && typeof (cookieStore as any).get === 'function') {
-      initialLocale = (cookieStore.get('NEXT_LOCALE')?.value as 'ar' | 'en') || initialLocale
+    const getFn = (cookieStore as { get?: (name: string) => { value?: string } })?.get
+    if (typeof getFn === 'function') {
+      initialLocale = (getFn('NEXT_LOCALE')?.value as 'ar' | 'en') || initialLocale
     } else {
       const cookieHeader = (await headers()).get('cookie') || ''
       const m = cookieHeader.match(/(?:^|; )NEXT_LOCALE=([^;]+)/)
@@ -22,9 +24,12 @@ export default async function ProviderRootLayout({ children }: { children: React
   }
 
   return (
-    <div className="provider-root">
+    <div className="provider-root" style={{ display: 'flex', minHeight: '100vh' }}>
       <ProviderSidebar initialLocale={initialLocale} />
-      <main className="provider-main">{children}</main>
+      <div style={{ flex: 1 }}>
+        <Topbar />
+        <main className="provider-main">{children}</main>
+      </div>
     </div>
   );
 }

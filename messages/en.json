@@ -130,6 +130,15 @@
     "government": "Governorate",
     "locationPhoto": "Location Photo",
     "locationPhotoHint": "Upload a photo of your store location",
+    "useMyLocation": "Use my location",
+    "previewLocation": "Preview location on map",
+    "previewMaps": "Preview GPS location in Google Maps",
+    "geolocationUnavailable": "Geolocation not available",
+    "permissionDenied": "Permission denied",
+    "grabLocation": "Grab location",
+    "gettingLocation": "Getting location…",
+    "updateLocation": "Update location",
+    "openInGoogleMaps": "Open in Google Maps",
     "verifyOTP": "Verify OTP",
     "otpTitle": "Verification Code",
     "otpSubtitle": "Enter the 6-digit code sent to your mobile",
@@ -158,6 +167,8 @@
     "strong": "Strong",
     "veryStrong": "Very Strong",
     "passwordRequirements": "Password must be at least 8 characters"
+    ,"select": "Select"
+    ,"passwordMatch": "Passwords do not match"
   },
   "admin": {
     "dashboard": "Dashboard",
@@ -180,6 +191,11 @@
     "hero": "Hero",
     "settings": "Settings",
     "logs": "Activity Logs",
+    "templates": "Templates",
+    "depositRequests": "Deposit Requests",
+    "withdrawRequests": "Withdraw Requests",
+    "history": "Wallet History",
+    "paymentMethods": "Payment Methods",
     "totalRevenue": "Total Revenue",
     "ordersToday": "Orders Today",
     "activeProviders": "Active Providers",
@@ -314,7 +330,19 @@
     "filterByUser": "Filter by User",
     "filterByDate": "Filter by Date",
     "exportCSV": "Export CSV"
+    ,
+    "messageTemplates": "Message Templates",
+    "otpTemplateLabel": "OTP Template (use placeholders like <1> for name, <2> for code, <3> for minutes)",
+    "saveOtpTemplate": "Save OTP Template",
+    "marketingTemplateLabel": "Marketing Template (Marketing_Msg) (placeholders: <1>..<5>)",
+    "saveMarketingTemplate": "Save Marketing Template",
+    "preview": "Preview",
+    "testMobile": "Test mobile",
+    "testOtp": "Test OTP",
+    "testMarketing": "Test Marketing",
+    "close": "Close"
   },
+  
   "provider": {
     "dashboard": "Dashboard",
     "store": "My Store",
@@ -340,6 +368,7 @@
     "logo": "Store Logo",
     "banner": "Store Banner",
     "deliveryZones": "Delivery Zones",
+    "deliveryAreas": "Delivery Areas",
     "addZone": "Add Delivery Zone",
     "zoneName": "Zone Name",
     "zoneNameAR": "Zone Name (Arabic)",

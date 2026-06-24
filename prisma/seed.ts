@@ -150,6 +150,16 @@ async function main() {
       value: 'true',
       description: 'Require admin approval when a provider sets or changes a product price',
     },
+    {
+      key: 'TEMPLATE_OTP',
+      value: '**{{2}}** is your verification code. For your security, do not share this code.\nExpires in {{3}} minutes.\nCopy code',
+      description: 'WhatsApp OTP template (placeholders: {{1}}=name, {{2}}=code, {{3}}=expiry minutes)',
+    },
+    {
+      key: 'TEMPLATE_Marketing_Msg',
+      value: 'Hello {{1}}! Enjoy an exclusive offer: {{2}}. Use code {{3}} to get {{4}} off. Shop now: {{5}}',
+      description: 'WhatsApp marketing template (placeholders: {{1}}..{{5}})',
+    },
   ]
 
   for (const setting of settings) {

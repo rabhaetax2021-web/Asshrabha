@@ -1,6 +1,7 @@
 import React from 'react'
 import { getProviderById } from '@/lib/actions/admin.actions'
 import ProviderActions from '@/components/admin/ProviderActions'
+import SaveLocationButton from '@/components/admin/SaveLocationButton'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -27,6 +28,7 @@ export default async function ProviderDetailPage({ params }: Props) {
           <p>Visible: {provider.isVisible ? 'Yes' : 'No'}</p>
           <p>Rating: {provider.rating ?? 0}</p>
           <p>Products: {provider.products?.length ?? 0}</p>
+          <SaveLocationButton providerId={provider.id} initialLat={provider.locationLat ?? null} initialLng={provider.locationLng ?? null} />
         </div>
       </div>
 

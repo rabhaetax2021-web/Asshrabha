@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { showToast } from '@/components/ui/toast'
 import { useRouter } from 'next/navigation'
+import { getErrorMessage } from '@/lib/errors'
 
 export default function UserAvatarForm({ initialAvatar }: { initialAvatar?: string | null }) {
   const [avatar, setAvatar] = useState<string | null>(initialAvatar || null)
@@ -22,8 +23,8 @@ export default function UserAvatarForm({ initialAvatar }: { initialAvatar?: stri
       showToast('Avatar updated', 'success')
       try { router.refresh() } catch (e) { /* ignore */ }
       // optionally refresh the page to update server-rendered parts
-    } catch (err: any) {
-      showToast(err.message || String(err), 'error')
+    } catch (err: unknown) {
+      showToast(getErrorMessage(err), 'error')
     } finally {
       setLoading(false)
     }

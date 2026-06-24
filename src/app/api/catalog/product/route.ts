@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getErrorMessage } from '@/lib/errors'
 
 export async function GET(request: Request) {
   try {
@@ -10,8 +11,8 @@ export async function GET(request: Request) {
     const p = await prisma.catalogProduct.findUnique({ where: { id }, include: { unitRanges: true } })
     if (!p) return NextResponse.json({ error: 'not found' }, { status: 404 })
     return NextResponse.json({ ok: true, product: p })
-  } catch (err: any) {
-    console.error('[api/catalog/product] error', err)
-    return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    console.error('[api/catalog/product] error', getErrorMessage(err))
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }

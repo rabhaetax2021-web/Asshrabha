@@ -1,11 +1,11 @@
 import { z } from 'zod'
 
 export const createProviderProductSchema = z.object({
-  providerId: z.string().min(1),
   catalogProductId: z.string().min(1),
   sellingPrice: z.number().positive(),
-  wholesalePrice: z.number().nonnegative().optional(),
-  retailPrice: z.number().nonnegative().optional(),
+  wholesaleUnit: z.enum(['BOX', 'PACK']).optional(),
+  wholesalePrice: z.number().nonnegative(),
+  retailPrice: z.number().nonnegative(),
   stockQuantity: z.number().int().nonnegative().optional(),
   options: z.array(z.object({
     unitType: z.enum(['PIECE', 'BOX', 'PACK']),
@@ -22,10 +22,10 @@ export const updateStoreSchema = z.object({
   shopNameAR: z.string().min(1).optional(),
   descriptionEN: z.string().optional(),
   descriptionAR: z.string().optional(),
+  defaultWholesaleUnit: z.enum(['BOX', 'PACK']).optional(),
 })
 
 export const createSuggestionSchema = z.object({
-  providerId: z.string().min(1),
   nameEN: z.string().min(1),
   nameAR: z.string().min(1),
   descriptionEN: z.string().optional(),

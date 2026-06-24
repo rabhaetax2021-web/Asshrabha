@@ -7,7 +7,11 @@ export default defineConfig({
     baseURL: 'http://localhost:3000',
     headless: true,
   },
-  webServer: ({ url: 'http://localhost:3000', reuseExistingServer: true } as any),
+  webServer: {
+    command: 'npm run dev',
+    port: 3000,
+    reuseExistingServer: true,
+  },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   ],

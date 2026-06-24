@@ -15,16 +15,33 @@ export async function POST(request: Request) {
     if (prov) {
       await prisma.notification.deleteMany({ where: { userId: prov.userId } })
       await prisma.providerProfile.delete({ where: { id: providerId } })
+      try { await prisma.adminPermission.deleteMany({ where: { userId: prov.userId } }) } catch(e) {}
       await prisma.user.deleteMany({ where: { id: prov.userId } })
     }
   }
 
   if (providerMobile) {
     await prisma.notification.deleteMany({ where: { AND: [{ titleEN: { contains: 'UI' } }, { userId: { in: [] } }] } }).catch(()=>{})
+    try {
+      const u = await prisma.user.findFirst({ where: { mobile: providerMobile } })
+      if (u) {
+        await prisma.adminPermission.deleteMany({ where: { userId: u.id } }).catch(()=>{})
+        await prisma.wallet.deleteMany({ where: { userId: u.id } }).catch(()=>{})
+        await prisma.notification.deleteMany({ where: { userId: u.id } }).catch(()=>{})
+      }
+    } catch(e) {}
     await prisma.user.deleteMany({ where: { mobile: providerMobile } })
   }
 
   if (adminMobile) {
+    try {
+      const u = await prisma.user.findFirst({ where: { mobile: adminMobile } })
+      if (u) {
+        await prisma.adminPermission.deleteMany({ where: { userId: u.id } }).catch(()=>{})
+        await prisma.wallet.deleteMany({ where: { userId: u.id } }).catch(()=>{})
+        await prisma.notification.deleteMany({ where: { userId: u.id } }).catch(()=>{})
+      }
+    } catch(e) {}
     await prisma.user.deleteMany({ where: { mobile: adminMobile } })
   }
 

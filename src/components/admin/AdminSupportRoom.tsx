@@ -2,16 +2,25 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { showToast } from '@/components/ui/toast'
 import '@/components/shop/support.css'
+import { getErrorMessage } from '@/lib/errors'
+
+type SupportMsg = {
+  id: string
+  content: string
+  createdAt: string
+  sender?: { id?: string; role?: string; nameEN?: string; nameAR?: string; mobile?: string }
+  senderId?: string
+}
 
 export default function AdminSupportRoom({ roomId }: { roomId: string }) {
-  const [messages, setMessages] = useState<any[]>([])
+  const [messages, setMessages] = useState<SupportMsg[]>([])
   const [text, setText] = useState('')
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Deduplicated message setter
-  const addMessages = useCallback((newMsgs: any[]) => {
+  const addMessages = useCallback((newMsgs: SupportMsg[]) => {
     setMessages(prev => {
       const existingIds = new Set(prev.map(m => m.id))
       const merged = [...prev]
@@ -27,8 +36,9 @@ export default function AdminSupportRoom({ roomId }: { roomId: string }) {
   }, [])
 
   useEffect(() => {
-    fetch('/api/auth/session').then(r => r.json()).then(s => {
-      setCurrentUserId(s?.user?.id || null)
+    fetch('/api/auth/session').then(r => r.json()).then((s: unknown) => {
+      const user = (s as Record<string, unknown>)?.user as Record<string, unknown> | undefined
+      setCurrentUserId(user ? (user.id as string | undefined) ?? null : null)
     }).catch(() => {})
   }, [])
 
@@ -70,9 +80,9 @@ export default function AdminSupportRoom({ roomId }: { roomId: string }) {
         try {
           const data = JSON.parse(ev.data)
           if (!mounted) return
-          if (data.type === 'initial') addMessages(data.payload || [])
-          if (data.type === 'message') addMessages([data.payload])
-        } catch (e) {}
+          if (data.type === 'initial' && Array.isArray(data.payload)) addMessages(data.payload as SupportMsg[])
+          if (data.type === 'message') addMessages([data.payload as SupportMsg])
+        } catch (_) {}
       }
       es.onerror = () => {
         if (es) es.close()
@@ -93,13 +103,13 @@ export default function AdminSupportRoom({ roomId }: { roomId: string }) {
     try {
       const res = await fetch(`/api/admin/support/${roomId}/messages`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ content: text }) })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Failed')
+      if (!res.ok) throw new Error((data as Record<string, unknown>)?.error ? String(((data as Record<string, unknown>)['error'])) : 'Failed')
       setText('')
-      if (data.message) addMessages([data.message])
-    } catch (e: any) { showToast(e?.message || String(e), 'error') }
+      if ((data as Record<string, unknown>)['message']) addMessages([ (data as Record<string, unknown>)['message'] as SupportMsg ])
+    } catch (err: unknown) { showToast(getErrorMessage(err), 'error') }
   }
 
-  const getSenderLabel = (msg: any) => {
+  const getSenderLabel = (msg: SupportMsg) => {
     const sender = msg.sender
     if (!sender) return 'Admin'
     if (sender.id === currentUserId) return 'You'
@@ -107,7 +117,7 @@ export default function AdminSupportRoom({ roomId }: { roomId: string }) {
     return sender.nameEN || sender.nameAR || sender.mobile || 'Customer'
   }
 
-  const isMe = (msg: any) => msg.senderId === currentUserId || (msg.sender?.role === 'ROOT_ADMIN' || msg.sender?.role === 'SUB_ADMIN')
+  const isMe = (msg: SupportMsg) => msg.senderId === currentUserId || (msg.sender?.role === 'ROOT_ADMIN' || msg.sender?.role === 'SUB_ADMIN')
 
   return (
     <div className="support-chat-admin">

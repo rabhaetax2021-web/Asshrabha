@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getErrorMessage } from '@/lib/errors'
 
 export async function POST(req: Request) {
   const user = await getCurrentUser()
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
   try {
     const updated = await prisma.user.update({ where: { id: user.id }, data: { nameEN, nameAR, mobile, email, avatar } })
     return NextResponse.json({ ok: true, user: { id: updated.id, nameEN: updated.nameEN, nameAR: updated.nameAR, mobile: updated.mobile, email: updated.email, avatar: updated.avatar } })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }

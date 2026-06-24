@@ -83,22 +83,24 @@ export default function LocationsManager() {
               <button className="btn btn-primary" onClick={() => { setShowModal(true); setModalMode('location'); setFormLocation({ nameEN: '', nameAR: '' }) }}>New Location</button>
             </div>
           </div>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Name (EN)</th>
-                <th>Name (AR)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {locations.map(l => (
-                <tr key={l.id}>
-                  <td>{l.nameEN}</td>
-                  <td>{l.nameAR}</td>
+          <div className="ui-table-wrap">
+            <table className="ui-table">
+              <thead>
+                <tr>
+                  <th>Name (EN)</th>
+                  <th className="hide-sm">Name (AR)</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {locations.map(l => (
+                  <tr key={l.id}>
+                    <td>{l.nameEN}</td>
+                    <td className="hide-sm">{l.nameAR}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div>
@@ -108,26 +110,28 @@ export default function LocationsManager() {
               <button className="btn btn-primary" onClick={() => { setShowModal(true); setModalMode('zone'); setFormZone({ providerId: '', locationId: '', isActive: true, shippingPrice: 0 }) }}>New Delivery Zone</button>
             </div>
           </div>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Provider</th>
-                <th>Location</th>
-                <th>Shipping Price</th>
-                <th>Active</th>
-              </tr>
-            </thead>
-            <tbody>
-              {zones.map(z => (
-                <tr key={z.id}>
-                  <td>{z.provider?.shopNameEN || z.provider?.shopNameAR || '-'}</td>
-                  <td>{z.location?.nameEN || z.location?.nameAR || '-'}</td>
-                  <td>{(z.shippingPrice ?? 0).toFixed(2)}</td>
-                  <td>{z.isActive ? 'Yes' : 'No'}</td>
+          <div className="ui-table-wrap">
+            <table className="ui-table">
+              <thead>
+                <tr>
+                  <th>Provider</th>
+                  <th className="hide-sm">Location</th>
+                  <th className="hide-sm">Shipping Price</th>
+                  <th>Active</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {zones.map(z => (
+                  <tr key={z.id}>
+                    <td>{z.provider?.shopNameEN || z.provider?.shopNameAR || '-'}</td>
+                    <td className="hide-sm">{z.location?.nameEN || z.location?.nameAR || '-'}</td>
+                    <td className="hide-sm">{(z.shippingPrice ?? 0).toFixed(2)}</td>
+                    <td>{z.isActive ? 'Yes' : 'No'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

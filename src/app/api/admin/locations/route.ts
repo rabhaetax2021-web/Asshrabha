@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
+import { getErrorMessage } from '@/lib/errors'
 
 export async function GET() {
   try {
     const locations = await prisma.location.findMany({ orderBy: { nameEN: 'asc' } })
     return NextResponse.json({ ok: true, locations })
-  } catch (err: any) {
-    console.error('[api/admin/locations] GET error', err)
-    return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    console.error('[api/admin/locations] GET error', getErrorMessage(err))
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }
 
@@ -23,8 +24,8 @@ export async function POST(request: Request) {
 
     const loc = await prisma.location.create({ data: { nameEN, nameAR: nameAR || '' } })
     return NextResponse.json({ ok: true, location: loc })
-  } catch (err: any) {
-    console.error('[api/admin/locations] POST error', err)
-    return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    console.error('[api/admin/locations] POST error', getErrorMessage(err))
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }

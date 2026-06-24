@@ -116,7 +116,7 @@ export async function POST() {
       const provUserId = provRes.rows[0].id
 
       const provProfileRes = await client.query(
-        `INSERT INTO "ProviderProfile" (id, "userId", "shopNameEN", "shopNameAR", "isVisible", "createdAt", "updatedAt") VALUES (gen_random_uuid(), $1, $2, $3, false, now(), now()) ON CONFLICT ("userId") DO NOTHING RETURNING id`,
+        `INSERT INTO "ProviderProfile" (id, "userId", "shopNameEN", "shopNameAR", "isVisible", "createdAt", "updatedAt") VALUES (gen_random_uuid(), $1, $2, $3, false, now(), now()) ON CONFLICT ("userId") DO UPDATE SET "shopNameEN" = EXCLUDED."shopNameEN", "shopNameAR" = EXCLUDED."shopNameAR", "updatedAt" = now() RETURNING id`,
         [provUserId, 'UI Test Shop', 'متجر UI']
       )
       const profileId = provProfileRes.rows[0] ? provProfileRes.rows[0].id : provUserId

@@ -13,7 +13,7 @@ export default async function EditProfilePage() {
     if (!profile) return <div>No store profile</div>
 
     // pass current user basic info too
-    const user = await prisma.user.findUnique({ where: { id: current.id }, select: { mobile: true, nameEN: true, nameAR: true } })
+    const user: any = await prisma.user.findUnique({ where: { id: current.id }, select: { mobile: true, nameEN: true, nameAR: true } })
 
     return (
       <section className="profile container">

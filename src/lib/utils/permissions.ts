@@ -19,19 +19,21 @@ export const ADMIN_PERMISSIONS: AdminPermissionType[] = [
 // ─── Role Checks ──────────────────────────────────────────────────────────────
 
 export function isAdmin(role: UserRole): boolean {
-  return role === 'ROOT_ADMIN' || role === 'SUB_ADMIN';
+  const r = (role || '').toString().toUpperCase()
+  return r === 'ROOT_ADMIN' || r === 'SUB_ADMIN' || r === 'ADMIN' || r === 'ADMINISTRATOR' || r === 'SUPER_ADMIN'
 }
 
 export function isRootAdmin(role: UserRole): boolean {
-  return role === 'ROOT_ADMIN';
+  const r = (role || '').toString().toUpperCase()
+  return r === 'ROOT_ADMIN' || r === 'SUPER_ADMIN'
 }
 
 export function isProvider(role: UserRole): boolean {
-  return role === 'PROVIDER';
+  return (role || '').toString().toUpperCase() === 'PROVIDER'
 }
 
 export function isCustomer(role: UserRole): boolean {
-  return role === 'CUSTOMER';
+  return (role || '').toString().toUpperCase() === 'CUSTOMER'
 }
 
 // ─── Permission Checks ───────────────────────────────────────────────────────
@@ -42,7 +44,8 @@ export function hasPermission(
   requiredPermission: AdminPermissionType
 ): boolean {
   // Root admin has all permissions
-  if (userRole === 'ROOT_ADMIN') return true;
+  const r = (userRole || '').toString().toUpperCase()
+  if (r === 'ROOT_ADMIN' || r === 'SUPER_ADMIN') return true;
 
   // Sub admin must have explicit permission
   if (userRole === 'SUB_ADMIN') {
@@ -57,7 +60,8 @@ export function hasAnyPermission(
   userPermissions: AdminPermissionType[],
   requiredPermissions: AdminPermissionType[]
 ): boolean {
-  if (userRole === 'ROOT_ADMIN') return true;
+  const r2 = (userRole || '').toString().toUpperCase()
+  if (r2 === 'ROOT_ADMIN' || r2 === 'SUPER_ADMIN') return true;
   return requiredPermissions.some((p) => userPermissions.includes(p));
 }
 

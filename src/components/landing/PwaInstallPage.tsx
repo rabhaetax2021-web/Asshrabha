@@ -14,9 +14,14 @@ export default function PwaInstallPage() {
   const router = useRouter();
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isStandalone, setIsStandalone] = useState(false);
-  const [isIos, setIsIos] = useState(false);
-  const [isAndroid, setIsAndroid] = useState(false);
+  const [isStandalone, setIsStandalone] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      return window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true
+    } catch (e) { return false }
+  });
+  const [isIos, setIsIos] = useState<boolean>(() => typeof window !== 'undefined' && /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase()));
+  const [isAndroid, setIsAndroid] = useState<boolean>(() => typeof window !== 'undefined' && /android/.test(navigator.userAgent.toLowerCase()));
 
   // Detect if already installed as PWA and platform
   useEffect(() => {
@@ -29,10 +34,6 @@ export default function PwaInstallPage() {
         router.push('/login');
       }
     };
-
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    setIsIos(/iphone|ipad|ipod/.test(userAgent));
-    setIsAndroid(/android/.test(userAgent));
 
     checkStandalone();
 

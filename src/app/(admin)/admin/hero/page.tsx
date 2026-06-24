@@ -35,8 +35,11 @@ export default function AdminHeroPage() {
       if (!res.ok) return
       const data = await res.json()
       let slidesData: Slide[] = []
-      if (Array.isArray(data)) slidesData = data as Slide[]
-      else if (data && Array.isArray((data as any).slides)) slidesData = (data as any).slides
+      if (Array.isArray(data)) slidesData = data as unknown as Slide[]
+      else {
+        const maybeSlides = (data as { slides?: unknown })?.slides
+        if (Array.isArray(maybeSlides)) slidesData = maybeSlides as unknown as Slide[]
+      }
       setSlides(slidesData)
     } catch (err) {
       console.error('fetchSlides', err)
@@ -164,7 +167,7 @@ export default function AdminHeroPage() {
             </>
           )}
           {type === 'wallet' && (
-            <input placeholder="amount" type="number" value={adAmount as any} onChange={(e)=>setAdAmount(e.target.value?Number(e.target.value):'')} />
+            <input placeholder="amount" type="number" value={adAmount === '' ? '' : String(adAmount)} onChange={(e)=>setAdAmount(e.target.value?Number(e.target.value):'')} />
           )}
           <input placeholder="target id (for product/provider)" value={targetId} onChange={(e) => setTargetId(e.target.value)} />
           <input placeholder="caption" value={caption} onChange={(e) => setCaption(e.target.value)} />

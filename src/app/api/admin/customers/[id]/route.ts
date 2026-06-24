@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server'
 import { approveCustomer, rejectCustomer } from '@/lib/actions/admin.actions'
 import { approveActionSchema } from '@/lib/validations/admin'
 import { getCurrentUser } from '@/lib/auth'
+import { getErrorMessage } from '@/lib/errors'
 
-export async function POST(request: Request, context: any) {
+export async function POST(request: Request, context: unknown) {
   try {
     const body = await request.json()
     const parsed = approveActionSchema.safeParse(body)
@@ -15,9 +16,9 @@ export async function POST(request: Request, context: any) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
 
-    const rawParams = context?.params
-    const params = rawParams && typeof rawParams.then === 'function' ? await rawParams : rawParams
-    const id = params?.id
+    const rawParams = (context as Record<string, unknown> | undefined)?.params
+    const params = rawParams && typeof (rawParams as { then?: Function }).then === 'function' ? await (rawParams as Promise<Record<string, unknown>>) : rawParams as Record<string, unknown> | undefined
+    const id = params?.id as string | undefined
     if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
 
     if (action === 'approve') {
@@ -34,7 +35,7 @@ export async function POST(request: Request, context: any) {
     }
 
     return NextResponse.json({ error: 'unknown action' }, { status: 400 })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }

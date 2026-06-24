@@ -1,6 +1,7 @@
 "use client"
 import React from 'react'
 import { useTranslations } from 'next-intl'
+import { getErrorMessage } from '@/lib/errors'
 
 export default function NewCategoryForm({ onCreated }: { onCreated?: () => void }) {
   const t = useTranslations('admin')
@@ -25,8 +26,8 @@ export default function NewCategoryForm({ onCreated }: { onCreated?: () => void 
       if (!res.ok) throw new Error(data?.error || 'Failed')
       if (onCreated) onCreated()
       window.location.href = '/admin/categories'
-    } catch (err: any) {
-      setError(err.message || String(err))
+    } catch (err: unknown) {
+      setError(getErrorMessage(err))
       setLoading(false)
     }
   }

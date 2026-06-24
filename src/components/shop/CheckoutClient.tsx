@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { showToast } from '@/components/ui/toast'
+import { getErrorMessage } from '@/lib/errors'
 import { useCartStore } from '@/stores/cartStore'
 import Link from 'next/link'
 
@@ -23,7 +24,7 @@ interface CheckoutClientProps {
 }
 
 export default function CheckoutClient({ addresses, userId }: CheckoutClientProps) {
-  const [mounted, setMounted] = useState(false)
+  const [mounted, setMounted] = useState<boolean>(() => typeof window !== 'undefined')
   const items = useCartStore((s: any) => s.items)
   const clear = useCartStore((s: any) => s.clear)
   const [loading, setLoading] = useState(false)
@@ -32,9 +33,8 @@ export default function CheckoutClient({ addresses, userId }: CheckoutClientProp
     return defaultAddr?.id || addresses[0]?.id || ''
   })
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  // `mounted` is initialized based on `window` availability to avoid
+  // calling setState synchronously inside an effect.
 
   const total = items.reduce((sum: number, i: any) => sum + (i.price || 0) * i.quantity, 0)
 
@@ -67,8 +67,8 @@ export default function CheckoutClient({ addresses, userId }: CheckoutClientProp
       showToast('Order placed successfully!', 'success')
       clear()
       window.location.href = '/shop/orders'
-    } catch (err: any) {
-      showToast(err.message || String(err), 'error')
+    } catch (err: unknown) {
+      showToast(getErrorMessage(err), 'error')
     } finally { setLoading(false) }
   }
 

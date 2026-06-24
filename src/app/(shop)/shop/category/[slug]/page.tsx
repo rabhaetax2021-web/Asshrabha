@@ -2,9 +2,16 @@ import React from 'react'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import CategoryFilter from '@/components/shop/CategoryFilter'
+import { getCurrentUser } from '@/lib/auth'
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
+  const currentUser = await getCurrentUser()
+  let preferredLocationId: string | null = null
+  if (currentUser) {
+    const address = await prisma.address.findFirst({ where: { userId: currentUser.id }, orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }] }) as any
+    preferredLocationId = address?.locationId || null
+  }
 
   // Fetch the category
   const category = await prisma.category.findUnique({ where: { slug } })
@@ -14,7 +21,18 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   const products = await prisma.providerProduct.findMany({
     where: {
       status: 'APPROVED',
-      catalogProduct: { category: { slug } }
+      catalogProduct: { category: { slug } },
+      provider: {
+        user: { role: 'PROVIDER' },
+        ...(preferredLocationId ? {
+          deliveryZones: {
+            some: {
+              locationId: preferredLocationId,
+              isActive: true,
+            },
+          },
+        } : {}),
+      },
     },
     include: {
       catalogProduct: { include: { category: true } },
@@ -35,6 +53,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   })
   const providers = Array.from(providerMap.values())
 
+  const isShop = !!currentUser && currentUser.role === 'PROVIDER'
+
   return (
     <section className="category-page container">
       <h1>{category.nameEN || category.nameAR}</h1>
@@ -46,7 +66,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       {products.length > 0 ? (
         <div className="product-grid">
           {products.map((p) => (
-            <div key={p.id} className="product-card">
+            <Link key={p.id} href={`/shop/product/${p.id}`} className="product-card">
               <div className="product-image-wrap">
                 {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
                   <img
@@ -63,10 +83,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                   </span>
                 )}
               </div>
-              <div className="product-card-body">
-                <Link href={`/shop/product/${p.id}`} className="product-card-title">
+                <div className="product-card-body">
+                <div className="product-card-title">
                   {p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'}
-                </Link>
+                </div>
                 <div className="product-card-provider">
                   {p.provider?.logo ? (
                     <img src={p.provider.logo} alt="" className="provider-logo-sm" />
@@ -75,13 +95,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                       {(p.provider?.shopNameEN || p.provider?.shopNameAR || 'S')?.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <Link href={`/shop/store/${p.provider?.id}`} style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>
-                    {p.provider?.shopNameEN || p.provider?.shopNameAR}
-                  </Link>
+                  <div style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{p.provider?.shopNameEN || p.provider?.shopNameAR}</div>
                 </div>
                 <div className="product-card-footer">
                   <div className="price" style={{ fontSize: 'var(--text-sm)' }}>
-                    Wholesale: {p.wholesalePrice || p.sellingPrice} EGP
+                    {isShop ? `Wholesale: ${ (p.wholesalePrice ?? p.sellingPrice) } EGP` : `Retail: ${ (p.retailPrice ?? p.sellingPrice) } EGP` }
                   </div>
                   {Number(p.retailPrice) > 0 && (
                     <span style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>
@@ -90,7 +108,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                   )}
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       ) : (

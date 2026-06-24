@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { subscribe } from '@/lib/supportStream'
+import { getErrorMessage } from '@/lib/errors'
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const current = await getCurrentUser()
@@ -25,22 +26,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   // simple SSE using ReadableStream
   const stream = new ReadableStream({
     start(controller) {
-      const send = (data: any) => {
+      const send = (data: unknown) => {
         try {
           controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(data)}\n\n`))
-        } catch (e) { /** ignore */ }
+        } catch (_) { /** ignore */ }
       }
 
       const unsub = subscribe(id, (payload) => send({ type: 'message', payload }))
 
-      // send initial state: last 100 messages (use promise .then to avoid async IIFE issues)
-      // @ts-ignore — pre-existing type issue with Prisma proxy in sync context
+      // send initial state: last 100 messages
       prisma.chatMessage.findMany({ where: { chatRoomId: id }, orderBy: { createdAt: 'asc' }, include: { sender: true }, take: 100 })
         .then(list => send({ type: 'initial', payload: list }))
         .catch(() => { /* ignore */ })
 
       // cleanup on cancel
-      (controller as any).oncancel = () => { unsub() }
+      ;(controller as unknown as { oncancel?: () => void }).oncancel = () => { unsub() }
     }
   })
 

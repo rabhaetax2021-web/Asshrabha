@@ -195,7 +195,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
 // Helper to get the current session user with typed properties
 export async function getCurrentUser() {
-  const session = await auth();
+  // Primary path: NextAuth server helper
+  let session = await auth().catch(() => null)
+  // Fallback: try to decode token from cookies (useful when `auth()` doesn't resolve)
+  if (!session?.user) {
+    try {
+      const { getToken } = await import('next-auth/jwt')
+      // Provide `req: undefined` and cast to any to satisfy server-side token read in App Router
+      const token = await getToken({ req: undefined, secret: process.env.NEXTAUTH_SECRET } as any)
+      if (token) {
+        session = { user: token as any } as any
+      }
+    } catch {
+      // ignore fallback failures
+    }
+  }
+
   if (!session?.user) return null;
 
   const user = session.user as any;
@@ -204,9 +219,9 @@ export async function getCurrentUser() {
     mobile: user.mobile as string,
     nameAR: user.nameAR as string | null,
     nameEN: user.nameEN as string | null,
-    role: user.role as string,
+    role: (user.role || '').toString().toUpperCase(),
     status: user.status as string,
-    forcePasswordReset: user.forcePasswordReset as boolean,
+    forcePasswordReset: Boolean(user.forcePasswordReset),
     locale: user.locale as string,
     avatar: user.avatar as string | null,
     permissions: (user.permissions || []) as string[],

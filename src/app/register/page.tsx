@@ -28,6 +28,9 @@ export default function RegisterPage() {
   const [shopNameAR, setShopNameAR] = useState('');
   const [shopNameEN, setShopNameEN] = useState('');
   const [locationAddress, setLocationAddress] = useState('');
+  const [locationLat, setLocationLat] = useState<number | null>(null);
+  const [locationLng, setLocationLng] = useState<number | null>(null);
+  const [locationUrl, setLocationUrl] = useState<string>('');
   const [locations, setLocations] = useState<{ id: string; nameEN?: string; nameAR?: string }[]>([]);
   const [locationId, setLocationId] = useState<string>('');
 
@@ -58,9 +61,15 @@ export default function RegisterPage() {
       setError(t('passwordRequirements'));
       return;
     }
-    // Require location for customers (either free-text address or selected government)
-    if (accountType === 'CUSTOMER' && !locationAddress.trim() && !locationId) {
-      setError('الرجاء إدخال موقعك / Please enter your location');
+    // Require both address line and selected governorate for customers
+    if (accountType === 'CUSTOMER' && (!locationAddress.trim() || !locationId)) {
+      setError('الرجاء إدخال عنوانك واختيار المحافظة / Please enter your address and select governorate');
+      return;
+    }
+
+    // Require location for providers as well
+    if (accountType === 'PROVIDER' && !locationAddress.trim()) {
+      setError('الرجاء إدخال موقع المتجر / Please enter your store location');
       return;
     }
     setError('');
@@ -87,6 +96,9 @@ export default function RegisterPage() {
         // include location for both providers and customers
         locationAddress: locationAddress || undefined,
         locationId: locationId || undefined,
+        locationLat: locationLat ?? undefined,
+        locationLng: locationLng ?? undefined,
+        locationUrl: locationUrl || undefined,
       });
 
       if (result.success && result.data) {
@@ -225,10 +237,79 @@ export default function RegisterPage() {
               {accountType === 'CUSTOMER' && (
                 <div>
                   <label className="label" htmlFor="locationAddress">{t('locationAddress')} *</label>
-                  <input id="locationAddress" className="input" value={locationAddress} onChange={(e) => setLocationAddress(e.target.value)} required />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input id="locationAddress" className="input" value={locationAddress} onChange={(e) => setLocationAddress(e.target.value)} required placeholder="Street, building, apartment" />
+                    <button
+                      id="customer-get-location-btn"
+                      type="button"
+                      className="btn btn-primary"
+                      aria-label={t('useMyLocation') || 'Use my location'}
+                      onClick={() => {
+                        if (!('geolocation' in navigator)) { setError(t('geolocationUnavailable') || 'Geolocation not available'); return }
+                        setLoading(true)
+                        navigator.geolocation.getCurrentPosition((pos) => {
+                          const lat = pos.coords.latitude
+                          const lng = pos.coords.longitude
+                          setLocationLat(lat)
+                          setLocationLng(lng)
+                          setLocationUrl(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`)
+                          setLoading(false)
+                        }, (err) => { setError(err?.message || (t('permissionDenied') || 'Permission denied')); setLoading(false) }, { enableHighAccuracy: true, timeout: 15000 })
+                    }}>{loading ? '…' : (t('useMyLocation') || 'Use my location')}</button>
+                  </div>
                   <div style={{ marginTop: 8 }}>
-                    <label className="label" htmlFor="locationId">{t('government') || 'Government'}</label>
-                    <select id="locationId" className="input" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
+                    <label className="label" htmlFor="locationId">{t('government') || 'Governorate'} *</label>
+                    <select id="locationId" className="input" value={locationId} onChange={(e) => setLocationId(e.target.value)} required>
+                      <option value="">-- {t('select') || 'Select'} --</option>
+                      {locations.map((l) => (
+                        <option key={l.id} value={l.id}>{l.nameAR || l.nameEN || l.id}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {(locationUrl || locationAddress.trim()) && (
+                    <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <a
+                        href={locationUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${locationAddress}${locationId ? `, ${locations.find((l) => l.id === locationId)?.nameEN || locationId}` : ''}`)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {t('previewLocation') || 'Preview location on map'}
+                      </a>
+                      {locationUrl && (
+                        <button type="button" className="btn-secondary" onClick={() => { setLocationUrl(''); setLocationLat(null); setLocationLng(null); }}>{tc('remove') || 'Remove'}</button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+              {accountType === 'PROVIDER' && (
+                <div>
+                  <label className="label" htmlFor="locationAddress">{t('locationAddress')} *</label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input id="locationAddress" className="input" value={locationAddress} onChange={(e) => setLocationAddress(e.target.value)} required placeholder="Street, building, apartment" />
+                    <button
+                      id="shop-get-location-btn"
+                      type="button"
+                      className="btn btn-primary"
+                      aria-label={t('useMyLocation') || 'Use my location'}
+                      onClick={() => {
+                        if (!('geolocation' in navigator)) { setError(t('geolocationUnavailable') || 'Geolocation not available'); return }
+                        setLoading(true)
+                        navigator.geolocation.getCurrentPosition((pos) => {
+                          const lat = pos.coords.latitude
+                          const lng = pos.coords.longitude
+                          setLocationLat(lat)
+                          setLocationLng(lng)
+                          // build a Google Maps URL and store it
+                          const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+                          setLocationUrl(url)
+                          setLoading(false)
+                        }, (err) => { setError(err?.message || (t('permissionDenied') || 'Permission denied')); setLoading(false) }, { enableHighAccuracy: true, timeout: 15000 })
+                    }}>{loading ? '…' : (t('useMyLocation') || 'Use my location')}</button>
+                  </div>
+                  <div style={{ marginTop: 8 }}>
+                    <label className="label" htmlFor="locationId">{t('government') || 'Governorate'}</label>
+                    <select id="locationId" className="input" value={locationId} onChange={(e) => setLocationId(e.target.value)} required>
                       <option value="">-- {t('select') || 'Select'} --</option>
                       {locations.map((l) => (
                         <option key={l.id} value={l.id}>{l.nameAR || l.nameEN || l.id}</option>
@@ -275,8 +356,27 @@ export default function RegisterPage() {
                 <input id="shopNameEN" className="input" value={shopNameEN} onChange={(e) => setShopNameEN(e.target.value)} required dir="ltr" />
               </div>
               <div>
-                <label className="label" htmlFor="locationAddress">{t('locationAddress')}</label>
-                <input id="locationAddress" className="input" value={locationAddress} onChange={(e) => setLocationAddress(e.target.value)} />
+                <label className="label" htmlFor="locationAddress">{t('locationAddress')} *</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input id="locationAddress" className="input" value={locationAddress} onChange={(e) => setLocationAddress(e.target.value)} required placeholder="Street, building, apartment" />
+                  <button
+                    id="shop-get-location-btn"
+                    type="button"
+                    className="btn btn-primary"
+                    aria-label={t('useMyLocation') || 'Use my location'}
+                    onClick={() => {
+                      if (!('geolocation' in navigator)) { setError(t('geolocationUnavailable') || 'Geolocation not available'); return }
+                      setLoading(true)
+                      navigator.geolocation.getCurrentPosition((pos) => {
+                        const lat = pos.coords.latitude
+                        const lng = pos.coords.longitude
+                        setLocationLat(lat)
+                        setLocationLng(lng)
+                        setLocationUrl(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`)
+                        setLoading(false)
+                      }, (err) => { setError(err?.message || (t('permissionDenied') || 'Permission denied')); setLoading(false) }, { enableHighAccuracy: true, timeout: 15000 })
+                  }}>{loading ? '…' : (t('useMyLocation') || 'Use my location')}</button>
+                </div>
                 <div style={{ marginTop: 8 }}>
                   <label className="label" htmlFor="locationId">{t('government') || 'Government'}</label>
                   <select id="locationId" className="input" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
@@ -286,6 +386,16 @@ export default function RegisterPage() {
                     ))}
                   </select>
                 </div>
+                {locationUrl ? (
+                  <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <a href={locationUrl} target="_blank" rel="noreferrer">{t('previewLocation') || 'Preview location on map'}</a>
+                    <button type="button" className="btn-secondary" onClick={() => { setLocationUrl(''); setLocationLat(null); setLocationLng(null); }}>{tc('remove') || 'Remove'}</button>
+                  </div>
+                ) : (locationLat != null && locationLng != null && (
+                  <div style={{ marginTop: 8 }}>
+                    <a href={`https://www.google.com/maps/search/?api=1&query=${locationLat},${locationLng}`} target="_blank" rel="noreferrer">{t('previewMaps') || 'Preview GPS location in Google Maps'}</a>
+                  </div>
+                ))}
               </div>
               <div>
                 <label className="label">{t('locationPhoto')}</label>

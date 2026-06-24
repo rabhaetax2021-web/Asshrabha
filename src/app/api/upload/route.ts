@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 import { randomUUID } from 'crypto'
+import { getErrorMessage } from '@/lib/errors'
 
 export const runtime = 'nodejs'
 
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
     if (!file) return NextResponse.json({ ok: false, error: 'No file' }, { status: 400 })
 
     // create a unique, sanitized filename to avoid collisions
-    const origName = (file as any).name ?? 'upload'
+    const origName = file instanceof File ? file.name : 'upload'
     const ext = path.extname(origName) || ''
     const safeExt = ext.replace(/[^.a-zA-Z0-9]/g, '')
     const filename = `${Date.now()}-${randomUUID()}${safeExt}`
@@ -52,8 +53,9 @@ export async function POST(request: Request) {
       // still return original absolute path so caller can handle
       return NextResponse.json({ ok: true, path: null, filePath })
     }
-  } catch (err: any) {
-    console.error('[upload] error', err)
-    return NextResponse.json({ ok: false, error: err?.message || String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    const msg = getErrorMessage(err)
+    console.error('[upload] error', msg)
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 })
   }
 }

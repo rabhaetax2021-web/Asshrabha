@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/auth'
 import fs from 'fs'
 import path from 'path'
 import { prisma } from '@/lib/prisma'
+import { getErrorMessage } from '@/lib/errors'
 import { randomUUID } from 'crypto'
 
 export const runtime = 'nodejs'
@@ -36,8 +37,8 @@ export async function POST(request: Request) {
     await prisma.user.update({ where: { id: current.id }, data: { avatar: publicPath } })
 
     return NextResponse.json({ ok: true, path: publicPath, filePath: publicFilePath })
-  } catch (err: any) {
-    console.error('[api/user/avatar] error', err)
-    return NextResponse.json({ ok: false, error: err?.message || String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    console.error('[api/user/avatar] error', getErrorMessage(err))
+    return NextResponse.json({ ok: false, error: getErrorMessage(err) }, { status: 500 })
   }
 }

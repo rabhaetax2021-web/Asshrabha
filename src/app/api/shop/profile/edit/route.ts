@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
+import { getErrorMessage } from '@/lib/errors'
 
 export async function POST(request: Request) {
   try {
@@ -25,8 +26,8 @@ export async function POST(request: Request) {
     }})
 
     return NextResponse.json({ ok: true, id: req.id })
-  } catch (err: any) {
-    console.error('[api/shop/profile/edit] error', err)
-    return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    console.error('[api/shop/profile/edit] error', getErrorMessage(err))
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }

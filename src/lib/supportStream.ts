@@ -1,6 +1,6 @@
 import EventEmitter from 'events'
 
-type MsgPayload = any
+type MsgPayload = Record<string, unknown> | string | number | boolean | null
 
 const emitters: Map<string, EventEmitter> = new Map()
 
@@ -32,4 +32,5 @@ export function removeEmitter(roomId: string) {
   }
 }
 
-export default { publish, subscribe, getEmitter, removeEmitter }
+const supportStream = { publish, subscribe, getEmitter, removeEmitter }
+export default supportStream

@@ -1,110 +1,132 @@
 import React from 'react'
+import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 
-export default async function SearchPage({ searchParams }: { searchParams: any }) {
-  const resolvedSearch = searchParams && typeof (searchParams as any).then === 'function' ? await searchParams : searchParams
-  const q = (resolvedSearch?.q || '').toString().trim()
+export default async function ShopSearchPage({ searchParams }: { searchParams?: any }) {
+  const q = (searchParams?.q || '').toString().trim()
+  const current = await getCurrentUser()
+  let preferredLocationId: string | null = null
+  if (current) {
+    const address = await prisma.address.findFirst({ where: { userId: current.id }, orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }] }) as any
+    preferredLocationId = address?.locationId || null
+  }
 
   let products: any[] = []
+  let providers: any[] = []
+
   if (q) {
+    const productWhere: any = {
+      status: 'APPROVED',
+      OR: [
+        { catalogProduct: { nameEN: { contains: q, mode: 'insensitive' } } },
+        { catalogProduct: { nameAR: { contains: q, mode: 'insensitive' } } },
+      ],
+    }
+    if (preferredLocationId) {
+      productWhere.provider = {
+        user: { role: 'PROVIDER' },
+        deliveryZones: {
+          some: {
+            locationId: preferredLocationId,
+            isActive: true,
+          }
+        }
+      }
+    } else {
+      productWhere.provider = { user: { role: 'PROVIDER' } }
+    }
+
     products = await prisma.providerProduct.findMany({
-      where: {
-        status: 'APPROVED',
-        catalogProduct: {
-          OR: [
-            { nameEN: { contains: q, mode: 'insensitive' } },
-            { nameAR: { contains: q, mode: 'insensitive' } },
-          ],
-        },
-      },
-      include: {
-        catalogProduct: { include: { category: true } },
-        provider: true,
-      },
-      orderBy: { createdAt: 'desc' },
+      where: productWhere,
+      include: { catalogProduct: true, provider: { include: { user: true } } },
       take: 50,
+      orderBy: { updatedAt: 'desc' }
+    })
+
+    const providerWhere: any = {
+      isVisible: true,
+      user: { role: 'PROVIDER' },
+      OR: [
+        { shopNameEN: { contains: q, mode: 'insensitive' } },
+        { shopNameAR: { contains: q, mode: 'insensitive' } },
+        { user: { nameEN: { contains: q, mode: 'insensitive' } } },
+        { user: { nameAR: { contains: q, mode: 'insensitive' } } },
+      ]
+    }
+    if (preferredLocationId) {
+      providerWhere.deliveryZones = {
+        some: {
+          locationId: preferredLocationId,
+          isActive: true,
+        }
+      }
+    }
+
+    providers = await prisma.providerProfile.findMany({
+      where: providerWhere,
+      include: { user: true },
+      take: 50,
+      orderBy: { createdAt: 'desc' }
     })
   }
 
   return (
-    <section className="search-page container">
-      <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--font-bold)', marginBottom: 'var(--space-6)', color: 'var(--text-primary)' }}>
-        Search Products
-      </h1>
+    <section className="container" style={{ paddingTop: 24 }}>
+      <h1 style={{ fontSize: 'var(--text-2xl)', marginBottom: 12 }}>Search</h1>
 
-      <form action="/shop/search" method="get" className="admin-form" style={{ marginBottom: 'var(--space-6)' }}>
-        <div className="form-row" style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
-          <input
-            name="q"
-            defaultValue={q}
-            placeholder="Search by product name..."
-            className="input"
-            style={{ flex: 1, padding: 'var(--space-3)', fontSize: 'var(--text-base)' }}
-          />
-          <button type="submit" className="btn btn-primary">Search</button>
-        </div>
+      <form method="get" style={{ marginBottom: 18 }}>
+        <input name="q" defaultValue={q} placeholder="Search products or providers" className="input" style={{ width: 420, padding: '8px 10px' }} />
+        <button className="btn" style={{ marginLeft: 8 }} type="submit">Search</button>
       </form>
 
-      {q && products.length === 0 && (
-        <div className="card" style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
-          <div style={{ fontSize: 'var(--text-4xl)', marginBottom: 'var(--space-4)' }}>🔍</div>
-          <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-bold)', marginBottom: 'var(--space-2)' }}>No products found</h3>
-          <p style={{ color: 'var(--text-muted)' }}>Try a different search term.</p>
+      {!q && (
+        <div style={{ color: 'var(--text-muted)' }}>Type a product name or provider/shop name and press Search.</div>
+      )}
+
+      {q && (
+        <div>
+          <h3 style={{ marginTop: 8 }}>Providers</h3>
+          {providers.length === 0 ? <div style={{ color: 'var(--text-muted)' }}>No providers found.</div> : (
+            <div style={{ display: 'grid', gap: 8 }}>
+              {providers.map(p => (
+                <Link key={p.id} href={`/shop/store/${p.id}`} className="card" style={{ padding: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <div style={{ width: 56, height: 56, borderRadius: 6, background: '#f3f3f3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{(p.shopNameEN || p.shopNameAR || '')?.charAt(0)}</div>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{p.shopNameEN || p.shopNameAR}</div>
+                    <div style={{ color: 'var(--text-muted)' }}>{p.user?.nameEN || p.user?.nameAR}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          <h3 style={{ marginTop: 18 }}>Products</h3>
+          {products.length === 0 ? <div style={{ color: 'var(--text-muted)' }}>No products found.</div> : (
+            <div className="product-grid">
+              {products.map((p) => (
+                <Link key={p.id} href={`/shop/product/${p.catalogProduct?.id || p.id}`} className="product-card">
+                  <div className="product-image-wrap">
+                    {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
+                      <img src={p.catalogProduct.images[0]} alt={p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'} className="product-image" />
+                    ) : (
+                      <div className="product-image-placeholder">📦</div>
+                    )}
+                  </div>
+                  <div className="product-card-body">
+                    <div className="product-card-title">{p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'}</div>
+                    <div className="product-card-provider" style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>{p.provider?.shopNameEN || p.provider?.shopNameAR}</div>
+                    <div className="product-card-footer">
+                      <div className="price">{p.retailPrice ? `${p.retailPrice} EGP` : `${p.sellingPrice} EGP`}</div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {products.length > 0 && (
-        <div className="product-grid">
-          {products.map((p) => (
-            <div key={p.id} className="product-card">
-              <div className="product-image-wrap">
-                {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
-                  <img
-                    src={p.catalogProduct.images[0]}
-                    alt={p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'}
-                    className="product-image"
-                  />
-                ) : (
-                  <div className="product-image-placeholder">📦</div>
-                )}
-                {p.stockQuantity <= 5 && p.stockQuantity > 0 && (
-                  <span className="badge badge-warning" style={{ fontSize: 'var(--text-2xs)' }}>
-                    Only {p.stockQuantity} left
-                  </span>
-                )}
-              </div>
-              <div className="product-card-body">
-                <Link href={`/shop/product/${p.id}`} className="product-card-title">
-                  {p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'}
-                </Link>
-                <div className="product-card-provider">
-                  {p.provider?.logo ? (
-                    <img src={p.provider.logo} alt="" className="provider-logo-sm" />
-                  ) : (
-                    <div className="provider-logo-sm" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--gradient-primary)', color: 'white', fontWeight: 'var(--font-bold)', fontSize: 'var(--text-xs)' }}>
-                      {(p.provider?.shopNameEN || p.provider?.shopNameAR || 'S')?.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <Link href={`/shop/store/${p.provider?.id}`} style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>
-                    {p.provider?.shopNameEN || p.provider?.shopNameAR}
-                  </Link>
-                </div>
-                <div className="product-card-footer">
-                  <div className="price" style={{ fontSize: 'var(--text-sm)' }}>
-                    Wholesale: {p.wholesalePrice || p.sellingPrice} EGP
-                  </div>
-                  {Number(p.retailPrice) > 0 && (
-                    <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>
-                      Retail: {p.retailPrice} EGP
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </section>
   )
 }

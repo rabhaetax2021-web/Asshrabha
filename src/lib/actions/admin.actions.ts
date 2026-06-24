@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 
 export async function getProviders() {
+  // Exclude users that are admin accounts (ROOT_ADMIN / SUB_ADMIN)
   return await prisma.providerProfile.findMany({
+    where: { user: { role: { notIn: ["ROOT_ADMIN", "SUB_ADMIN"] } } },
     include: { user: true },
     orderBy: { createdAt: "desc" },
     take: 200,
@@ -152,6 +154,32 @@ export async function setProviderVisibility(providerId: string, visible: boolean
       entity: 'ProviderProfile',
       entityId: providerId,
       details: note ? { note } : {},
+    },
+  })
+
+  return provider
+}
+
+export async function setProviderLocation(providerId: string, lat?: number | null, lng?: number | null, adminUserId?: string, locationAddress?: string | null, mapsLink?: string | null) {
+  const data: Record<string, unknown> = {}
+  if (typeof lat === 'number') data.locationLat = lat
+  if (typeof lng === 'number') data.locationLng = lng
+  if (typeof locationAddress === 'string') data.locationAddress = locationAddress
+  if (typeof mapsLink === 'string') data.locationPhoto = (mapsLink as unknown) // reuse locationPhoto field? better to save mapsLink in description? We'll use locationAddress for now
+
+  const provider = await prisma.providerProfile.update({
+    where: { id: providerId },
+    data,
+    include: { user: true },
+  })
+
+  await prisma.auditLog.create({
+    data: {
+      userId: adminUserId || null,
+      action: 'SET_PROVIDER_LOCATION',
+      entity: 'ProviderProfile',
+      entityId: providerId,
+      details: { lat, lng, locationAddress, mapsLink },
     },
   })
 
@@ -326,16 +354,72 @@ export async function getPendingSuggestions() {
   })
 }
 
-export async function approveSuggestion(suggestionId: string, adminUserId?: string, note?: string) {
+export async function approveSuggestion(
+  suggestionId: string,
+  adminUserId?: string,
+  note?: string,
+  rangeData?: {
+    wholesaleMinPrice: number
+    wholesaleMaxPrice: number
+    retailMinPrice: number
+    retailMaxPrice: number
+    categoryId?: string
+    unitType?: 'PIECE' | 'BOX' | 'PACK'
+  }
+) {
+  const suggestion = await prisma.productSuggestion.findUnique({
+    where: { id: suggestionId },
+    include: { provider: { include: { user: true } } },
+  })
+  if (!suggestion) throw new Error('Suggestion not found')
+  if (!rangeData) throw new Error('Price range data is required')
+
+  const category = rangeData.categoryId
+    ? await prisma.category.findUnique({ where: { id: rangeData.categoryId } })
+    : suggestion.categorySuggestion
+      ? await prisma.category.findFirst({
+          where: {
+            OR: [
+              { slug: suggestion.categorySuggestion },
+              { nameEN: suggestion.categorySuggestion },
+              { nameAR: suggestion.categorySuggestion },
+            ],
+          },
+        })
+      : null
+
+  const fallbackCategory = category ?? await prisma.category.findFirst({ orderBy: { createdAt: 'asc' } })
+  if (!fallbackCategory) throw new Error('No category available to assign catalog product')
+
+  const catalogProduct = await prisma.catalogProduct.create({
+    data: {
+      categoryId: fallbackCategory.id,
+      nameEN: suggestion.nameEN,
+      nameAR: suggestion.nameAR,
+      descriptionEN: suggestion.descriptionEN || null,
+      descriptionAR: suggestion.descriptionAR || null,
+      images: suggestion.images || [],
+      minimumPrice: Math.min(rangeData.wholesaleMinPrice, rangeData.retailMinPrice),
+      maximumPrice: Math.max(rangeData.wholesaleMaxPrice, rangeData.retailMaxPrice),
+      wholesaleMinPrice: rangeData.wholesaleMinPrice,
+      wholesaleMaxPrice: rangeData.wholesaleMaxPrice,
+      retailMinPrice: rangeData.retailMinPrice,
+      retailMaxPrice: rangeData.retailMaxPrice,
+      unitType: rangeData.unitType || 'PACK',
+      wholesalePrice: rangeData.wholesaleMinPrice,
+      retailPrice: rangeData.retailMinPrice,
+      status: 'ACTIVE',
+    },
+  })
+
   const sug = await prisma.productSuggestion.update({
     where: { id: suggestionId },
-    data: { status: 'APPROVED', adminNote: note || null },
-    include: { provider: { include: { user: true } } },
+    data: { status: 'MERGED', adminNote: note || null },
   })
 
   await prisma.notification.create({
     data: {
-      userId: sug.provider.userId,
+      userId: suggestion.provider.userId,
       type: 'SUGGESTION_STATUS',
       titleAR: 'تمت الموافقة على اقتراحك',
       titleEN: 'Your suggestion was approved',
@@ -354,7 +438,7 @@ export async function approveSuggestion(suggestionId: string, adminUserId?: stri
     },
   })
 
-  return sug
+  return { suggestion: sug, catalogProduct }
 }
 
 export async function rejectSuggestion(suggestionId: string, adminUserId?: string, note?: string) {

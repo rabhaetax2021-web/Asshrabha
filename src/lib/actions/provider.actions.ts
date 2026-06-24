@@ -12,19 +12,22 @@ export async function getProductsByProviderId(providerId: string) {
   })
 }
 
-export async function updateStoreProfile(providerId: string, data: any) {
-  return await prisma.providerProfile.update({
-    where: { id: providerId },
-    data: {
-      shopNameAR: data.shopNameAR,
-      shopNameEN: data.shopNameEN,
-      descriptionAR: data.descriptionAR,
-      descriptionEN: data.descriptionEN,
-      logo: data.logo || undefined,
-      banner: data.banner || undefined,
-      locationPhoto: data.locationPhoto || undefined,
-    },
-  })
+export async function updateStoreProfile(providerId: string, data: Record<string, unknown>) {
+  const updateData: any = {
+    shopNameAR: (data as any).shopNameAR,
+    shopNameEN: (data as any).shopNameEN,
+    descriptionAR: (data as any).descriptionAR,
+    descriptionEN: (data as any).descriptionEN,
+    logo: (data as any).logo || undefined,
+    banner: (data as any).banner || undefined,
+    locationPhoto: (data as any).locationPhoto || undefined,
+  }
+
+  if ((data as any).defaultWholesaleUnit !== undefined) {
+    updateData.defaultWholesaleUnit = (data as any).defaultWholesaleUnit
+  }
+
+  return await prisma.providerProfile.update({ where: { id: providerId }, data: updateData })
 }
 
 export async function getOrdersByProvider(providerId: string) {
@@ -35,7 +38,7 @@ export async function getOrdersByProvider(providerId: string) {
   })
 }
 
-export async function listCatalogProducts(filter?: any) {
+export async function listCatalogProducts(filter?: Record<string, unknown>) {
   return await prisma.catalogProduct.findMany({
     where: { status: 'ACTIVE' },
     orderBy: { createdAt: 'desc' },
@@ -43,35 +46,42 @@ export async function listCatalogProducts(filter?: any) {
   })
 }
 
-export async function createProviderProduct(providerId: string, catalogProductId: string, sellingPrice: number, stockQuantity: number, wholesalePrice?: number, retailPrice?: number, options?: any[]) {
-  // Avoid duplicate listings: return existing if present
+export async function createProviderProduct(providerId: string, catalogProductId: string, sellingPrice: number, stockQuantity: number, wholesalePrice?: number, retailPrice?: number, options?: Record<string, unknown>[], wholesaleUnit?: string) {
+  // Avoid duplicate listings: return an existing pending approval record, otherwise fail
   const existing = await prisma.providerProduct.findFirst({ where: { providerId, catalogProductId } })
-  if (existing) return existing
-
-  const pp = await prisma.providerProduct.create({
-    data: {
-      providerId,
-      catalogProductId,
-      sellingPrice,
-      wholesalePrice: wholesalePrice ?? sellingPrice,
-      retailPrice: retailPrice ?? 0,
-      stockQuantity,
-      status: 'PENDING_APPROVAL',
-    },
-  })
+  if (existing) {
+    if (existing.status === 'PENDING_APPROVAL') return existing
+    throw new Error('This product is already listed by your store.')
+  }
+  // if wholesaleUnit not provided, fall back to provider default
+    if (!wholesaleUnit) {
+      const prov: any = await prisma.providerProfile.findUnique({ where: { id: providerId } })
+      wholesaleUnit = prov?.defaultWholesaleUnit || undefined
+    }
+    const pp = await prisma.providerProduct.create({
+      data: {
+        providerId,
+        catalogProductId,
+        sellingPrice,
+        wholesalePrice: wholesalePrice ?? sellingPrice,
+        retailPrice: retailPrice ?? 0,
+        stockQuantity,
+        status: 'PENDING_APPROVAL',
+      },
+    })
 
   if (options && options.length > 0) {
     // map options to DB records
-    const data = options.map((o: any) => ({
+    const data = options.map((o) => ({
       providerProductId: pp.id,
-      unitType: o.unitType,
-      price: Number(o.price || sellingPrice),
-      minQuantity: Number(o.minQuantity || 1),
-      maxQuantity: o.maxQuantity ? Number(o.maxQuantity) : null,
-      stockQuantity: Number(o.stockQuantity || 0),
+      unitType: String((o as Record<string, unknown>)['unitType'] || ''),
+      price: Number((o as Record<string, unknown>)['price'] ?? sellingPrice),
+      minQuantity: Number((o as Record<string, unknown>)['minQuantity'] ?? 1),
+      maxQuantity: (o as Record<string, unknown>)['maxQuantity'] ? Number((o as Record<string, unknown>)['maxQuantity']) : null,
+      stockQuantity: Number((o as Record<string, unknown>)['stockQuantity'] ?? 0),
     }))
     try {
-      await prisma.providerProductOption.createMany({ data })
+      await prisma.providerProductOption.createMany({ data: data as any })
     } catch (err) {
       console.error('createProviderProduct options error', err)
     }

@@ -137,19 +137,19 @@ model User {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  providerProfile ProviderProfile?
-  wallet          Wallet?
-  permissions     AdminPermission[]
-  customerOrders  Order[]           @relation("CustomerOrders")
-  addresses       Address[]
-  reviews         Review[]
-  notifications   Notification[]
-  chatParticipants ChatParticipant[]
-  chatMessages    ChatMessage[]
-  otpCodes        OTPCode[]
-  auditLogs       AuditLog[]
-  profileEditRequests ProviderProfileEdit[]
-  customerProfileEdits CustomerProfileEdit[] @relation("CustomerProfileEdit_user")
+  providerProfile                 ProviderProfile?
+  wallet                          Wallet?
+  permissions                     AdminPermission[]
+  customerOrders                  Order[]               @relation("CustomerOrders")
+  addresses                       Address[]
+  reviews                         Review[]
+  notifications                   Notification[]
+  chatParticipants                ChatParticipant[]
+  chatMessages                    ChatMessage[]
+  otpCodes                        OTPCode[]
+  auditLogs                       AuditLog[]
+  profileEditRequests             ProviderProfileEdit[]
+  customerProfileEdits            CustomerProfileEdit[] @relation("CustomerProfileEdit_user")
   customerProfileEditRequestsMade CustomerProfileEdit[] @relation("CustomerProfileEdit_requester")
 
   @@index([role, status])
@@ -161,7 +161,7 @@ model AdminPermission {
   userId     String
   permission AdminPermissionType
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, permission])
 }
@@ -174,34 +174,38 @@ model OTPCode {
   verified  Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, code])
 }
 
 model ProviderProfile {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  shopNameAR      String
-  shopNameEN      String
-  descriptionAR   String?
-  descriptionEN   String?
-  logo            String?
-  banner          String?
-  locationPhoto   String?
-  locationLat     Float?
-  locationLng     Float?
-  locationAddress String?
-  rating          Float    @default(0)
-  reviewCount     Int      @default(0)
-  isVisible       Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  shopNameAR           String
+  shopNameEN           String
+  descriptionAR        String?
+  descriptionEN        String?
+  logo                 String?
+  banner               String?
+  locationPhoto        String?
+  locationLat          Float?
+  locationLng          Float?
+  locationAddress      String?
+  locationId           String?
+  location             Location? @relation(name: "ProviderProfile_Location", fields: [locationId], references: [id])
+  locationUrl          String?
+  rating               Float     @default(0)
+  reviewCount          Int       @default(0)
+  isVisible            Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  defaultWholesaleUnit UnitType?
 
-  user          User                @relation(fields: [userId], references: [id])
+  user          User                  @relation(fields: [userId], references: [id])
   products      ProviderProduct[]
   deliveryZones DeliveryZone[]
-  orders        Order[]             @relation("ProviderOrders")
+  orders        Order[]               @relation("ProviderOrders")
   suggestions   ProductSuggestion[]
   reviews       Review[]
   edits         ProviderProfileEdit[]
@@ -210,31 +214,31 @@ model ProviderProfile {
 }
 
 model ProviderProfileEdit {
-  id          String          @id @default(cuid())
+  id          String           @id @default(cuid())
   providerId  String
   requestedBy String
   changes     Json
   status      SuggestionStatus @default(PENDING)
   adminNote   String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
-  provider ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  requester User @relation(fields: [requestedBy], references: [id])
+  provider  ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  requester User            @relation(fields: [requestedBy], references: [id])
 
   @@index([providerId])
   @@index([status])
 }
 
 model CustomerProfileEdit {
-  id          String    @id @default(cuid())
+  id          String           @id @default(cuid())
   userId      String
   requestedBy String
   changes     Json
   status      SuggestionStatus @default(PENDING)
   adminNote   String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   user      User @relation("CustomerProfileEdit_user", fields: [userId], references: [id], onDelete: Cascade)
   requester User @relation("CustomerProfileEdit_requester", fields: [requestedBy], references: [id])
@@ -244,28 +248,30 @@ model CustomerProfileEdit {
 }
 
 model DeliveryZone {
-  id         String  @id @default(cuid())
-  providerId String
-  nameAR     String?
-  nameEN     String?
-  locationId String?
-  shippingPrice Float @default(0)
-  isActive   Boolean @default(true)
+  id            String  @id @default(cuid())
+  providerId    String
+  nameAR        String?
+  nameEN        String?
+  locationId    String?
+  shippingPrice Float   @default(0)
+  isActive      Boolean @default(true)
 
   provider ProviderProfile @relation(fields: [providerId], references: [id])
-  location Location? @relation(fields: [locationId], references: [id])
+  location Location?       @relation(fields: [locationId], references: [id])
 
   @@index([providerId])
 }
 
 model Location {
-  id      String @id @default(cuid())
-  nameAR  String
-  nameEN  String
+  id        String   @id @default(cuid())
+  nameAR    String
+  nameEN    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   zones DeliveryZone[]
+  addresses Address[]
+  providerProfiles ProviderProfile[] @relation(name: "ProviderProfile_Location")
 }
 
 model Category {
@@ -284,24 +290,27 @@ model Category {
 }
 
 model CatalogProduct {
-  id            String        @id @default(cuid())
-  categoryId    String
-  nameAR        String
-  nameEN        String
-  descriptionAR String?
-  descriptionEN String?
-  images        String[]
-  minimumPrice  Float
-  maximumPrice  Float
-  wholesaleMinPrice Float @default(0)
-  wholesaleMaxPrice Float @default(0)
-  retailMinPrice Float @default(0)
-  retailMaxPrice Float @default(0)
-  status        ProductStatus @default(ACTIVE)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id                String        @id @default(cuid())
+  categoryId        String
+  nameAR            String
+  nameEN            String
+  descriptionAR     String?
+  descriptionEN     String?
+  images            String[]
+  minimumPrice      Float
+  maximumPrice      Float
+  wholesaleMinPrice Float         @default(0)
+  wholesaleMaxPrice Float         @default(0)
+  retailMinPrice    Float         @default(0)
+  retailMaxPrice    Float         @default(0)
+  unitType          UnitType
+  wholesalePrice    Float         @default(0)
+  retailPrice       Float         @default(0)
+  status            ProductStatus @default(ACTIVE)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
-  category         Category          @relation(fields: [categoryId], references: [id])
+  category         Category                  @relation(fields: [categoryId], references: [id])
   providerProducts ProviderProduct[]
   unitRanges       CatalogProductUnitRange[]
 
@@ -315,6 +324,7 @@ model ProviderProduct {
   catalogProductId String
   sellingPrice     Float
   wholesalePrice   Float                 @default(0)
+  wholesaleUnit    UnitType?
   retailPrice      Float                 @default(0)
   stockQuantity    Int                   @default(0)
   status           ProviderProductStatus @default(PENDING_APPROVAL)
@@ -322,9 +332,9 @@ model ProviderProduct {
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
 
-  provider       ProviderProfile @relation(fields: [providerId], references: [id])
-  catalogProduct CatalogProduct  @relation(fields: [catalogProductId], references: [id])
-  orderItems     OrderItem[]
+  provider               ProviderProfile         @relation(fields: [providerId], references: [id])
+  catalogProduct         CatalogProduct          @relation(fields: [catalogProductId], references: [id])
+  orderItems             OrderItem[]
   providerProductOptions ProviderProductOption[]
 
   @@unique([providerId, catalogProductId])
@@ -333,15 +343,15 @@ model ProviderProduct {
 }
 
 model ProviderProductOption {
-  id                String     @id @default(cuid())
+  id                String   @id @default(cuid())
   providerProductId String
   unitType          UnitType
   price             Float
-  minQuantity       Int        @default(1)
+  minQuantity       Int      @default(1)
   maxQuantity       Int?
-  stockQuantity     Int        @default(0)
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  stockQuantity     Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   providerProduct ProviderProduct @relation(fields: [providerProductId], references: [id], onDelete: Cascade)
 
@@ -350,16 +360,16 @@ model ProviderProductOption {
 }
 
 model CatalogProductUnitRange {
-  id              String   @id @default(cuid())
+  id               String   @id @default(cuid())
   catalogProductId String
-  unitType        UnitType
-  minPrice        Float
-  maxPrice        Float
+  unitType         UnitType
+  minPrice         Float
+  maxPrice         Float
 
   catalogProduct CatalogProduct @relation(fields: [catalogProductId], references: [id], onDelete: Cascade)
 
-  @@index([catalogProductId])
   @@unique([catalogProductId, unitType])
+  @@index([catalogProductId])
 }
 
 model ProductSuggestion {
@@ -389,18 +399,22 @@ model Address {
   mobile      String
   addressLine String
   city        String
+  locationId  String?
   area        String?
   landmark    String?
   lat         Float?
   lng         Float?
+  locationUrl String?
   isDefault   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user   User    @relation(fields: [userId], references: [id])
-  orders Order[]
+  user     User     @relation(fields: [userId], references: [id])
+  location Location? @relation(fields: [locationId], references: [id])
+  orders   Order[]
 
   @@index([userId])
+  @@index([locationId])
 }
 
 model Order {
@@ -417,9 +431,9 @@ model Order {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
-  customer      User             @relation("CustomerOrders", fields: [customerId], references: [id])
-  provider      ProviderProfile  @relation("ProviderOrders", fields: [providerId], references: [id])
-  address       Address?         @relation(fields: [addressId], references: [id])
+  customer      User                 @relation("CustomerOrders", fields: [customerId], references: [id])
+  provider      ProviderProfile      @relation("ProviderOrders", fields: [providerId], references: [id])
+  address       Address?             @relation(fields: [addressId], references: [id])
   items         OrderItem[]
   statusHistory OrderStatusHistory[]
 
@@ -469,6 +483,32 @@ model Wallet {
   user             User                @relation(fields: [userId], references: [id])
   transactions     WalletTransaction[]
   withdrawRequests WithdrawRequest[]
+  depositRequests  DepositRequest[]
+}
+
+model PaymentMethod {
+  id           String   @id @default(cuid())
+  name         String
+  instructions String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model DepositRequest {
+  id          String         @id @default(cuid())
+  walletId    String
+  amount      Float
+  methodId    String?
+  status      WithdrawStatus @default(PENDING)
+  adminNote   String?
+  processedBy String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @default(now()) @updatedAt
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, status])
 }
 
 model WalletTransaction {

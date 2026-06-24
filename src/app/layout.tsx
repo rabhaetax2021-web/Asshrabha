@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
+import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
+import ThemeProvider from '@/components/ui/ThemeProvider'
+import PWAInstallPrompt from '@/components/ui/PWAInstallPrompt'
 
 export const metadata: Metadata = {
   title: {
@@ -20,7 +23,11 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   width: 'device-width',
+  height: 'device-height',
   initialScale: 1,
+  minimumScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#6366f1' },
     { media: '(prefers-color-scheme: dark)', color: '#0f0f23' },
@@ -47,7 +54,11 @@ export default async function RootLayout({
       </head>
       <body>
         <NextIntlClientProvider messages={messages}>
-          {children}
+          <ThemeProvider>
+            <ServiceWorkerRegister />
+            <PWAInstallPrompt />
+            {children}
+          </ThemeProvider>
         </NextIntlClientProvider>
       </body>
     </html>

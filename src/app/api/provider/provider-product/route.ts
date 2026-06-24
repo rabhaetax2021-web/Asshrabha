@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getErrorMessage } from '@/lib/errors'
 
 export async function GET(request: Request) {
   try {
@@ -13,8 +14,8 @@ export async function GET(request: Request) {
     })
     if (!pp) return NextResponse.json({ error: 'not found' }, { status: 404 })
     return NextResponse.json({ ok: true, product: pp })
-  } catch (err: any) {
-    console.error('[api/provider/provider-product] error', err)
-    return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    console.error('[api/provider/provider-product] error', getErrorMessage(err))
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }

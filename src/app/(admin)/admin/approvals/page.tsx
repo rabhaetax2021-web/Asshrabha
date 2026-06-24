@@ -17,9 +17,10 @@ export default async function ApprovalsPage() {
       <h1>Approvals</h1>
 
       <h2>Account Approvals</h2>
-      <table className="simple-table">
+      <div className="ui-table-wrap">
+        <table className="ui-table">
         <thead>
-          <tr><th>Store</th><th>Owner</th><th>Mobile</th><th>Created</th><th>Actions</th></tr>
+          <tr><th>Store</th><th className="hide-sm">Owner</th><th>Mobile</th><th className="hide-sm">Created</th><th>Actions</th></tr>
         </thead>
         <tbody>
           {providers.map(p => (
@@ -33,12 +34,14 @@ export default async function ApprovalsPage() {
           ))}
           {providers.length === 0 && <tr><td colSpan={5}>No pending accounts.</td></tr>}
         </tbody>
-      </table>
+        </table>
+      </div>
 
       <h2>Product Listings</h2>
-      <table className="simple-table">
+      <div className="ui-table-wrap">
+        <table className="ui-table">
         <thead>
-          <tr><th>Product</th><th>Provider</th><th>Price</th><th>Created</th><th>Actions</th></tr>
+          <tr><th>Product</th><th className="hide-sm">Provider</th><th>Price</th><th className="hide-sm">Created</th><th>Actions</th></tr>
         </thead>
         <tbody>
           {products.map(pp => (
@@ -52,12 +55,14 @@ export default async function ApprovalsPage() {
           ))}
           {products.length === 0 && <tr><td colSpan={5}>No pending product listings.</td></tr>}
         </tbody>
-      </table>
+        </table>
+      </div>
 
       <h2>Product Suggestions</h2>
-      <table className="simple-table">
+      <div className="ui-table-wrap">
+        <table className="ui-table">
         <thead>
-          <tr><th>Suggestion</th><th>Provider</th><th>Created</th><th>Actions</th></tr>
+          <tr><th>Suggestion</th><th className="hide-sm">Provider</th><th className="hide-sm">Created</th><th>Actions</th></tr>
         </thead>
         <tbody>
           {suggestions.map(s => (
@@ -65,12 +70,13 @@ export default async function ApprovalsPage() {
               <td>{s.nameEN || s.nameAR}</td>
               <td>{s.provider?.shopNameEN || s.provider?.shopNameAR}</td>
               <td>{new Date(s.createdAt).toLocaleString()}</td>
-              <td><SuggestionActions suggestionId={s.id} /></td>
+              <td><Link href={`/admin/approvals/suggestion/${s.id}`} className="btn btn-secondary">Review</Link></td>
             </tr>
           ))}
           {suggestions.length === 0 && <tr><td colSpan={4}>No suggestions.</td></tr>}
         </tbody>
-      </table>
+        </table>
+      </div>
     </section>
   )
 }

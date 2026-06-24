@@ -1,17 +1,24 @@
 "use client"
 import React, { useState } from 'react'
 import { showToast } from '@/components/ui/toast'
+import { getErrorMessage } from '@/lib/errors'
 import { useCartStore } from '@/stores/cartStore'
+
+type Option = { id: string; title?: string; price?: number; unitType?: string }
+type CatalogOption = { unitType: string; minPrice?: number; maxPrice?: number }
 
 export default function AddToCart({ providerProductId, catalogProductId }: { providerProductId?: string, catalogProductId?: string }) {
   const [loading, setLoading] = useState(false)
-  const addItem = useCartStore((s: any) => s.addItem)
+  const addItem = useCartStore(s => s.addItem)
+  const setOpen = useCartStore(s => s.setOpen)
   const [quantity, setQuantity] = useState(1)
-  const [options, setOptions] = useState<any[]>([])
+  const [options, setOptions] = useState<Option[]>([])
   const [selectedOption, setSelectedOption] = useState<string | null>(null)
   const [productName, setProductName] = useState<string | undefined>(undefined)
   const [productPrice, setProductPrice] = useState<number | undefined>(undefined)
-  const [catalogOptions, setCatalogOptions] = useState<any[]>([])
+  const [productImage, setProductImage] = useState<string | undefined>(undefined)
+  const [isShop, setIsShop] = useState<boolean>(false)
+  const [catalogOptions, setCatalogOptions] = useState<CatalogOption[]>([])
   const [selectedCatalogOption, setSelectedCatalogOption] = useState<string | null>(null)
 
   React.useEffect(() => {
@@ -24,12 +31,22 @@ export default function AddToCart({ providerProductId, catalogProductId }: { pro
         const opts = j.product?.providerProductOptions || []
         setOptions(opts)
         if (opts.length > 0) setSelectedOption(opts[0].id)
-        // store a cached title/price to use when adding to cart
+        // store a cached title/price/image to use when adding to cart
         // prefer catalog product name (EN) then AR then fallback
         const catalog = j.product?.catalogProduct
         if (catalog) setProductName(catalog.nameEN || catalog.nameAR || undefined)
-        // also cache selling price
-        if (j.product?.sellingPrice) setProductPrice(j.product.sellingPrice)
+        const img = j.product?.catalogProduct?.images?.[0] || j.product?.images?.[0] || undefined
+        if (img) setProductImage(img)
+        // determine buyer role (client or shop) and cache appropriate price
+        try {
+          const s = await fetch('/api/auth/session').then(r => r.json()).catch(() => ({}))
+          const shop = !!s?.user && s.user.role === 'PROVIDER'
+          setIsShop(shop)
+          const computed = opts.length > 0 ? undefined : (shop ? (j.product?.wholesalePrice ?? j.product?.sellingPrice) : (j.product?.retailPrice ?? j.product?.sellingPrice))
+          if (computed) setProductPrice(computed)
+        } catch (e) {
+          if (j.product?.sellingPrice) setProductPrice(j.product.sellingPrice)
+        }
       } catch (err) {
         // ignore
       }
@@ -60,8 +77,12 @@ export default function AddToCart({ providerProductId, catalogProductId }: { pro
         // add to client-side cart using selected option
         const opt = options.find(o => o.id === selectedOption)
         const title = opt?.title || productName || undefined
+        // prefer option price if present, otherwise use role-based cached product price
         const price = opt?.price ?? productPrice ?? undefined
-        addItem({ providerProductId, optionId: selectedOption || undefined, unitType: opt?.unitType, quantity: Number(quantity || 1), title, price })
+        // try to pick a thumbnail from the provider product or its catalog product
+        const image = productImage || undefined
+        addItem({ providerProductId, optionId: selectedOption || undefined, unitType: opt?.unitType, quantity: Number(quantity || 1), title, price, image })
+        try { setOpen(true) } catch (e) {}
         showToast('Added to cart', 'success')
         setLoading(false)
         return
@@ -73,24 +94,36 @@ export default function AddToCart({ providerProductId, catalogProductId }: { pro
       if (selectedCatalogOption) form.append('unitType', selectedCatalogOption)
 
       const res = await fetch('/api/cart/add', { method: 'POST', body: form })
-      if (res.redirected) {
-        showToast('Added to cart', 'success')
-        // follow redirect
-        window.location.href = res.url
-        return
-      }
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Failed to add to cart')
+      // If server suggests a redirect (to product page), follow it so user can pick listing
+      if (data?.redirect) {
+        window.location.href = data.redirect
+        return
+      }
+
+      // If server returned an item with unitPrice, add it to client cart as convenience
+      if (data?.providerProduct) {
+        const pp = data.providerProduct
+        const title = pp.title || undefined
+        const price = pp.unitPrice ?? undefined
+        const image = pp.catalogProduct?.images?.[0] || pp.images?.[0] || undefined
+        addItem({ providerProductId: pp.id, optionId: undefined, unitType: pp.unitType, quantity: Number(quantity || 1), title, price, image })
+        try { setOpen(true) } catch (e) {}
+        showToast('Added to cart', 'success')
+        return
+      }
+
       showToast('Added to cart', 'success')
-    } catch (err: any) {
-      showToast(err.message || String(err), 'error')
+    } catch (err: unknown) {
+      showToast(getErrorMessage(err), 'error')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <form onSubmit={doAdd} className="add-to-cart-form">
+    <form onSubmit={doAdd} className="add-to-cart-form" onClick={e => e.stopPropagation()}>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         <input type="number" min={1} value={quantity} onChange={e => setQuantity(Number(e.target.value))} style={{ width: 80 }} />
         {options.length > 0 && (
@@ -100,7 +133,7 @@ export default function AddToCart({ providerProductId, catalogProductId }: { pro
         )}
         {catalogOptions.length > 0 && (
           <select value={selectedCatalogOption || ''} onChange={e => setSelectedCatalogOption(e.target.value)}>
-            {catalogOptions.map((o: any) => <option key={o.unitType} value={o.unitType}>{o.unitType} - {o.minPrice} - {o.maxPrice} EGP</option>)}
+            {catalogOptions.map((o) => <option key={o.unitType} value={o.unitType}>{o.unitType} - {o.minPrice} - {o.maxPrice} EGP</option>)}
           </select>
         )}
         <button type="submit" disabled={loading} className="btn btn-primary">{loading ? 'Adding...' : 'Add to Cart'}</button>

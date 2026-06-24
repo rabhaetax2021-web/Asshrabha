@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { showToast } from '@/components/ui/toast'
+import { getErrorMessage } from '@/lib/errors'
 
 export default function ProviderProductActions({ productId }: { productId: string }) {
   const [loading, setLoading] = useState(false)
@@ -21,8 +22,8 @@ export default function ProviderProductActions({ productId }: { productId: strin
       if (!res.ok) throw new Error(data?.error || 'Request failed')
       showToast('Success', 'success')
       window.location.reload()
-    } catch (err: any) {
-      showToast(err.message || String(err), 'error')
+    } catch (err: unknown) {
+      showToast(getErrorMessage(err), 'error')
     } finally {
       setLoading(false)
     }

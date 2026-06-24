@@ -10,7 +10,12 @@ interface Props {
 }
 
 export default function AdminSidebar({ collapsed = false, initialLocale = 'ar' }: Props) {
-  const [locale, setLocaleState] = React.useState<'ar'|'en'>(initialLocale)
+  const [locale, setLocaleState] = React.useState<'ar'|'en'>(() => {
+    if (typeof document === 'undefined') return initialLocale
+    const m = document.cookie.match(/(?:^|; )NEXT_LOCALE=([^;]+)/)
+    const cookieLocale = (m ? decodeURIComponent(m[1]) : null) as 'ar'|'en'|null
+    return cookieLocale || initialLocale
+  })
   const [open, setOpen] = React.useState(false)
   const t = useTranslations('admin')
   const tc = useTranslations('common')
@@ -23,12 +28,7 @@ export default function AdminSidebar({ collapsed = false, initialLocale = 'ar' }
     }
     window.location.href = '/login'
   }
-  React.useEffect(() => {
-    if (typeof document === 'undefined') return
-    const m = document.cookie.match(/(?:^|; )NEXT_LOCALE=([^;]+)/)
-    const cookieLocale = (m ? decodeURIComponent(m[1]) : null) as 'ar'|'en'|null
-    if (cookieLocale && cookieLocale !== locale) setLocaleState(cookieLocale)
-  }, [])
+  // Locale is initialized from cookie above to avoid calling setState in effect
 
   const setLocale = (newLocale: 'ar'|'en') => {
     if (typeof document === 'undefined') return
@@ -105,6 +105,23 @@ export default function AdminSidebar({ collapsed = false, initialLocale = 'ar' }
           </li>
           <li>
             <Link href="/admin/settings" className="sidebar-item">{t('settings')}</Link>
+          </li>
+          <li>
+            <Link href="/admin/templates" className="sidebar-item">{t('templates')}</Link>
+          </li>
+          <li>
+            <div className="sidebar-item sidebar-collapsible" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Link href="/admin/wallet" className="no-underline">{t('wallet')}</Link>
+              <button type="button" className="btn-icon btn-sm" onClick={() => setOpen(prev => !prev)} aria-expanded={open} aria-label="Toggle wallet submenu">{open ? '−' : '+'}</button>
+            </div>
+            {open && (
+              <ul className="sidebar-submenu" style={{ paddingLeft: 12, marginTop: 6 }}>
+                <li><Link href="/admin/wallet/deposit-requests" className="sidebar-item">{t('depositRequests')}</Link></li>
+                <li><Link href="/admin/wallet/withdraw-requests" className="sidebar-item">{t('withdrawRequests')}</Link></li>
+                <li><Link href="/admin/wallet/history" className="sidebar-item">{t('history')}</Link></li>
+                <li><Link href="/admin/wallet/payment-methods" className="sidebar-item">{t('paymentMethods')}</Link></li>
+              </ul>
+            )}
           </li>
         </ul>
       </nav>

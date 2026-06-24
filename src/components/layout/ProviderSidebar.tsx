@@ -9,15 +9,15 @@ interface Props { collapsed?: boolean; initialLocale?: 'ar'|'en' }
 export default function ProviderSidebar({ collapsed = false, initialLocale = 'ar' }: Props) {
   const t = useTranslations('provider')
   const tc = useTranslations('common')
-  const [locale, setLocaleState] = React.useState<'ar'|'en'>(initialLocale)
-  const [open, setOpen] = React.useState(false)
-
-  React.useEffect(() => {
-    if (typeof document === 'undefined') return
+  const [locale, setLocaleState] = React.useState<'ar'|'en'>(() => {
+    if (typeof document === 'undefined') return initialLocale
     const m = document.cookie.match(/(?:^|; )NEXT_LOCALE=([^;]+)/)
     const cookieLocale = (m ? decodeURIComponent(m[1]) : null) as 'ar'|'en'|null
-    if (cookieLocale && cookieLocale !== locale) setLocaleState(cookieLocale)
-  }, [])
+    return cookieLocale || initialLocale
+  })
+  const [open, setOpen] = React.useState(false)
+
+  // Locale is initialized from cookie above to avoid calling setState in effect
 
   const setLocale = (newLocale: 'ar'|'en') => {
     if (typeof document === 'undefined') return
@@ -61,6 +61,7 @@ export default function ProviderSidebar({ collapsed = false, initialLocale = 'ar
         <ul>
           <li><Link href="/provider" className="sidebar-item">{t('dashboard')}</Link></li>
           <li><Link href="/provider/store" className="sidebar-item">{t('store')}</Link></li>
+          <li><Link href="/provider/delivery-areas" className="sidebar-item">{t('deliveryAreas')}</Link></li>
           <li><Link href="/provider/products" className="sidebar-item">{t('products')}</Link></li>
           <li><Link href="/provider/products/catalog" className="sidebar-item">{t('browseCatalog')}</Link></li>
           <li><Link href="/provider/orders" className="sidebar-item">{t('orders')}</Link></li>

@@ -1,6 +1,7 @@
 "use client"
 import React, { useState } from 'react'
 import { showToast } from '@/components/ui/toast'
+import { getErrorMessage } from '@/lib/errors'
 
 export default function ToggleVisibilityButton({ providerId, visible }: { providerId: string, visible: boolean }) {
   const [loading, setLoading] = useState(false)
@@ -19,8 +20,8 @@ export default function ToggleVisibilityButton({ providerId, visible }: { provid
       if (!res.ok) throw new Error(j?.error || 'Request failed')
       showToast('Updated', 'success')
       window.location.reload()
-    } catch (err: any) {
-      showToast(err.message || String(err), 'error')
+    } catch (err: unknown) {
+      showToast(getErrorMessage(err), 'error')
     } finally {
       setLoading(false)
     }

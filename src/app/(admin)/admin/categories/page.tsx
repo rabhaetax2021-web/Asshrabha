@@ -14,13 +14,13 @@ export default async function CategoriesPage() {
         </div>
       </div>
 
-      <div className="table-wrap">
-        <table className="categories-table">
+      <div className="ui-table-wrap">
+        <table className="ui-table">
           <thead>
             <tr>
               <th>Name</th>
-              <th>Slug</th>
-              <th>Created</th>
+              <th className="hide-sm">Slug</th>
+              <th className="hide-sm">Created</th>
             </tr>
           </thead>
           <tbody>

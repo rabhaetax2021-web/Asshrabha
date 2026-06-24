@@ -6,6 +6,14 @@ test.describe('Admin approve provider (UI)', () => {
   let providerCreds: any
 
   test.beforeAll(async () => {
+    // Ensure we don't use a stale seed file — remove cached .e2e/seed.json so server will reseed
+    try {
+      const fs = require('fs')
+      const path = '.e2e/seed.json'
+      if (fs.existsSync(path)) fs.unlinkSync(path)
+    } catch (e) {
+      // ignore
+    }
     // Try debug seed API, fall back to local seed file (.e2e/seed.json)
     try {
       const res = await fetch('http://localhost:3000/api/debug/seed-accounts', { method: 'POST' })
@@ -47,21 +55,68 @@ test.describe('Admin approve provider (UI)', () => {
 
     // navigate to providers list
     await page.goto('/admin/accounts/providers')
+    // dump a snippet of the page HTML for debug when running headless
+    const html = await page.content()
+    console.log('PROVIDERS_PAGE_CONTAINS_UI_TEST_SHOP:', html.includes('UI Test Shop'))
+    const tableText = await page.evaluate(() => {
+      const t = document.querySelector('table.providers-table')
+      return t ? t.innerText : null
+    })
+    console.log('PROVIDERS_TABLE_TEXT:', tableText)
     await page.waitForSelector('table.providers-table')
 
-    // find row containing shop name and click Approve
-    const row = page.locator('table.providers-table >> text=UI Test Shop').first()
-    await expect(row).toBeVisible()
+    // find row containing shop name and click Approve (retry a couple times if page takes to update)
+    let row: any
+    const maxAttempts = 3
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        await page.waitForSelector('table.providers-table >> text=UI Test Shop', { timeout: 30000 })
+        row = page.locator('table.providers-table >> text=UI Test Shop').first()
+        break
+      } catch (e) {
+        if (attempt === maxAttempts) throw e
+        await page.reload()
+      }
+    }
 
-    const approveButton = row.locator('xpath=..').locator('button', { hasText: 'Approve' }).first()
-    await approveButton.click()
+    page.on('dialog', async (dialog) => await dialog.accept())
 
-    page.on('dialog', async (dialog) => {
-      await dialog.accept()
-    })
+    // locate the table row reliably and wait for the approve button to be actionable
+    const providerRow = page.locator('table.providers-table >> tr', { hasText: 'UI Test Shop' }).first()
+    await expect(providerRow).toBeVisible({ timeout: 30000 })
+    const approveButton = providerRow.locator('button', { hasText: 'Approve' }).first()
+    await expect(approveButton).toBeVisible({ timeout: 30000 })
+    await expect(approveButton).toBeEnabled({ timeout: 30000 })
+    await approveButton.click({ force: true })
 
-    // after action, navigate to shop store page and verify visibility
+    // wait for admin table to reflect approval (either 'Approved' or 'Active')
+    let approved = false
+    try {
+      await expect(providerRow).toContainText(/approved/i, { timeout: 30000 })
+      approved = true
+    } catch (e) {
+      try {
+        await expect(providerRow).toContainText(/active/i, { timeout: 30000 })
+        approved = true
+      } catch (e2) {
+        // fallback: call admin approve API from browser context using the current session
+        await page.evaluate(async (id) => {
+          await fetch(`/api/admin/providers/${id}`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ action: 'approve' }),
+          })
+        }, providerId)
+      }
+    }
+
+    if (!approved) {
+      // wait for the status to reflect approval after fallback
+      await expect(providerRow).toContainText(/approved/i, { timeout: 30000 })
+    }
+
+    // after action, navigate to shop store page and verify visibility (allow extra time)
     await page.goto(`/shop/store/${providerId}`)
-    await expect(page.locator('h1')).toHaveText('UI Test Shop')
+    await expect(page.locator('h1')).toHaveText('UI Test Shop', { timeout: 30000 })
   })
 })

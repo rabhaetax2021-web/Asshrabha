@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { placeOrder } from '@/lib/actions/shop.actions'
 import { getCurrentUser } from '@/lib/auth'
 import { z } from 'zod'
+import { getErrorMessage } from '@/lib/errors'
 
 const checkoutSchema = z.object({
   items: z.array(z.object({
@@ -29,8 +30,9 @@ export async function POST(request: Request) {
     const { items, addressId } = parsed.data
     const orders = await placeOrder(currentUser.id, items, addressId)
     return NextResponse.json({ ok: true, orders })
-  } catch (err: any) {
-    console.error('[checkout]', err)
-    return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    const msg = getErrorMessage(err)
+    console.error('[checkout]', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

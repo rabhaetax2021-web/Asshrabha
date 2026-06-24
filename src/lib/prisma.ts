@@ -11,20 +11,21 @@ function getClient() {
 		const adapter = new PrismaPg(pool)
 		_client = new PrismaClient({ adapter })
 		if (process.env.NODE_ENV !== 'production') {
-			;(globalThis as any).__prismaClient = _client
+			;(globalThis as unknown as { __prismaClient?: PrismaClient }).__prismaClient = _client
 		}
 	}
 	return _client
 }
 
-const handler: ProxyHandler<Record<string, any>> = {
-	get(_, prop) {
+const handler: ProxyHandler<Record<PropertyKey, unknown>> = {
+	get(_, prop: PropertyKey) {
 		const client = getClient()
-		// @ts-ignore
-		return client[prop]
+		const val = (client as unknown as Record<PropertyKey, unknown>)[prop]
+		if (typeof val === 'function') return (val as Function).bind(client)
+		return val
 	},
 }
 
-export const prisma = new Proxy({}, handler) as unknown as PrismaClient
+export const prisma = new Proxy({} as Record<PropertyKey, unknown>, handler) as unknown as PrismaClient
 
 export default prisma

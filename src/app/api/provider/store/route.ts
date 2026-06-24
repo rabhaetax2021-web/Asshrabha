@@ -3,6 +3,7 @@ import { updateStoreProfile } from '@/lib/actions/provider.actions'
 import { updateStoreSchema } from '@/lib/validations/provider'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getErrorMessage } from '@/lib/errors'
 
 export const runtime = 'nodejs'
 
@@ -25,8 +26,8 @@ export async function POST(request: Request) {
 
     const result = await updateStoreProfile(providerId, data)
     return NextResponse.json({ ok: true, result })
-  } catch (err: any) {
-    console.error('[api/provider/store] error', err)
-    return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    console.error('[api/provider/store] error', getErrorMessage(err))
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }

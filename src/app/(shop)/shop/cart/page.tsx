@@ -4,11 +4,14 @@ import React, { useEffect, useState } from 'react'
 import { useCartStore } from '@/stores/cartStore'
 import Link from 'next/link'
 
+type CartItem = { providerProductId: string; title?: string; quantity: number; price?: number }
+
 export default function CartPage() {
   const [mounted, setMounted] = useState(false)
-  const items = useCartStore((s: any) => s.items)
-  const remove = useCartStore((s: any) => s.removeItem)
-  const total = items.reduce((sum: number, i: any) => sum + (i.price || 0) * i.quantity, 0)
+  const items = useCartStore((s: { items: CartItem[] }) => s.items)
+  const remove = useCartStore((s: { removeItem: (id: string, optionId?: string) => void }) => s.removeItem)
+  const updateQuantity = useCartStore((s: { updateQuantity: (id: string, optionId: string | undefined, quantity: number) => void }) => s.updateQuantity)
+  const total = items.reduce((sum: number, i: CartItem) => sum + (i.price || 0) * i.quantity, 0)
 
   useEffect(() => {
     setMounted(true)
@@ -43,13 +46,21 @@ export default function CartPage() {
       {items.length > 0 && (
         <div className="cart-list">
           {items.map((i: any) => (
-            <div key={i.providerProductId} className="cart-item card">
-              <div className="cart-item-info">
-                <div className="cart-item-title">{i.title || i.providerProductId}</div>
-                <div className="cart-item-meta">Qty: {i.quantity} × {i.price || 0} EGP</div>
+            <div key={`${i.providerProductId}-${i.optionId ?? 'base'}`} className="cart-item card">
+              <div className="cart-item-info" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                {i.image && <img src={i.image} alt={i.title || 'product'} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8 }} />}
+                <div>
+                  <div className="cart-item-title">{i.title || i.providerProductId}</div>
+                  <div className="cart-item-meta">{i.price ? `${i.price} EGP` : '—'}</div>
+                </div>
               </div>
-              <div className="cart-item-price">{((i.price || 0) * i.quantity).toFixed(2)} EGP</div>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => remove(i.providerProductId)}>Remove</button>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => updateQuantity(i.providerProductId, i.optionId, Math.max(0, i.quantity - 1))}>−</button>
+                <div>{i.quantity}</div>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => updateQuantity(i.providerProductId, i.optionId, i.quantity + 1)}>+</button>
+                <div className="cart-item-price">{((i.price || 0) * i.quantity).toFixed(2)} EGP</div>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => remove(i.providerProductId, i.optionId)}>Remove</button>
+              </div>
             </div>
           ))}
 

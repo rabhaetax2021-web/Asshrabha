@@ -2,22 +2,22 @@ import { NextResponse } from 'next/server'
 import { createProviderProduct } from '@/lib/actions/provider.actions'
 import { createProviderProductSchema } from '@/lib/validations/provider'
 import { getCurrentUser } from '@/lib/auth'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
+import { getErrorMessage } from '@/lib/errors'
 
 export async function POST(request: Request) {
   try {
-    let body: any = {}
+    let body: Record<string, unknown> = {}
     const contentType = request.headers.get('content-type') || ''
     if (contentType.includes('application/json')) {
-      body = await request.json()
+      body = await request.json() as Record<string, unknown>
     } else {
       const fd = await request.formData()
       fd.forEach((v, k) => {
-        // formData values may be File or string
         body[k] = typeof v === 'string' ? v : v
       })
     }
-    // coerce numeric fields when coming from form submissions
+
     if (body.sellingPrice !== undefined) body.sellingPrice = Number(body.sellingPrice)
     if (body.wholesalePrice !== undefined) body.wholesalePrice = Number(body.wholesalePrice)
     if (body.retailPrice !== undefined) body.retailPrice = Number(body.retailPrice)
@@ -25,21 +25,44 @@ export async function POST(request: Request) {
     const parsed = createProviderProductSchema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-    const { providerId, catalogProductId, sellingPrice, wholesalePrice, retailPrice, stockQuantity, options } = parsed.data
+    const { catalogProductId, sellingPrice, wholesalePrice, retailPrice, stockQuantity, options, wholesaleUnit } = parsed.data
+
     const current = await getCurrentUser()
     if (!current || current.role !== 'PROVIDER' || current.status !== 'APPROVED') {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
 
-    // Ensure the session user owns the providerId being modified
-    const owner = await prisma.providerProfile.findUnique({ where: { id: providerId }, select: { userId: true } })
-    if (!owner || owner.userId !== current.id) {
+    const provider = await prisma.providerProfile.findUnique({ where: { userId: current.id }, select: { id: true } })
+    if (!provider) {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 })
     }
 
-    const result = await createProviderProduct(providerId, catalogProductId, sellingPrice, Number(stockQuantity || 0), wholesalePrice, retailPrice, options || [])
+    const catalog = await prisma.catalogProduct.findUnique({
+      where: { id: catalogProductId },
+      select: {
+        id: true,
+        wholesaleMinPrice: true,
+        wholesaleMaxPrice: true,
+        retailMinPrice: true,
+        retailMaxPrice: true,
+        unitRanges: true,
+      },
+    })
+    if (!catalog) return NextResponse.json({ error: 'catalog product not found' }, { status: 400 })
+
+    if (catalog.wholesaleMaxPrice > 0 && (wholesalePrice < catalog.wholesaleMinPrice || wholesalePrice > catalog.wholesaleMaxPrice)) {
+      return NextResponse.json({ error: `Wholesale price must be between ${catalog.wholesaleMinPrice} and ${catalog.wholesaleMaxPrice}` }, { status: 400 })
+    }
+    if (catalog.retailMaxPrice > 0 && (retailPrice < catalog.retailMinPrice || retailPrice > catalog.retailMaxPrice)) {
+      return NextResponse.json({ error: `Retail price must be between ${catalog.retailMinPrice} and ${catalog.retailMaxPrice}` }, { status: 400 })
+    }
+    if (catalog.unitRanges && catalog.unitRanges.length > 0 && (!options || options.length === 0)) {
+      return NextResponse.json({ error: 'This catalog product requires options and cannot be listed without them.' }, { status: 400 })
+    }
+
+    const result = await createProviderProduct(provider.id, catalogProductId, sellingPrice, Number(stockQuantity || 0), wholesalePrice, retailPrice, options || [], wholesaleUnit as string | undefined)
     return NextResponse.json({ ok: true, result })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }

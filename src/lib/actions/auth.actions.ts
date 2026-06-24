@@ -6,6 +6,8 @@ import bcrypt from 'bcryptjs';
 import { BCRYPT_SALT_ROUNDS, OTP_EXPIRY_MINUTES, OTP_LENGTH } from '@/lib/utils/constants';
 import { generateOTP } from '@/lib/utils/helpers';
 import type { ApiResponse } from '@/types';
+import { getErrorMessage } from '@/lib/errors'
+import { isAdmin } from '@/lib/utils/permissions'
 
 // ─── Login ────────────────────────────────────────────────────────────────────
 
@@ -20,7 +22,7 @@ export async function loginAction(
     try {
       const { prisma } = await import('@/lib/prisma')
       const u = await prisma.user.findUnique({ where: { mobile }, select: { passwordHash: true } })
-      if (u) storedHash = (u as any).passwordHash
+      if (u) storedHash = u.passwordHash as string | null
     } catch (e) {
       try {
         const { Client } = await import('pg')
@@ -62,7 +64,8 @@ export async function loginAction(
     });
 
     // Get user to determine redirect. Use Prisma when available, otherwise use PG fallback.
-    let user: any = null
+    type MinimalUser = { id?: string; role?: string; status?: string; forcePasswordReset?: boolean }
+    let user: MinimalUser | null = null
     try {
       const { prisma } = await import('@/lib/prisma')
       user = await prisma.user.findUnique({
@@ -100,7 +103,7 @@ export async function loginAction(
     }
 
     if (user.forcePasswordReset) {
-      const uid = (user as any).id
+      const uid = user.id
       return { success: true, data: { redirectTo: `/reset-password?userId=${uid}` } };
     }
 
@@ -109,15 +112,16 @@ export async function loginAction(
     }
 
     let redirectTo = '/shop';
-    if (user.role === 'ROOT_ADMIN' || user.role === 'SUB_ADMIN') redirectTo = '/admin';
+    if (isAdmin(user.role as any)) redirectTo = '/admin';
     else if (user.role === 'PROVIDER') redirectTo = '/provider';
 
     return { success: true, data: { redirectTo } };
-  } catch (error: any) {
-    if (error?.message === 'ACCOUNT_DISABLED') {
+  } catch (error: unknown) {
+    const m = getErrorMessage(error)
+    if (m === 'ACCOUNT_DISABLED') {
       return { success: false, error: 'ACCOUNT_DISABLED' };
     }
-    if (error?.message === 'ACCOUNT_SUSPENDED') {
+    if (m === 'ACCOUNT_SUSPENDED') {
       return { success: false, error: 'ACCOUNT_SUSPENDED' };
     }
     return { success: false, error: 'INVALID_CREDENTIALS' };
@@ -136,6 +140,9 @@ export async function registerAction(data: {
   shopNameEN?: string;
   locationAddress?: string;
   locationId?: string;
+  locationLat?: number | null;
+  locationLng?: number | null;
+  locationUrl?: string;
 }): Promise<ApiResponse<{ userId: string }>> {
   try {
     // Check if mobile already exists
@@ -166,8 +173,13 @@ export async function registerAction(data: {
       return { success: false, error: 'REGISTRATION_DISABLED' };
     }
 
-    // Require location for customer registrations
-    if (data.role === 'CUSTOMER' && (!data.locationAddress || !String(data.locationAddress).trim())) {
+    // Require both governorate (locationId) and address line for customer registrations
+    if (data.role === 'CUSTOMER' && (!data.locationId || !data.locationAddress || !String(data.locationAddress).trim())) {
+      return { success: false, error: 'MISSING_LOCATION' };
+    }
+
+    // Require location for providers as well (address line is mandatory)
+    if (data.role === 'PROVIDER' && (!data.locationAddress || !String(data.locationAddress).trim())) {
       return { success: false, error: 'MISSING_LOCATION' };
     }
 
@@ -203,6 +215,10 @@ export async function registerAction(data: {
             shopNameAR: data.shopNameAR || data.nameAR,
             shopNameEN: data.shopNameEN || data.nameEN,
             locationAddress: data.locationAddress,
+            locationLat: data.locationLat ?? null,
+            locationLng: data.locationLng ?? null,
+            locationId: data.locationId || null,
+            locationUrl: data.locationUrl || null,
           },
         });
       }
@@ -221,6 +237,10 @@ export async function registerAction(data: {
               mobile: data.mobile,
               addressLine: data.locationAddress || '',
               city: cityName,
+              locationId: data.locationId || null,
+              lat: data.locationLat ?? null,
+              lng: data.locationLng ?? null,
+              locationUrl: data.locationUrl || null,
               isDefault: true,
             },
           });
@@ -251,6 +271,18 @@ export async function registerAction(data: {
 
       return newUser;
     });
+
+    // Send OTP via WhatsApp API (non-blocking)
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/auth/whatsapp-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, mobile: data.mobile }),
+      });
+    } catch (e) {
+      console.error('Failed to send WhatsApp OTP:', e);
+      // Don't block registration if WhatsApp send fails
+    }
 
     return { success: true, data: { userId: user.id } };
   } catch (error) {
@@ -353,6 +385,12 @@ export async function resendOTPAction(userId: string): Promise<ApiResponse> {
   try {
     const otpCode = generateOTP(OTP_LENGTH);
 
+    // Get user mobile for WhatsApp
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { mobile: true } });
+    if (!user) {
+      return { success: false, error: 'USER_NOT_FOUND' };
+    }
+
     await prisma.$transaction(async (tx) => {
       // Invalidate old OTPs
       await tx.oTPCode.updateMany({
@@ -382,6 +420,18 @@ export async function resendOTPAction(userId: string): Promise<ApiResponse> {
         },
       });
     });
+
+    // Send OTP via WhatsApp API (non-blocking)
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/auth/whatsapp-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, mobile: user.mobile }),
+      });
+    } catch (e) {
+      console.error('Failed to send WhatsApp OTP on resend:', e);
+      // Don't block resend if WhatsApp send fails
+    }
 
     return { success: true, message: 'OTP sent successfully' };
   } catch (error) {

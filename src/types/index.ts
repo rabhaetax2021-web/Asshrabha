@@ -186,20 +186,17 @@ export interface CatalogProductFormData {
   descriptionAR: string;
   descriptionEN: string;
   images: File[];
-  minimumPrice: number;
-  maximumPrice: number;
-  wholesaleMinPrice?: number;
-  wholesaleMaxPrice?: number;
-  retailMinPrice?: number;
-  retailMaxPrice?: number;
+  wholesalePrice: number;
+  retailPrice: number;
   status: ProductStatus;
 }
 
 export interface ProviderProductFormData {
   catalogProductId: string;
   sellingPrice: number;
-  wholesalePrice?: number;
-  retailPrice?: number;
+  wholesalePrice: number;
+  wholesaleUnit?: 'BOX' | 'PACK';
+  retailPrice: number;
   stockQuantity: number;
 }
 

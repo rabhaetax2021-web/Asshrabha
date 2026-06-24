@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
+import { isAdmin } from '@/lib/utils/permissions'
 import { prisma } from '@/lib/prisma'
+import { getErrorMessage } from '@/lib/errors'
 
 export async function GET() {
   const current = await getCurrentUser()
   if (!current) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  if (!(current.role === 'ROOT_ADMIN' || current.role === 'SUB_ADMIN')) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  if (!isAdmin(current.role as any)) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
 
   const rooms = await prisma.chatRoom.findMany({
     orderBy: { updatedAt: 'desc' },
@@ -21,7 +23,7 @@ export async function GET() {
 export async function DELETE(request: Request) {
   const current = await getCurrentUser()
   if (!current) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  if (!(current.role === 'ROOT_ADMIN' || current.role === 'SUB_ADMIN')) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  if (!isAdmin(current.role as any)) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
 
   try {
     const body = await request.json().catch(() => ({}))
@@ -30,15 +32,15 @@ export async function DELETE(request: Request) {
 
     await prisma.chatRoom.delete({ where: { id } })
     return NextResponse.json({ ok: true })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }
 
 export async function PATCH(request: Request) {
   const current = await getCurrentUser()
   if (!current) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  if (!(current.role === 'ROOT_ADMIN' || current.role === 'SUB_ADMIN')) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  if (!isAdmin(current.role as any)) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
 
   try {
     const body = await request.json().catch(() => ({}))
@@ -47,7 +49,7 @@ export async function PATCH(request: Request) {
 
     await prisma.chatRoom.update({ where: { id }, data: { isClosed } })
     return NextResponse.json({ ok: true })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }

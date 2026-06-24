@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { showToast } from '@/components/ui/toast'
+import { getErrorMessage } from '@/lib/errors'
 
 export default function ProviderStoreForm({ provider }: any) {
   const [form, setForm] = useState({
@@ -12,6 +13,7 @@ export default function ProviderStoreForm({ provider }: any) {
     logo: provider?.logo || '',
     banner: provider?.banner || '',
     locationPhoto: provider?.locationPhoto || '',
+    defaultWholesaleUnit: (provider as any)?.defaultWholesaleUnit || '',
   })
   const [loading, setLoading] = useState(false)
 
@@ -28,8 +30,8 @@ export default function ProviderStoreForm({ provider }: any) {
       if (!res.ok) throw new Error(data?.error || 'Failed')
       showToast('Saved', 'success')
       window.location.reload()
-    } catch (err: any) {
-      showToast(err.message || String(err), 'error')
+    } catch (err: unknown) {
+      showToast(getErrorMessage(err), 'error')
     } finally {
       setLoading(false)
     }
@@ -54,8 +56,8 @@ export default function ProviderStoreForm({ provider }: any) {
       } else {
         showToast(data?.error || 'Upload failed', 'error')
       }
-    } catch (err: any) {
-      showToast(err?.message || String(err), 'error')
+    } catch (err: unknown) {
+      showToast(getErrorMessage(err), 'error')
     } finally {
       setLoading(false)
     }
@@ -86,6 +88,13 @@ export default function ProviderStoreForm({ provider }: any) {
       <label className="label">Location Photo
         <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'locationPhoto')} />
         {form.locationPhoto && <div style={{marginTop:8}}><img src={form.locationPhoto} alt="location" style={{maxWidth:240,maxHeight:120}}/></div>}
+      </label>
+      <label className="label">Default Wholesale Unit
+        <select value={form.defaultWholesaleUnit} onChange={e => setForm({...form, defaultWholesaleUnit: e.target.value})}>
+          <option value="">(none)</option>
+          <option value="BOX">Box</option>
+          <option value="PACK">Pack</option>
+        </select>
       </label>
       <div>
         <button disabled={loading} className="btn btn-primary" type="submit">Save</button>

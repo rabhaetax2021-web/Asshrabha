@@ -1,8 +1,11 @@
 "use client"
 import React from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
+import { getErrorMessage } from '@/lib/errors'
 
-export default function EditProfileForm({ profile, user }: any) {
+export default function EditProfileForm({ profile, user }: { profile: Record<string, any>; user: Record<string, any> }) {
+  const t = useTranslations('auth')
   const router = useRouter()
   const [shopNameEN, setShopNameEN] = React.useState(profile?.shopNameEN || '')
   const [shopNameAR, setShopNameAR] = React.useState(profile?.shopNameAR || '')
@@ -22,7 +25,7 @@ export default function EditProfileForm({ profile, user }: any) {
     setLoading(true)
     setError(null)
     try {
-      const changes: any = {
+      const changes: Record<string, unknown> = {
         providerProfile: {
           shopNameEN: shopNameEN || null,
           shopNameAR: shopNameAR || null,
@@ -44,8 +47,8 @@ export default function EditProfileForm({ profile, user }: any) {
       if (!res.ok) throw new Error(j?.error || 'Failed')
       // show pending message then redirect to profile
       router.push('/shop/profile')
-    } catch (err: any) {
-      setError(err.message || String(err))
+    } catch (err: unknown) {
+      setError(getErrorMessage(err))
       setLoading(false)
     }
   }
@@ -70,7 +73,18 @@ export default function EditProfileForm({ profile, user }: any) {
       </div>
       <div className="form-row">
         <label>Location Address</label>
-        <input value={locationAddress} onChange={e => setLocationAddress(e.target.value)} />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input value={locationAddress} onChange={e => setLocationAddress(e.target.value)} />
+          <button type="button" className="btn" onClick={() => {
+            if (!('geolocation' in navigator)) { setError(t('geolocationUnavailable') || 'Geolocation not available'); return }
+            setLoading(true)
+            navigator.geolocation.getCurrentPosition((pos) => {
+              setLocationLat(pos.coords.latitude)
+              setLocationLng(pos.coords.longitude)
+              setLoading(false)
+            }, (err) => { setError(err?.message || (t('permissionDenied') || 'Permission denied')); setLoading(false) }, { enableHighAccuracy: true, timeout: 15000 })
+          }}>{t('grabLocation') || 'Grab'}</button>
+        </div>
       </div>
       <div className="form-row">
         <label>Logo</label>
@@ -87,7 +101,7 @@ export default function EditProfileForm({ profile, user }: any) {
             const p = j?.path || j?.data?.path || null
             if (p) setLogo(p)
           } catch (err) {
-            setError((err as any)?.message || String(err))
+            setError(getErrorMessage(err))
           } finally { setLoading(false) }
         }} />
         {logo && <div style={{ marginTop: 8 }}><img src={logo} alt="logo" style={{ maxWidth: 160, borderRadius: 6 }} /><button type="button" className="btn" onClick={() => setLogo('')}>Remove</button></div>}
@@ -107,7 +121,7 @@ export default function EditProfileForm({ profile, user }: any) {
             const p = j?.path || j?.data?.path || null
             if (p) setBanner(p)
           } catch (err) {
-            setError((err as any)?.message || String(err))
+            setError(getErrorMessage(err))
           } finally { setLoading(false) }
         }} />
         {banner && <div style={{ marginTop: 8 }}><img src={banner} alt="banner" style={{ width: '100%', maxWidth: 320, borderRadius: 6 }} /><button type="button" className="btn" onClick={() => setBanner('')}>Remove</button></div>}

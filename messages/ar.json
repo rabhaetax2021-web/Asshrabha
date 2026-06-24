@@ -130,6 +130,15 @@
     "government": "المحافظة",
     "locationPhoto": "صورة الموقع",
     "locationPhotoHint": "ارفع صورة لموقع متجرك",
+    "useMyLocation": "استخدم موقعي",
+    "previewLocation": "معاينة الموقع على الخريطة",
+    "previewMaps": "معاينة الموقع في خرائط جوجل",
+    "geolocationUnavailable": "الميزة غير متاحة في هذا المتصفح",
+    "permissionDenied": "تم رفض الوصول للموقع",
+    "grabLocation": "التقاط الموقع",
+    "gettingLocation": "جاري الحصول على الموقع…",
+    "updateLocation": "تحديث الموقع",
+    "openInGoogleMaps": "افتح في خرائط جوجل",
     "verifyOTP": "التحقق من الرمز",
     "otpTitle": "رمز التحقق",
     "otpSubtitle": "أدخل الرمز المكون من 6 أرقام المرسل إلى جوالك",
@@ -158,6 +167,8 @@
     "strong": "قوية",
     "veryStrong": "قوية جداً",
     "passwordRequirements": "يجب أن تكون كلمة المرور 8 أحرف على الأقل"
+    ,"select": "اختر"
+    ,"passwordMatch": "كلمات المرور غير متطابقة"
   },
   "admin": {
     "dashboard": "لوحة التحكم",
@@ -180,6 +191,11 @@
     "hero": "سلايدر",
     "settings": "الإعدادات",
     "logs": "سجل النشاط",
+    "templates": "قوالب",
+    "depositRequests": "طلبات الإيداع",
+    "withdrawRequests": "طلبات السحب",
+    "history": "سجل المحفظة",
+    "paymentMethods": "طرق الدفع",
     "totalRevenue": "إجمالي الإيرادات",
     "ordersToday": "طلبات اليوم",
     "activeProviders": "المزودون النشطون",
@@ -314,7 +330,19 @@
     "filterByUser": "تصفية حسب المستخدم",
     "filterByDate": "تصفية حسب التاريخ",
     "exportCSV": "تصدير CSV"
+    ,
+    "messageTemplates": "قوالب الرسائل",
+    "otpTemplateLabel": "قالب OTP (استخدم العناصر النائبة مثل <1> للاسم، <2> للرمز، <3> للدقائق)",
+    "saveOtpTemplate": "حفظ قالب OTP",
+    "marketingTemplateLabel": "قالب التسويق (Marketing_Msg) (العناصر النائبة: <1>..<5>)",
+    "saveMarketingTemplate": "حفظ قالب التسويق",
+    "preview": "معاينة",
+    "testMobile": "جوال الاختبار",
+    "testOtp": "اختبار OTP",
+    "testMarketing": "اختبار التسويق",
+    "close": "إغلاق"
   },
+  
   "provider": {
     "dashboard": "لوحة التحكم",
     "store": "متجري",
@@ -340,6 +368,7 @@
     "logo": "شعار المتجر",
     "banner": "بانر المتجر",
     "deliveryZones": "مناطق التوصيل",
+    "deliveryAreas": "مناطق التوصيل",
     "addZone": "إضافة منطقة توصيل",
     "zoneName": "اسم المنطقة",
     "zoneNameAR": "اسم المنطقة (عربي)",

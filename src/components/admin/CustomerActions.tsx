@@ -1,6 +1,8 @@
 "use client"
 import React, { useState } from 'react'
 import { showToast } from '@/components/ui/toast'
+import { getErrorMessage } from '@/lib/errors'
+import AdminDeleteButton from '@/components/admin/AdminDeleteButton'
 
 export default function CustomerActions({ userId, status }: { userId: string; status?: string }) {
   const [loading, setLoading] = useState(false)
@@ -20,8 +22,8 @@ export default function CustomerActions({ userId, status }: { userId: string; st
       if (!res.ok) throw new Error(data?.error || 'Request failed')
       showToast('Success', 'success')
       window.location.reload()
-    } catch (err: any) {
-      showToast(err.message || String(err), 'error')
+    } catch (err: unknown) {
+      showToast(getErrorMessage(err), 'error')
     } finally {
       setLoading(false)
     }
@@ -62,6 +64,9 @@ export default function CustomerActions({ userId, status }: { userId: string; st
           </div>
         </div>
       )}
+      <div style={{ marginTop: 8 }}>
+        <AdminDeleteButton userId={userId} label="Delete" />
+      </div>
     </div>
   )
 }

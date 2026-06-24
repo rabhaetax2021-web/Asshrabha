@@ -9,14 +9,15 @@ export default async function CustomersPage() {
   return (
     <section className="admin-customers container">
       <h1>Customers</h1>
-      <div className="table-wrap">
-        <table className="customers-table">
+      <div className="ui-table-wrap">
+        <table className="ui-table">
           <thead>
             <tr>
               <th>Name</th>
               <th>Mobile</th>
               <th>Status</th>
-              <th>Created</th>
+              <th className="hide-sm">Created</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -31,7 +32,7 @@ export default async function CustomersPage() {
                 <td>{c.nameEN || c.nameAR || '-'}</td>
                 <td>{c.mobile}</td>
                 <td>{c.status ?? 'PENDING'}</td>
-                <td>{new Date(c.createdAt).toLocaleString()}</td>
+                <td className="hide-sm">{new Date(c.createdAt).toLocaleString()}</td>
                 <td><CustomerActions userId={c.id} status={c.status ?? undefined} /></td>
               </tr>
             ))}

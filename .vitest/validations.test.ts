@@ -18,6 +18,16 @@ describe('Zod validations', () => {
 
   it('validates catalog schemas', () => {
     expect(() => categorySchema.parse({ nameEN: 'Cat', nameAR: 'فئة' })).not.toThrow()
-    expect(() => catalogProductSchema.parse({ categoryId: 'cat1', nameEN: 'T', nameAR: 'ت', minimumPrice: 1, maximumPrice: 5 })).not.toThrow()
+    expect(() => catalogProductSchema.parse({
+      categoryId: 'cat1',
+      nameEN: 'T',
+      nameAR: 'ت',
+      wholesalePrice: 10,
+      wholesaleMinPrice: 8,
+      wholesaleMaxPrice: 12,
+      retailPrice: 15,
+      retailMinPrice: 13,
+      retailMaxPrice: 18,
+    })).not.toThrow()
   })
 })

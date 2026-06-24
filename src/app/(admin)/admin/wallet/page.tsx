@@ -7,18 +7,20 @@ export default async function AdminWalletPage() {
   return (
     <section className="admin-wallet container">
       <h1>Wallets</h1>
-      <table>
-        <thead><tr><th>User</th><th>Available</th><th>Pending</th></tr></thead>
-        <tbody>
-          {wallets.map(w => (
-            <tr key={w.id}>
-              <td>{w.userId}</td>
-              <td>{w.availableBalance}</td>
-              <td>{w.pendingBalance}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="ui-table-wrap">
+        <table className="ui-table">
+          <thead><tr><th>User</th><th>Available</th><th className="hide-sm">Pending</th></tr></thead>
+          <tbody>
+            {wallets.map(w => (
+              <tr key={w.id}>
+                <td>{w.userId}</td>
+                <td>{w.availableBalance}</td>
+                <td className="hide-sm">{w.pendingBalance}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   )
 }

@@ -1,10 +1,11 @@
 import { prisma } from '@/lib/prisma'
 
-export async function browseProducts({ categorySlug, take = 20, skip = 0 }: any = {}) {
-  const where: any = { status: 'ACTIVE' }
-  if (categorySlug) where.category = { slug: categorySlug }
+export async function browseProducts(params: { categorySlug?: string; take?: number; skip?: number } = {}) {
+  const { categorySlug, take = 20, skip = 0 } = params
+  const where: Record<string, unknown> = { status: 'ACTIVE' }
+  if (categorySlug) (where as any).category = { slug: categorySlug }
 
-  return await prisma.catalogProduct.findMany({ where, take, skip, include: { category: true } })
+  return await prisma.catalogProduct.findMany({ where: where as any, take, skip, include: { category: true } })
 }
 
 export async function getProductById(id: string) {
@@ -21,7 +22,7 @@ export async function getProductById(id: string) {
   return null
 }
 
-export async function placeOrder(customerId: string, cartItems: any[], addressId?: string) {
+export async function placeOrder(customerId: string, cartItems: { providerProductId: string; quantity: number; optionId?: string }[], addressId?: string) {
   // Group items by provider via providerProduct -> providerId
   return await prisma.$transaction(async (tx) => {
     const orders: any[] = []
@@ -29,7 +30,11 @@ export async function placeOrder(customerId: string, cartItems: any[], addressId
     // Resolve provider products and group
     const resolved = await Promise.all(cartItems.map(async (ci) => {
       const pp = await tx.providerProduct.findUnique({ where: { id: ci.providerProductId }, include: { provider: true, catalogProduct: true } })
-      return { ...ci, providerProduct: pp }
+      let option = null
+      if (ci.optionId) {
+        option = await tx.providerProductOption.findUnique({ where: { id: ci.optionId } })
+      }
+      return { ...ci, providerProduct: pp, option }
     }))
 
     const byProvider = new Map<string, any[]>()
@@ -44,7 +49,19 @@ export async function placeOrder(customerId: string, cartItems: any[], addressId
 
     for (const [providerId, items] of byProvider.entries()) {
       const orderNumber = `ASH-${Date.now()}-${Math.floor(Math.random()*900+100)}`
-      const totalAmount = items.reduce((s:any,i:any) => s + (i.quantity * i.providerProduct.sellingPrice), 0)
+      // Determine buyer role to pick wholesale vs retail
+      const buyer = await tx.user.findUnique({ where: { id: customerId } })
+      const buyerIsShop = !!buyer && buyer.role === 'PROVIDER'
+
+      const totalAmount = items.reduce((s: number, i: any) => {
+        const pp = i.providerProduct
+        if (!pp) return s
+        let unitPrice = pp.sellingPrice || 0
+        // If option present, prefer option price
+        if (i.option) unitPrice = i.option.price
+        else unitPrice = buyerIsShop ? (pp.wholesalePrice ?? pp.sellingPrice) : (pp.retailPrice ?? pp.sellingPrice)
+        return s + (i.quantity * unitPrice)
+      }, 0)
       const order = await tx.order.create({ data: {
         orderNumber,
         customerId,
@@ -55,12 +72,18 @@ export async function placeOrder(customerId: string, cartItems: any[], addressId
       }})
 
       for (const it of items) {
+        const pp = it.providerProduct
+        if (!pp) continue
+        let unitPrice = pp.sellingPrice || 0
+        if (it.option) unitPrice = it.option.price
+        else unitPrice = buyerIsShop ? (pp.wholesalePrice ?? pp.sellingPrice) : (pp.retailPrice ?? pp.sellingPrice)
+
         await tx.orderItem.create({ data: {
           orderId: order.id,
-          providerProductId: it.providerProduct.id,
+          providerProductId: pp.id,
           quantity: it.quantity,
-          unitPrice: it.providerProduct.sellingPrice,
-          totalPrice: it.quantity * it.providerProduct.sellingPrice,
+          unitPrice,
+          totalPrice: it.quantity * unitPrice,
         }})
 
         // deduct stock

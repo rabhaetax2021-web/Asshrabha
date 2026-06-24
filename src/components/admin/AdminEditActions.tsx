@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { showToast } from '@/components/ui/toast'
+import { getErrorMessage } from '@/lib/errors'
 
 export default function AdminEditActions({ editId, type, onDone }: { editId: string, type: 'provider' | 'customer', onDone?: () => void }) {
   const [loading, setLoading] = useState(false)
@@ -18,8 +19,8 @@ export default function AdminEditActions({ editId, type, onDone }: { editId: str
       showToast('Updated', 'success')
       if (onDone) onDone()
       else router.refresh()
-    } catch (err: any) {
-      showToast(err.message || String(err), 'error')
+    } catch (err: unknown) {
+      showToast(getErrorMessage(err), 'error')
     } finally { setLoading(false) }
   }
 

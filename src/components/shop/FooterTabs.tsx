@@ -20,7 +20,7 @@ function Icon({ name }: { name: string }) {
 export default function FooterTabs() {
   const path = usePathname()
   const router = useRouter()
-  const [mounted, setMounted] = useState(false)
+  const [mounted, setMounted] = useState<boolean>(false)
 
   useEffect(() => {
     setMounted(true)
@@ -30,7 +30,6 @@ export default function FooterTabs() {
   const content = (
     <nav className="footer-tabs">
       <Link href="/shop" className={path === '/shop' ? 'tab active' : 'tab'} title="Home"><Icon name="home"/><span>Home</span></Link>
-      <Link href="/shop/search" className={path?.startsWith('/shop/search') ? 'tab active' : 'tab'} title="Search"><Icon name="search"/><span>Search</span></Link>
       <a
         className={path?.startsWith('/shop/category') ? 'tab active' : 'tab'}
         title="Categories"

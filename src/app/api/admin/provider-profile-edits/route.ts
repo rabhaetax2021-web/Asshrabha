@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
+import { getErrorMessage } from '@/lib/errors'
 
 export async function GET(request: Request) {
   try {
@@ -9,9 +10,9 @@ export async function GET(request: Request) {
 
     const edits = await prisma.providerProfileEdit.findMany({ orderBy: { createdAt: 'desc' }, include: { provider: true, requester: true } })
     return NextResponse.json({ ok: true, edits })
-  } catch (err: any) {
-    console.error('[api/admin/provider-profile-edits] GET error', err)
-    return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    console.error('[api/admin/provider-profile-edits] GET error', getErrorMessage(err))
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }
 
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
         console.error('apply providerProfile changes error', e)
       }
       // update user mobile if present
-      if (changes.user && changes.user.mobile) {
+      if (changes.user && (changes.user as any).mobile) {
         try {
           const prov = await prisma.providerProfile.findUnique({ where: { id: edit.providerId }, select: { userId: true } })
           if (prov) await prisma.user.update({ where: { id: prov.userId }, data: { mobile: changes.user.mobile } })
@@ -55,8 +56,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ error: 'invalid action' }, { status: 400 })
-  } catch (err: any) {
-    console.error('[api/admin/provider-profile-edits] POST error', err)
-    return NextResponse.json({ error: err.message || String(err) }, { status: 500 })
+  } catch (err: unknown) {
+    console.error('[api/admin/provider-profile-edits] POST error', getErrorMessage(err))
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }

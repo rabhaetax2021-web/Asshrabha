@@ -1,6 +1,7 @@
 import React from 'react'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import { getCurrentUser } from '@/lib/auth'
 
 export default async function StorePage({ params, searchParams }: { params: any; searchParams?: any }) {
   const resolvedParams = await params
@@ -8,27 +9,22 @@ export default async function StorePage({ params, searchParams }: { params: any;
   const categoryFilter = (resolvedSearch?.category || '').toString()
 
   const store = await prisma.providerProfile.findFirst({
-    where: { id: resolvedParams.id, isVisible: true },
+    where: { id: resolvedParams.id, isVisible: true, user: { role: 'PROVIDER' } },
     include: { user: true }
   })
   if (!store) return <div>Store not found</div>
 
+  const current = await getCurrentUser()
+  const isShop = !!current && current.role === 'PROVIDER'
+
   // Fetch all approved products with catalog details and categories
-  const products = await prisma.providerProduct.findMany({
-    where: { 
-      providerId: store.id, 
-      status: 'APPROVED',
-      ...(categoryFilter ? { catalogProduct: { category: { slug: categoryFilter } } } : {})
-    },
+  const allProducts = await prisma.providerProduct.findMany({
+    where: { providerId: store.id, status: 'APPROVED' },
     include: { catalogProduct: { include: { category: true } } },
     orderBy: { createdAt: 'desc' },
   })
 
   // Extract unique categories from all products for the filter
-  const allProducts = await prisma.providerProduct.findMany({
-    where: { providerId: store.id, status: 'APPROVED' },
-    include: { catalogProduct: { include: { category: true } } },
-  })
   const categoryMap = new Map()
   allProducts.forEach(p => {
     const cat = p.catalogProduct?.category
@@ -37,6 +33,9 @@ export default async function StorePage({ params, searchParams }: { params: any;
     }
   })
   const categories = Array.from(categoryMap.values())
+
+  // Optionally filter products when a category is selected
+  const products = categoryFilter ? allProducts.filter(p => p.catalogProduct?.category?.slug === categoryFilter) : allProducts
 
   return (
     <section className="store-page container">
@@ -89,48 +88,72 @@ export default async function StorePage({ params, searchParams }: { params: any;
         </div>
       )}
 
-      {/* Products Grid */}
+      {/* Products grouped by category when no category filter, or show filtered list */}
       {products.length > 0 ? (
-        <div className="product-grid">
-          {products.map((p) => (
-            <div key={p.id} className="product-card">
-              <div className="product-image-wrap">
-                {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
-                  <img
-                    src={p.catalogProduct.images[0]}
-                    alt={p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'}
-                    className="product-image"
-                  />
-                ) : (
-                  <div className="product-image-placeholder">📦</div>
-                )}
-                {p.stockQuantity <= 5 && p.stockQuantity > 0 && (
-                  <span className="badge badge-warning" style={{ fontSize: 'var(--text-2xs)' }}>
-                    Only {p.stockQuantity} left
-                  </span>
-                )}
-              </div>
-              <div className="product-card-body">
-                <Link href={`/shop/product/${p.id}`} className="product-card-title">
-                  {p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'}
-                </Link>
-                <div className="product-card-provider">
-                  {p.catalogProduct?.category?.nameEN || ''}
-                </div>
-                <div className="product-card-footer">
-                  <div className="price" style={{ fontSize: 'var(--text-sm)' }}>
-                    Wholesale: {p.wholesalePrice || p.sellingPrice} EGP
-                  </div>
-                  {Number(p.retailPrice) > 0 && (
-                    <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>
-                      Retail: {p.retailPrice} EGP
-                    </div>
+        categoryFilter ? (
+          <div className="product-grid">
+            {products.map((p) => (
+              <Link href={`/shop/product/${p.catalogProduct?.id || p.id}`} key={p.id} className="product-card">
+                <div className="product-image-wrap">
+                  {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
+                    <img src={p.catalogProduct.images[0]} alt={p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'} className="product-image" />
+                  ) : (
+                    <div className="product-image-placeholder">📦</div>
+                  )}
+                  {p.stockQuantity <= 5 && p.stockQuantity > 0 && (
+                    <span className="badge badge-warning" style={{ fontSize: 'var(--text-2xs)' }}>
+                      Only {p.stockQuantity} left
+                    </span>
                   )}
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
+                <div className="product-card-body">
+                  <div className="product-card-title">
+                    {p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'}
+                  </div>
+                  <div className="product-card-provider">{p.catalogProduct?.category?.nameEN || ''}</div>
+                  <div className="product-card-footer">
+                    <div className="price" style={{ fontSize: 'var(--text-sm)' }}>{isShop ? `Wholesale: ${ (p.wholesalePrice ?? p.sellingPrice) } EGP` : `Retail: ${ (p.retailPrice ?? p.sellingPrice) } EGP` }</div>
+                    {Number(p.retailPrice) > 0 && (
+                      <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>Retail: {p.retailPrice} EGP</div>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          // Render each category and its products
+          <div>
+            {categories.map((cat) => {
+              const items = allProducts.filter(p => p.catalogProduct?.category?.id === cat.id)
+              if (!items.length) return null
+              return (
+                <section key={cat.id} style={{ marginBottom: 'var(--space-8)' }}>
+                  <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-4)' }}>{cat.nameEN || cat.nameAR}</h3>
+                  <div className="product-grid">
+                    {items.map((p) => (
+                      <Link key={p.id} href={`/shop/product/${p.id}`} className="product-card">
+                        <div className="product-image-wrap">
+                          {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
+                            <img src={p.catalogProduct.images[0]} alt={p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'} className="product-image" />
+                          ) : (
+                            <div className="product-image-placeholder">📦</div>
+                          )}
+                        </div>
+                        <div className="product-card-body">
+                          <div className="product-card-title">{p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'}</div>
+                          <div className="product-card-footer">
+                            <div className="price" style={{ fontSize: 'var(--text-sm)' }}>{isShop ? `Wholesale: ${ (p.wholesalePrice ?? p.sellingPrice) } EGP` : `Retail: ${ (p.retailPrice ?? p.sellingPrice) } EGP` }</div>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              )
+            })}
+          </div>
+        )
       ) : (
         <div className="card" style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
           <div style={{ fontSize: 'var(--text-4xl)', marginBottom: 'var(--space-4)' }}>📦</div>
