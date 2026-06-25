@@ -5,14 +5,13 @@ import { prisma } from '@/lib/prisma'
 import { subscribe } from '@/lib/supportStream'
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const { params } = context
-    const current = await getCurrentUser()
-    if (!current) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-    if (!isAdmin(current.role as any)) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  const current = await getCurrentUser()
+  if (!current) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  if (!isAdmin(current.role as any)) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
 
-    const params = await context.params
-    const id = params?.id as string | undefined
-    if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
+  const params = await context.params
+  const id = params?.id as string | undefined
+  if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
 
   const stream = new ReadableStream({
     start(controller) {
