@@ -4,10 +4,9 @@ import { getCurrentUser } from '@/lib/auth'
 import { getErrorMessage } from '@/lib/errors'
 
 export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const { params } = context
   try {
-    const { params } = context
-    const p = await params
+    const params = await context.params
+    const p = params
     const current = await getCurrentUser()
     if (!current || current.role !== 'PROVIDER') {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })

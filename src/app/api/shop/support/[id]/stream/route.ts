@@ -5,24 +5,11 @@ import { subscribe } from '@/lib/supportStream'
 import { getErrorMessage } from '@/lib/errors'
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const { id } = await context.params
   const current = await getCurrentUser()
   if (!current) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  let id: string | undefined
-  try {
-    const p = await params
-    id = p?.id
-  } catch (e) {
-    // ignore
-  }
-  if (!id) {
-    try {
-      const url = new URL(request.url)
-      const parts = url.pathname.split('/').filter(Boolean)
-      if (parts.length >= 5) id = parts[3]
-    } catch (e) {}
-  }
-  if (!id) return NextResponse.json({ error: 'missing id', pathname: (() => { try { return new URL(request.url).pathname } catch(e){ return null } })() }, { status: 400 })
+
+  const { id } = await context.params
+  if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
 
   // simple SSE using ReadableStream
   const stream = new ReadableStream({

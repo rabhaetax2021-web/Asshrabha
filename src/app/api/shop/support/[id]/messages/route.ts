@@ -14,8 +14,8 @@ async function resolveParams(p: unknown): Promise<Record<string, unknown> | unde
 export async function GET(request: NextRequest, context: { params: Promise<Record<string, unknown>> }) {
   const current = await getCurrentUser()
   if (!current) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  const rp = await resolveParams(context.params)
-  const id = (rp && (rp.id as string | undefined)) ?? undefined
+  const params = await context.params
+  const id = params?.id as string | undefined
   if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
 
   const messages = await prisma.chatMessage.findMany({ where: { chatRoomId: String(id) }, orderBy: { createdAt: 'asc' }, include: { sender: true } })
@@ -26,19 +26,9 @@ export async function POST(request: NextRequest, context: { params: Promise<Reco
   const current = await getCurrentUser()
   if (!current) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
-  // Robustly resolve id: prefer params, fall back to parsing the request URL
-  let id = (await resolveParams(context.params))?.id as string | undefined
-  if (!id) {
-    try {
-      const url = new URL(request.url)
-      const parts = url.pathname.split('/').filter(Boolean)
-      // expected: ['api','shop','support','{id}','messages']
-      if (parts.length >= 5) id = parts[3]
-    } catch (_) {
-      // ignore
-    }
-  }
-  if (!id) return NextResponse.json({ error: 'missing id', params: params ?? null, pathname: (() => { try { return new URL(request.url).pathname } catch(e){ return null } })() }, { status: 400 })
+  const paramsResolved = await context.params
+  const id = paramsResolved?.id as string | undefined
+  if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
 
   const body = await request.json() as Record<string, unknown>
   const content = body?.content as string | undefined

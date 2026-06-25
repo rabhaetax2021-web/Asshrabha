@@ -5,13 +5,12 @@ import { prisma } from '@/lib/prisma'
 import { publish } from '@/lib/supportStream'
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const { params } = context
   const current = await getCurrentUser()
   if (!current) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   if (!isAdmin(current.role as any)) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
 
-  let id: string | undefined
-  try { id = (await params)?.id } catch (e) {}
+  const params = await context.params
+  const id = params?.id as string | undefined
   if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
 
   const messages = await prisma.chatMessage.findMany({ where: { chatRoomId: id }, orderBy: { createdAt: 'asc' }, include: { sender: true } })
@@ -19,13 +18,12 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
 }
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const { params } = context
   const current = await getCurrentUser()
   if (!current) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   if (!isAdmin(current.role as any)) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
 
-  let id: string | undefined
-  try { id = (await params)?.id } catch (e) {}
+  const params = await context.params
+  const id = params?.id as string | undefined
   if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
 
   const body = await request.json().catch(() => ({}))
