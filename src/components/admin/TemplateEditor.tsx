@@ -28,15 +28,23 @@ export default function TemplateEditor() {
   useEffect(() => { load() }, [])
 
   function renderTemplate(key: string) {
-    const tpl = templates[key] || ''
+    let tpl = templates[key] || ''
+    // Fallback for backwards compatibility: if otp_en is empty, try TEMPLATE_OTP
+    if (key === 'otp_en' && !tpl && templates['TEMPLATE_OTP']) {
+      tpl = templates['TEMPLATE_OTP']
+    }
     if (!tpl) return ''
     if (key === 'otp_en') {
       const code = '123456'
-      const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Asshrabha'
-      const minutes = '10'
+      const appName = 'Asshrabha'
+      const minutes = '3'
       const supportPhone = '123-456-7890'
       // {{1}} = code, {{2}} = app name, {{3}} = expiry minutes, {{4}} = support number
-      return String(tpl).replace(/{{1}}/g, code).replace(/{{2}}/g, appName).replace(/{{3}}/g, minutes).replace(/{{4}}/g, supportPhone)
+      let result = String(tpl).replace(/{{1}}/g, code)
+      result = result.replace(/{{2}}/g, appName)
+      result = result.replace(/{{3}}/g, minutes)
+      result = result.replace(/{{4}}/g, supportPhone)
+      return result
     }
     // simple replacement for up to 5 placeholders
     let out = String(tpl)
