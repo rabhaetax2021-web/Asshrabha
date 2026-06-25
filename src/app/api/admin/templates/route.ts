@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { isAdmin } from '@/lib/utils/permissions'
 
-const ALLOWED_KEYS = ['TEMPLATE_OTP', 'TEMPLATE_Marketing_Msg']
+const ALLOWED_KEYS = ['otp_en', 'TEMPLATE_OTP', 'TEMPLATE_Marketing_Msg']
 
 export async function GET() {
   try {

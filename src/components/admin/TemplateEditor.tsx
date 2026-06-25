@@ -5,7 +5,7 @@ import { showToast } from '@/components/ui/toast'
 
 export default function TemplateEditor() {
   const t = useTranslations('admin')
-  const [templates, setTemplates] = useState<Record<string,string>>({ TEMPLATE_OTP: '', TEMPLATE_Marketing_Msg: '' })
+  const [templates, setTemplates] = useState<Record<string,string>>({ otp_en: '', TEMPLATE_Marketing_Msg: '' })
   const [loading, setLoading] = useState(false)
   const [previewText, setPreviewText] = useState<string | null>(null)
   const [showPreview, setShowPreview] = useState(false)
@@ -30,11 +30,13 @@ export default function TemplateEditor() {
   function renderTemplate(key: string) {
     const tpl = templates[key] || ''
     if (!tpl) return ''
-    if (key === 'TEMPLATE_OTP') {
-      const name = 'Test User'
+    if (key === 'otp_en') {
       const code = '123456'
-      const minutes = '5'
-      return String(tpl).replace(/{{1}}/g, name).replace(/{{2}}/g, code).replace(/{{3}}/g, minutes)
+      const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Asshrabha'
+      const minutes = '10'
+      const supportPhone = '123-456-7890'
+      // {{1}} = code, {{2}} = app name, {{3}} = expiry minutes, {{4}} = support number
+      return String(tpl).replace(/{{1}}/g, code).replace(/{{2}}/g, appName).replace(/{{3}}/g, minutes).replace(/{{4}}/g, supportPhone)
     }
     // simple replacement for up to 5 placeholders
     let out = String(tpl)
@@ -104,11 +106,11 @@ export default function TemplateEditor() {
             {mode === 'otp' ? (
               <div>
                 <div style={{ marginBottom: 6 }}>
-                  <label>{t('otpTemplateLabel') || 'OTP Template example'}</label>
-                  <div style={{ whiteSpace: 'pre-wrap', background: '#fafafa', padding: 8, borderRadius: 4 }}>{renderTemplate('TEMPLATE_OTP') || 'No OTP template'}</div>
+                  <label>{t('otpTemplateLabel') || 'OTP Template ({{1}}=code, {{2}}=app name, {{3}}=expiry, {{4}}=support phone)'}</label>
+                  <div style={{ whiteSpace: 'pre-wrap', background: '#fafafa', padding: 8, borderRadius: 4 }}>{renderTemplate('otp_en') || 'No OTP template'}</div>
                 </div>
                 <div>
-                  <button className="btn btn-ghost" onClick={() => previewTemplate('TEMPLATE_OTP')}>{t('preview') || 'Preview'}</button>
+                  <button className="btn btn-ghost" onClick={() => previewTemplate('otp_en')}>{t('preview') || 'Preview'}</button>
                   <button className="btn btn-outline" style={{ marginLeft: 8 }} onClick={() => sendOtpTest()}>{t('testOtp') || 'Test OTP'}</button>
                 </div>
               </div>
