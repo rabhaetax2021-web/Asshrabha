@@ -27,7 +27,6 @@ export default async function CatalogPage() {
             <div style={{ display: 'grid', gap: 6, marginBottom: 'var(--space-3)' }}>
               <div><strong>Wholesale range:</strong> {p.wholesaleMinPrice} - {p.wholesaleMaxPrice} EGP</div>
               <div><strong>Retail range:</strong> {p.retailMinPrice} - {p.retailMaxPrice} EGP</div>
-              <div><strong>Price range:</strong> {p.minimumPrice} - {p.maximumPrice} EGP</div>
               <div><strong>Unit type:</strong> {p.unitType}</div>
             </div>
             <a href={`/provider/products/catalog/${p.id}`} className="btn btn-primary" style={{ display: 'inline-block', marginTop: 'var(--space-2)' }}>View details</a>

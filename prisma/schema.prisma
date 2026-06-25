@@ -297,8 +297,6 @@ model CatalogProduct {
   descriptionAR     String?
   descriptionEN     String?
   images            String[]
-  minimumPrice      Float
-  maximumPrice      Float
   wholesaleMinPrice Float         @default(0)
   wholesaleMaxPrice Float         @default(0)
   retailMinPrice    Float         @default(0)

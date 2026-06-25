@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getProductsByProviderId } from '@/lib/actions/provider.actions'
 import { getErrorMessage } from '@/lib/errors'
 
 export const runtime = 'nodejs'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url)
     const providerId = url.searchParams.get('providerId')

@@ -119,11 +119,7 @@ export default async function ProductPage({ params, searchParams }: { params: un
           <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--space-4)', lineHeight: 'var(--leading-relaxed)' }}>
             {cp.descriptionEN || cp.descriptionAR || 'No description available.'}
           </p>
-          <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'baseline', marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
-            <div className="price" style={{ fontSize: 'var(--text-3xl)' }}>
-              {cp.minimumPrice} - {cp.maximumPrice} EGP
-            </div>
-          </div>
+
           {addedPP && (
             <div className="badge badge-success" style={{ marginBottom: 'var(--space-4)', display: 'inline-block' }}>
               ✅ Added listing: {String(addedPP)}

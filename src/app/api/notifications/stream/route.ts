@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   // Minimal SSE placeholder: returns a plain JSON stream is not implemented in this demo
   return NextResponse.json({ ok: true, message: 'SSE endpoint placeholder' })
 }

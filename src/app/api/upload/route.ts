@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 import { randomUUID } from 'crypto'
@@ -6,7 +6,7 @@ import { getErrorMessage } from '@/lib/errors'
 
 export const runtime = 'nodejs'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File | null

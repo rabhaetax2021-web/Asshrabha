@@ -1,17 +1,18 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { isAdmin } from '@/lib/utils/permissions'
 import { getErrorMessage } from '@/lib/errors'
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { params } = context
   try {
     const current = await getCurrentUser()
     if (!current || !isAdmin(current.role) || current.status !== 'APPROVED') {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
 
-    const id = params.id
+    const id = (await params).id
     await prisma.catalogProduct.delete({ where: { id } })
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
@@ -19,14 +20,15 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { params } = context
   try {
     const current = await getCurrentUser()
     if (!current || !isAdmin(current.role) || current.status !== 'APPROVED') {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
 
-    const id = params.id
+    const id = (await params).id
     const body = await request.json()
     const updated = await prisma.catalogProduct.update({ where: { id }, data: body })
     return NextResponse.json({ ok: true, product: updated })

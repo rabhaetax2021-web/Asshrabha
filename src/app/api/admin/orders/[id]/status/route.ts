@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { isAdmin } from '@/lib/utils/permissions'
 import { prisma } from '@/lib/prisma'
@@ -6,12 +6,13 @@ import { getErrorMessage } from '@/lib/errors'
 
 const VALID_STATUSES = ['PENDING','CONFIRMED','SHIPPED','DELIVERED','COMPLETED','CANCELLED','REFUNDED']
 
-export async function PUT(request: Request, context: { params: any }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params
   try {
     const current = await getCurrentUser()
     if (!current || !isAdmin(current.role as any)) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
-    const { params } = context
-    const id = params.id
+    // const { params } = context
+    // const id = params.id
     const body = await request.json()
     let status = (body?.status || '').toString().toUpperCase()
     // Accept legacy 'PAID' label and map to CONFIRMED

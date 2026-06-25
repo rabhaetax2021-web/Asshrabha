@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { publish } from '@/lib/supportStream'
@@ -11,24 +11,23 @@ async function resolveParams(p: unknown): Promise<Record<string, unknown> | unde
   return p as Record<string, unknown> | undefined
 }
 
-export async function GET(request: Request, { params }: { params: unknown }) {
+export async function GET(request: NextRequest, context: { params: Promise<Record<string, unknown>> }) {
   const current = await getCurrentUser()
   if (!current) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-
-  const rp = await resolveParams(params)
-  const id = (rp && (rp.id as string | undefined)) ?? (params as Record<string, unknown>)?.id
+  const rp = await resolveParams(context.params)
+  const id = (rp && (rp.id as string | undefined)) ?? undefined
   if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
 
   const messages = await prisma.chatMessage.findMany({ where: { chatRoomId: String(id) }, orderBy: { createdAt: 'asc' }, include: { sender: true } })
   return NextResponse.json({ ok: true, messages })
 }
 
-export async function POST(request: Request, { params }: { params: unknown }) {
+export async function POST(request: NextRequest, context: { params: Promise<Record<string, unknown>> }) {
   const current = await getCurrentUser()
   if (!current) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   // Robustly resolve id: prefer params, fall back to parsing the request URL
-  let id = (await resolveParams(params))?.id as string | undefined
+  let id = (await resolveParams(context.params))?.id as string | undefined
   if (!id) {
     try {
       const url = new URL(request.url)

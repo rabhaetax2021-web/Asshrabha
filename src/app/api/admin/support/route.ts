@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { isAdmin } from '@/lib/utils/permissions'
 import { prisma } from '@/lib/prisma'
@@ -20,7 +20,7 @@ export async function GET() {
   return NextResponse.json({ ok: true, rooms })
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   const current = await getCurrentUser()
   if (!current) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   if (!isAdmin(current.role as any)) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
@@ -37,7 +37,7 @@ export async function DELETE(request: Request) {
   }
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(request: NextRequest) {
   const current = await getCurrentUser()
   if (!current) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   if (!isAdmin(current.role as any)) return NextResponse.json({ error: 'forbidden' }, { status: 403 })

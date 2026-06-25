@@ -6,6 +6,7 @@ import Link from 'next/link'
 export default async function ShopSearchPage({ searchParams }: { searchParams?: any }) {
   const q = (searchParams?.q || '').toString().trim()
   const current = await getCurrentUser()
+  const isShop = !!current && current.role === 'PROVIDER'
   let preferredLocationId: string | null = null
   if (current) {
     const address = await prisma.address.findFirst({ where: { userId: current.id }, orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }] }) as any
@@ -117,7 +118,7 @@ export default async function ShopSearchPage({ searchParams }: { searchParams?: 
                     <div className="product-card-title">{p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'}</div>
                     <div className="product-card-provider" style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>{p.provider?.shopNameEN || p.provider?.shopNameAR}</div>
                     <div className="product-card-footer">
-                      <div className="price">{p.retailPrice ? `${p.retailPrice} EGP` : `${p.sellingPrice} EGP`}</div>
+                      <div className="price">{isShop ? `Wholesale: ${p.wholesalePrice ?? p.sellingPrice} EGP` : (p.retailPrice ? `${p.retailPrice} EGP` : `${p.sellingPrice} EGP`)}</div>
                     </div>
                   </div>
                 </Link>

@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { isAdmin } from '@/lib/utils/permissions'
 import { prisma } from '@/lib/prisma'
 import { getErrorMessage } from '@/lib/errors'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const current = await getCurrentUser()
     if (!current || !isAdmin(current.role as any)) {

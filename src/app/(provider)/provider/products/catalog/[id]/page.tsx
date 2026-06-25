@@ -21,8 +21,6 @@ export default async function AddListingPage({ params }: { params: Promise<{ id:
       wholesaleMaxPrice: true,
       retailMinPrice: true,
       retailMaxPrice: true,
-      minimumPrice: true,
-      maximumPrice: true,
       unitType: true,
       unitRanges: true,
     },
@@ -50,7 +48,6 @@ export default async function AddListingPage({ params }: { params: Promise<{ id:
           <div style={{ display: 'grid', gap: 8, marginTop: 'var(--space-4)' }}>
             <div><strong>Wholesale range:</strong> {catalog.wholesaleMinPrice} - {catalog.wholesaleMaxPrice} EGP</div>
             <div><strong>Retail range:</strong> {catalog.retailMinPrice} - {catalog.retailMaxPrice} EGP</div>
-            <div><strong>Price range:</strong> {catalog.minimumPrice} - {catalog.maximumPrice} EGP</div>
             <div><strong>Unit type:</strong> {catalog.unitType}</div>
             {catalog.unitRanges && catalog.unitRanges.length > 0 && (
               <div>

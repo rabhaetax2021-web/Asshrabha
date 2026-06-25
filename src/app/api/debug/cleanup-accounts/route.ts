@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
 export const runtime = 'nodejs'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   if (process.env.NODE_ENV === 'production') return NextResponse.json({ error: 'not allowed' }, { status: 403 })
   const body = await request.json()
   const { providerId, providerMobile, adminMobile } = body || {}

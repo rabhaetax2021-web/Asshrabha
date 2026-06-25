@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { placeOrder } from '@/lib/actions/shop.actions'
 import { getCurrentUser } from '@/lib/auth'
 import { z } from 'zod'
@@ -13,7 +13,7 @@ const checkoutSchema = z.object({
   addressId: z.string().optional(),
 })
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     // Get the actual logged-in user from session (never trust client-provided customerId)
     const currentUser = await getCurrentUser()

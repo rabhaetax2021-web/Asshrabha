@@ -8,6 +8,7 @@ import AddToCartButton from '@/components/shop/AddToCartButton'
 
 export default async function ShopHomePage() {
   const current = await getCurrentUser()
+  const isShop = !!current && current.role === 'PROVIDER'
   let preferredLocationId: string | null = null
   if (current) {
     const address = await prisma.address.findFirst({ where: { userId: current.id }, orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }] }) as any
@@ -107,7 +108,7 @@ export default async function ShopHomePage() {
                         <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{p.catalogProduct?.nameEN || p.catalogProduct?.nameAR}</div>
                       </Link>
                         <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>{p.retailPrice ? `${p.retailPrice} EGP` : `${p.sellingPrice} EGP`}</div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>{isShop ? `Wholesale: ${p.wholesalePrice ?? p.sellingPrice} EGP` : (p.retailPrice ? `${p.retailPrice} EGP` : `${p.sellingPrice} EGP`)}</div>
                         <div>
                           <AddToCartButton product={p} />
                         </div>

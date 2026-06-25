@@ -3,8 +3,8 @@ import React from 'react'
 import { getErrorMessage } from '@/lib/errors'
 
 export default function AddListingForm({ catalog }: { catalog: any }) {
-  const [sellingPrice, setSellingPrice] = React.useState(String(catalog.minimumPrice || ''))
-  const [wholesalePrice, setWholesalePrice] = React.useState(String(catalog.wholesaleMinPrice || catalog.minimumPrice || ''))
+  const [sellingPrice, setSellingPrice] = React.useState(String(catalog.wholesaleMinPrice || catalog.wholesalePrice || ''))
+  const [wholesalePrice, setWholesalePrice] = React.useState(String(catalog.wholesaleMinPrice || catalog.wholesalePrice || catalog.retailMinPrice || ''))
   const [retailPrice, setRetailPrice] = React.useState(String(catalog.retailMinPrice || 0))
   const [wholesaleUnit, setWholesaleUnit] = React.useState('BOX')
   const [stockQuantity, setStockQuantity] = React.useState('0')

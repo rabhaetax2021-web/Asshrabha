@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { updateStoreProfile } from '@/lib/actions/provider.actions'
 import { updateStoreSchema } from '@/lib/validations/provider'
 import { getCurrentUser } from '@/lib/auth'
@@ -7,7 +7,7 @@ import { getErrorMessage } from '@/lib/errors'
 
 export const runtime = 'nodejs'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const parsed = updateStoreSchema.safeParse(body)

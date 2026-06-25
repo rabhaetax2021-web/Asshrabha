@@ -1,15 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { isAdmin } from '@/lib/utils/permissions'
 import { approveDepositRequest } from '@/lib/actions/wallet.actions'
 import { getErrorMessage } from '@/lib/errors'
 
-export async function POST(request: Request, context: { params: any }) {
+export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const params = await context.params
+    const { id } = await context.params
     const current = await getCurrentUser()
     if (!current || !isAdmin(current.role as any)) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
-    const id = params.id
     const result = await approveDepositRequest(id, current.id)
     if (!result) return NextResponse.json({ error: 'not found' }, { status: 404 })
     return NextResponse.json({ ok: true, result })

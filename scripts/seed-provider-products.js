@@ -39,7 +39,7 @@ async function main() {
     console.log('✅ Found provider:', providerId)
 
     // get active catalog products
-    const catRes = await client.query('SELECT id, "nameEN", "nameAR", "minimumPrice", "maximumPrice" FROM "CatalogProduct" WHERE status=$1 ORDER BY "createdAt" DESC LIMIT 8', ['ACTIVE'])
+    const catRes = await client.query('SELECT id, "nameEN", "nameAR", "wholesaleMinPrice", "wholesaleMaxPrice", "retailMinPrice", "retailMaxPrice", "wholesalePrice", "retailPrice" FROM "CatalogProduct" WHERE status=$1 ORDER BY "createdAt" DESC LIMIT 8', ['ACTIVE'])
     if (!catRes.rows.length) {
       console.error('❌ No active catalog products found to seed provider listings')
       process.exit(1)
@@ -52,9 +52,24 @@ async function main() {
         continue
       }
 
-      const minP = item.minimumPrice || 10
-      const maxP = item.maximumPrice || (minP * 1.2)
-      const price = Math.round(((minP + maxP) / 2) * 100) / 100
+      const wMin = item.wholesaleMinPrice || 0
+      const wMax = item.wholesaleMaxPrice || 0
+      const rMin = item.retailMinPrice || 0
+      const rMax = item.retailMaxPrice || 0
+      let price = 10
+      if (wMin > 0 || wMax > 0) {
+        const a = wMin > 0 ? wMin : (wMax > 0 ? wMax * 0.8 : 0)
+        const b = wMax > 0 ? wMax : (wMin > 0 ? wMin * 1.2 : a * 1.2)
+        price = Math.round(((a + b) / 2) * 100) / 100
+      } else if (rMin > 0 || rMax > 0) {
+        const a = rMin || (rMax * 0.8)
+        const b = rMax || (rMin * 1.2)
+        price = Math.round(((a + b) / 2) * 100) / 100
+      } else if (item.wholesalePrice) {
+        price = Math.round(Number(item.wholesalePrice) * 100) / 100
+      } else if (item.retailPrice) {
+        price = Math.round(Number(item.retailPrice) * 100) / 100
+      }
       const stock = Math.floor(Math.random() * 50) + 5
 
       await client.query('INSERT INTO "ProviderProduct" (id, "providerId", "catalogProductId", "sellingPrice", "stockQuantity", status, "priceApproved", "createdAt", "updatedAt") VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, now(), now())', [providerId, item.id, price, stock, 'APPROVED', true])

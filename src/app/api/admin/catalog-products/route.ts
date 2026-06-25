@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { isAdmin } from '@/lib/utils/permissions'
 import { getErrorMessage } from '@/lib/errors'
 import { catalogProductSchema } from '@/lib/validations/catalog'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const current = await getCurrentUser()
     if (!current || !isAdmin(current.role) || current.status !== 'APPROVED') {
@@ -38,8 +38,7 @@ export async function POST(request: Request) {
       ? images.split(',').map((s) => s.trim()).filter(Boolean)
       : []
 
-    const minimumPrice = Math.min(wholesaleMinPrice, retailMinPrice)
-    const maximumPrice = Math.max(wholesaleMaxPrice, retailMaxPrice)
+    // note: minimumPrice/maximumPrice removed from schema; use wholesale/retail ranges directly
 
     const product = await prisma.catalogProduct.create({
       data: {
@@ -49,14 +48,12 @@ export async function POST(request: Request) {
         descriptionEN: descriptionEN ? String(descriptionEN) : null,
         descriptionAR: descriptionAR ? String(descriptionAR) : null,
         images: imgs,
-        minimumPrice,
-        maximumPrice,
         wholesaleMinPrice,
         wholesaleMaxPrice,
         retailMinPrice,
         retailMaxPrice,
         unitType,
-      }
+      } as any
     })
 
     return NextResponse.json({ ok: true, id: product.id })

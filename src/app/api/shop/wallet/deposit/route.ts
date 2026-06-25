@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { createDepositRequest } from '@/lib/actions/wallet.actions'
 import { getErrorMessage } from '@/lib/errors'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const current = await getCurrentUser()
     if (!current) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })

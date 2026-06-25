@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createProviderProduct } from '@/lib/actions/provider.actions'
 import { createProviderProductSchema } from '@/lib/validations/provider'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getErrorMessage } from '@/lib/errors'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     let body: Record<string, unknown> = {}
     const contentType = request.headers.get('content-type') || ''

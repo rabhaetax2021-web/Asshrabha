@@ -399,8 +399,6 @@ export async function approveSuggestion(
       descriptionEN: suggestion.descriptionEN || null,
       descriptionAR: suggestion.descriptionAR || null,
       images: suggestion.images || [],
-      minimumPrice: Math.min(rangeData.wholesaleMinPrice, rangeData.retailMinPrice),
-      maximumPrice: Math.max(rangeData.wholesaleMaxPrice, rangeData.retailMaxPrice),
       wholesaleMinPrice: rangeData.wholesaleMinPrice,
       wholesaleMaxPrice: rangeData.wholesaleMaxPrice,
       retailMinPrice: rangeData.retailMinPrice,
@@ -409,7 +407,7 @@ export async function approveSuggestion(
       wholesalePrice: rangeData.wholesaleMinPrice,
       retailPrice: rangeData.retailMinPrice,
       status: 'ACTIVE',
-    },
+    } as any,
   })
 
   const sug = await prisma.productSuggestion.update({

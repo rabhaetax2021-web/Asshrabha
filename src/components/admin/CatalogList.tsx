@@ -14,8 +14,7 @@ type Product = {
   wholesaleMaxPrice: number
   retailMinPrice: number
   retailMaxPrice: number
-  minimumPrice: number
-  maximumPrice: number
+  // minimumPrice/maximumPrice removed from schema
 }
 
 export default function CatalogList({ products: initial }: { products: Product[] }) {
@@ -49,9 +48,6 @@ export default function CatalogList({ products: initial }: { products: Product[]
               <div>
                 <strong>Wholesale:</strong> {p.wholesaleMinPrice} - {p.wholesaleMaxPrice} EGP
                 <span style={{ marginLeft: 'var(--space-4)' }}><strong>Retail:</strong> {p.retailMinPrice} - {p.retailMaxPrice} EGP</span>
-              </div>
-              <div style={{ marginTop: 6 }}>
-                <strong>Range:</strong> {p.minimumPrice} - {p.maximumPrice} EGP
               </div>
             </div>
           </div>

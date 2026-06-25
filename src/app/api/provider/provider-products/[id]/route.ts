@@ -1,15 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { isProvider } from '@/lib/utils/permissions'
 import { prisma } from '@/lib/prisma'
 import { getErrorMessage } from '@/lib/errors'
 
-export async function DELETE(request: Request, context: { params: any }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const current = await getCurrentUser()
     if (!current || !isProvider(current.role as any)) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
-    const { params } = context
-    const id = params.id
+    const { id } = await context.params
     // Ensure the product belongs to provider
     const prod = await prisma.providerProduct.findUnique({ where: { id }, select: { providerId: true } })
     if (!prod) return NextResponse.json({ error: 'not found' }, { status: 404 })
@@ -23,12 +22,11 @@ export async function DELETE(request: Request, context: { params: any }) {
   }
 }
 
-export async function PUT(request: Request, context: { params: any }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const current = await getCurrentUser()
     if (!current || !isProvider(current.role as any)) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
-    const { params } = context
-    const id = params.id
+    const { id } = await context.params
     const body = await request.json()
 
     const prod = await prisma.providerProduct.findUnique({

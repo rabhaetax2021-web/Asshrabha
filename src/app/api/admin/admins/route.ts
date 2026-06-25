@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { isAdmin } from '@/lib/utils/permissions'
@@ -18,7 +18,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const current = await getCurrentUser()
     if (!current || !isAdmin(current.role as any)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
   try {
     const current = await getCurrentUser()
     if (!current || !isAdmin(current.role as any)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
@@ -91,7 +91,7 @@ export async function PUT(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
     const current = await getCurrentUser()
     if (!current || !isAdmin(current.role as any)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })

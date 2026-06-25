@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getSlides, saveSlides } from '@/lib/heroSlides'
 import { getCurrentUser } from '@/lib/auth'
 import { getErrorMessage } from '@/lib/errors'
 
 export const runtime = 'nodejs'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const current = await getCurrentUser()
     if (!current || !['ROOT_ADMIN', 'SUB_ADMIN'].includes(current.role)) {

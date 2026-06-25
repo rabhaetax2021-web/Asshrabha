@@ -34,15 +34,30 @@ export async function seedListingsForProviderUser(userId: string) {
     const providerId = provRes.rows[0].id
 
     // only use catalog products that are ACTIVE (approved)
-    const catRes = await client.query('SELECT id, "minimumPrice", "maximumPrice", "nameEN", "nameAR" FROM "CatalogProduct" WHERE status=$1', ['ACTIVE'])
+    const catRes = await client.query('SELECT id, "wholesaleMinPrice", "wholesaleMaxPrice", "retailMinPrice", "retailMaxPrice", "wholesalePrice", "retailPrice", "nameEN", "nameAR" FROM "CatalogProduct" WHERE status=$1', ['ACTIVE'])
     if (!catRes.rows.length) { await client.end(); return }
 
     for (const item of catRes.rows) {
       const exists = await client.query('SELECT id FROM "ProviderProduct" WHERE "providerId"=$1 AND "catalogProductId"=$2 LIMIT 1', [providerId, item.id])
       if (exists.rows.length) continue
-      const minP = item.minimumPrice || 10
-      const maxP = item.maximumPrice || (minP * 1.2)
-      const price = Math.round(((minP + maxP) / 2) * 100) / 100
+      const wMin = item.wholesaleminprice || item.wholesaleMinPrice || 0
+      const wMax = item.wholesalemaxprice || item.wholesaleMaxPrice || 0
+      const rMin = item.retailminprice || item.retailMinPrice || 0
+      const rMax = item.retailmaxprice || item.retailMaxPrice || 0
+      let price = 10
+      if (wMin > 0 || wMax > 0) {
+        const a = wMin > 0 ? wMin : (wMax > 0 ? wMax * 0.8 : 0)
+        const b = wMax > 0 ? wMax : (wMin > 0 ? wMin * 1.2 : a * 1.2)
+        price = Math.round(((a + b) / 2) * 100) / 100
+      } else if (rMin > 0 || rMax > 0) {
+        const a = rMin || (rMax * 0.8)
+        const b = rMax || (rMin * 1.2)
+        price = Math.round(((a + b) / 2) * 100) / 100
+      } else if (item.wholesaleprice || item.wholesalePrice) {
+        price = Math.round(Number(item.wholesaleprice || item.wholesalePrice) * 100) / 100
+      } else if (item.retailprice || item.retailPrice) {
+        price = Math.round(Number(item.retailprice || item.retailPrice) * 100) / 100
+      }
       const stock = Math.floor(Math.random() * 50) + 5
       await client.query('INSERT INTO "ProviderProduct" (id, "providerId", "catalogProductId", "sellingPrice", "stockQuantity", status, "priceApproved", "createdAt", "updatedAt") VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, now(), now())', [providerId, item.id, price, stock, 'APPROVED', true])
     }

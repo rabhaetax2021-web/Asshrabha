@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { generateOTP } from '@/lib/utils/helpers'
 import { OTP_EXPIRY_MINUTES, OTP_LENGTH } from '@/lib/utils/constants'
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const userId = body.userId || null

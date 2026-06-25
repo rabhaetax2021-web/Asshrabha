@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getErrorMessage } from '@/lib/errors'
 import { createSuggestionSchema } from '@/lib/validations/provider'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const current = await getCurrentUser()
     if (!current || current.role !== 'PROVIDER' || current.status !== 'APPROVED') {
