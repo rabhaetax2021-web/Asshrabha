@@ -16,7 +16,7 @@ export async function POST(request: NextRequest, context: { params: Promise<Reco
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
     const params = await context.params
-    const id = params?.id
+    const id = params?.id as string | undefined
     if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
 
     if (action === 'approve') {
