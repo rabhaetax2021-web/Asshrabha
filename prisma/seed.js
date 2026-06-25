@@ -11,7 +11,7 @@ async function main() {
   const passwordHash = await bcrypt.hash('2463', 12)
 
   const admin = await prisma.user.upsert({
-    where: { mobile: '01094056918' },
+    where: { mobile: '01094056919' },
     update: {
       passwordHash,
       nameAR: 'مدير النظام',
@@ -22,7 +22,7 @@ async function main() {
       locale: 'ar',
     },
     create: {
-      mobile: '01094056918',
+      mobile: '01094056919',
       passwordHash,
       nameAR: 'مدير النظام',
       nameEN: 'System Admin',
