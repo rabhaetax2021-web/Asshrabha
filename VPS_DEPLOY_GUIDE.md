@@ -97,7 +97,17 @@ NEXT_PUBLIC_APP_URL="https://yourdomain.com"
 NEXT_PUBLIC_APP_NAME="Asshrabha"
 NEXT_PUBLIC_DEFAULT_LOCALE="ar"
 
-# Upload
+# Upload - MinIO Configuration
+MINIO_ENDPOINT="files.marymatelier.com"
+MINIO_PORT="443"
+MINIO_USE_SSL="true"
+MINIO_ACCESS_KEY="your-access-key"
+MINIO_SECRET_KEY="your-secret-key"
+MINIO_REGION="us-east-1"
+MINIO_BUCKET="ashrabha"
+MINIO_PUBLIC_URL="http://files.marymatelier.com"
+
+# Legacy Upload (deprecated)
 UPLOAD_DIR="./uploads"
 MAX_FILE_SIZE_MB="5"
 ```
@@ -190,11 +200,8 @@ server {
         proxy_read_timeout 86400;
     }
 
-    location /uploads/ {
-        alias /var/www/asshrabha/uploads/;
-        expires 30d;
-        add_header Cache-Control "public, immutable";
-    }
+    # Note: /uploads/ are now served by MinIO at files.marymatelier.com
+    # No local upload directory needed
 
     location /_next/static/ {
         proxy_pass http://127.0.0.1:3000;

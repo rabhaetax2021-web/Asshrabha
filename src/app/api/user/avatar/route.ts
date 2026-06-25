@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
-import fs from 'fs'
-import path from 'path'
 import { prisma } from '@/lib/prisma'
 import { getErrorMessage } from '@/lib/errors'
 import { randomUUID } from 'crypto'
+import path from 'path'
+import { uploadToMinIO } from '@/lib/minio'
 
 export const runtime = 'nodejs'
 
@@ -22,21 +22,19 @@ export async function POST(request: NextRequest) {
     const safeExt = ext.replace(/[^.a-zA-Z0-9]/g, '')
     const filename = `${Date.now()}-${randomUUID()}${safeExt}`
 
-    const publicRoot = path.resolve(process.cwd(), 'public')
-    const uploadsDir = path.join(publicRoot, 'uploads')
-    if (!fs.existsSync(uploadsDir)) await fs.promises.mkdir(uploadsDir, { recursive: true })
-
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
-    const publicFilePath = path.join(uploadsDir, filename)
-    await fs.promises.writeFile(publicFilePath, buffer)
+    
+    // Determine content type
+    const contentType = file.type || 'application/octet-stream'
 
-    const publicPath = '/' + path.relative(publicRoot, publicFilePath).replace(/\\/g, '/')
+    // Upload to MinIO (using 'avatars' as category prefix)
+    const publicPath = await uploadToMinIO(filename, buffer, contentType, 'avatars')
 
     // persist to user.avatar
     await prisma.user.update({ where: { id: current.id }, data: { avatar: publicPath } })
 
-    return NextResponse.json({ ok: true, path: publicPath, filePath: publicFilePath })
+    return NextResponse.json({ ok: true, path: publicPath, filePath: publicPath })
   } catch (err: unknown) {
     console.error('[api/user/avatar] error', getErrorMessage(err))
     return NextResponse.json({ ok: false, error: getErrorMessage(err) }, { status: 500 })
