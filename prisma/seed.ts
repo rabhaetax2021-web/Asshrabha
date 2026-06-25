@@ -151,9 +151,9 @@ async function main() {
       description: 'Require admin approval when a provider sets or changes a product price',
     },
     {
-      key: 'TEMPLATE_OTP',
-      value: '**{{2}}** is your verification code. For your security, do not share this code.\nExpires in {{3}} minutes.\nCopy code',
-      description: 'WhatsApp OTP template (placeholders: {{1}}=name, {{2}}=code, {{3}}=expiry minutes)',
+      key: 'otp_en',
+      value: 'OTP Code: {{1}}. This is your OTP for {{2}}. The OTP is valid for {{3}} minutes. Call {{4}} if you did not perform this request. For your security, do not share this code.\nExpires in {{3}} minutes.',
+      description: 'WhatsApp OTP template EN (placeholders: {{1}}=code, {{2}}=app_name, {{3}}=expiry_minutes, {{4}}=support_number)',
     },
     {
       key: 'TEMPLATE_Marketing_Msg',

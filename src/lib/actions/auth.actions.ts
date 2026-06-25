@@ -256,15 +256,44 @@ export async function registerAction(data: {
         },
       });
 
-      // Create in-app notification with OTP
+      // Fetch OTP template (same as Meta WhatsApp template)
+      let templateEN = 'OTP Code: {{1}}. This is your OTP for {{2}}. The OTP is valid for {{3}} minutes. Call {{4}} if you did not perform this request. For your security, do not share this code.\nExpires in {{3}} minutes.';
+      let templateAR = 'رمز التحقق الخاص بك هو: {{1}}';
+      try {
+        const template = await tx.systemSetting.findUnique({
+          where: { key: 'otp_en' },
+        });
+        if (template?.value) {
+          // Use the same template for in-app notification as Meta WhatsApp
+          templateEN = template.value;
+          // Arabic template can be customized separately if needed
+        }
+      } catch (e) {
+        // Use defaults if template lookup fails
+      }
+
+      // Replace placeholders with actual values (same as WhatsApp API)
+      // {{1}} = OTP code, {{2}} = app name, {{3}} = expiry minutes, {{4}} = support number
+      const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Asshrabha';
+      const supportNumber = process.env.SUPPORT_PHONE || '123-456-7890';
+      const bodyEN = String(templateEN)
+        .replace(/{{1}}/g, otpCode)
+        .replace(/{{2}}/g, appName)
+        .replace(/{{3}}/g, String(OTP_EXPIRY_MINUTES))
+        .replace(/{{4}}/g, supportNumber);
+      
+      const bodyAR = String(templateAR)
+        .replace(/{{1}}/g, otpCode);
+
+      // Create in-app notification with OTP (using same template as Meta)
       await tx.notification.create({
         data: {
           userId: newUser.id,
           type: 'OTP_CODE',
           titleAR: 'رمز التحقق',
           titleEN: 'Verification Code',
-          bodyAR: `رمز التحقق الخاص بك هو: ${otpCode}`,
-          bodyEN: `Your verification code is: ${otpCode}`,
+          bodyAR,
+          bodyEN,
           data: { code: otpCode },
         },
       });
@@ -385,8 +414,11 @@ export async function resendOTPAction(userId: string): Promise<ApiResponse> {
   try {
     const otpCode = generateOTP(OTP_LENGTH);
 
-    // Get user mobile for WhatsApp
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { mobile: true } });
+    // Get user mobile and name for WhatsApp and template
+    const user = await prisma.user.findUnique({ 
+      where: { id: userId }, 
+      select: { mobile: true, nameEN: true, nameAR: true } 
+    });
     if (!user) {
       return { success: false, error: 'USER_NOT_FOUND' };
     }
@@ -407,15 +439,44 @@ export async function resendOTPAction(userId: string): Promise<ApiResponse> {
         },
       });
 
-      // Create notification
+      // Fetch OTP template (same as Meta WhatsApp template)
+      let templateEN = 'OTP Code: {{1}}. This is your OTP for {{2}}. The OTP is valid for {{3}} minutes. Call {{4}} if you did not perform this request. For your security, do not share this code.\nExpires in {{3}} minutes.';
+      let templateAR = 'رمز التحقق الخاص بك هو: {{1}}';
+      try {
+        const template = await tx.systemSetting.findUnique({
+          where: { key: 'otp_en' },
+        });
+        if (template?.value) {
+          // Use the same template for in-app notification as Meta WhatsApp
+          templateEN = template.value;
+          // Arabic template can be customized separately if needed
+        }
+      } catch (e) {
+        // Use defaults if template lookup fails
+      }
+
+      // Replace placeholders with actual values (same as WhatsApp API)
+      // {{1}} = OTP code, {{2}} = app name, {{3}} = expiry minutes, {{4}} = support number
+      const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Asshrabha';
+      const supportNumber = process.env.SUPPORT_PHONE || '123-456-7890';
+      const bodyEN = String(templateEN)
+        .replace(/{{1}}/g, otpCode)
+        .replace(/{{2}}/g, appName)
+        .replace(/{{3}}/g, String(OTP_EXPIRY_MINUTES))
+        .replace(/{{4}}/g, supportNumber);
+      
+      const bodyAR = String(templateAR)
+        .replace(/{{1}}/g, otpCode);
+
+      // Create notification (using same template as Meta)
       await tx.notification.create({
         data: {
           userId,
           type: 'OTP_CODE',
           titleAR: 'رمز التحقق',
           titleEN: 'Verification Code',
-          bodyAR: `رمز التحقق الخاص بك هو: ${otpCode}`,
-          bodyEN: `Your verification code is: ${otpCode}`,
+          bodyAR,
+          bodyEN,
           data: { code: otpCode },
         },
       });
