@@ -39,7 +39,7 @@ async function main() {
   try {
     loadEnv();
     const locationId = await findLocationId();
-    const { registerAction } = await import('../src/lib/actions/auth.actions.ts');
+    const { registerAction } = await import('../src/lib/actions/auth.actions');
     const mobileArg = process.argv[2] || '01094056919'
     const result = await registerAction({
       mobile: mobileArg,
