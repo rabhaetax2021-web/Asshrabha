@@ -130,6 +130,8 @@
     "government": "Governorate",
     "locationPhoto": "Location Photo",
     "locationPhotoHint": "Upload a photo of your store location",
+    "profilePhoto": "Profile Photo",
+    "profilePhotoHint": "Upload a profile photo",
     "useMyLocation": "Use my location",
     "previewLocation": "Preview location on map",
     "previewMaps": "Preview GPS location in Google Maps",

@@ -51,7 +51,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (databaseUrl) {
               const client = new Client({ connectionString: databaseUrl })
               await client.connect()
-              const res = await client.query('SELECT id, mobile, "passwordHash", "nameEN", "nameAR", role, status, "forcePasswordReset", locale, avatar FROM "User" WHERE mobile = $1', [mobile])
+              const res = await client.query('SELECT id, mobile, "passwordHash", "nameEN", "nameAR", role, "customerType", status, "forcePasswordReset", locale, avatar FROM "User" WHERE mobile = $1', [mobile])
               if (res.rowCount) {
                 user = res.rows[0]
                 user.permissions = []
@@ -135,6 +135,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           nameAR: user.nameAR,
           nameEN: user.nameEN,
           role: user.role,
+          customerType: user.customerType,
           status: user.status,
           forcePasswordReset: user.forcePasswordReset,
           locale: user.locale,
@@ -152,6 +153,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.nameAR = (user as any).nameAR;
         token.nameEN = (user as any).nameEN;
         token.role = (user as any).role;
+        token.customerType = (user as any).customerType;
         token.status = (user as any).status;
         token.forcePasswordReset = (user as any).forcePasswordReset;
         token.locale = (user as any).locale;
@@ -167,6 +169,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         (session.user as any).nameAR = token.nameAR;
         (session.user as any).nameEN = token.nameEN;
         (session.user as any).role = token.role;
+        (session.user as any).customerType = token.customerType;
         (session.user as any).status = token.status;
         (session.user as any).forcePasswordReset = token.forcePasswordReset;
         (session.user as any).locale = token.locale;
@@ -220,6 +223,7 @@ export async function getCurrentUser() {
     nameAR: user.nameAR as string | null,
     nameEN: user.nameEN as string | null,
     role: (user.role || '').toString().toUpperCase(),
+    customerType: user.customerType ? (user.customerType as string).toString().toUpperCase() as any : undefined,
     status: user.status as string,
     forcePasswordReset: Boolean(user.forcePasswordReset),
     locale: user.locale as string,

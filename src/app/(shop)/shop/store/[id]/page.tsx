@@ -15,7 +15,7 @@ export default async function StorePage({ params, searchParams }: { params: any;
   if (!store) return <div>Store not found</div>
 
   const current = await getCurrentUser()
-  const isShop = !!current && current.role === 'PROVIDER'
+  const isShop = !!current && (current.role === 'PROVIDER' || current.customerType === 'SHOP')
 
   // Fetch all approved products with catalog details and categories
   const allProducts = await prisma.providerProduct.findMany({

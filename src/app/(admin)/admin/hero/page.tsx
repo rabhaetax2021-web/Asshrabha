@@ -73,11 +73,15 @@ export default function AdminHeroPage() {
     fd.append('file', f)
     try {
       const r = await fetch('/api/upload', { method: 'POST', body: fd })
-      const j = await r.json()
+      const j = await r.json().catch(() => null)
+      if (!r.ok) {
+        const err = (j && (j.error || j.message)) || (await r.text().catch(() => 'upload failed'))
+        throw new Error(String(err))
+      }
       return j?.path || j?.data?.path || null
     } catch (err) {
       console.error('upload', err)
-      return null
+      throw err
     }
   }
 
@@ -88,7 +92,6 @@ export default function AdminHeroPage() {
       let imagePath = ''
       if (file) {
         const p = await uploadFile(file)
-        if (!p) throw new Error('upload failed')
         imagePath = p
       }
 
@@ -112,10 +115,19 @@ export default function AdminHeroPage() {
         setType('custom')
         await fetchSlides()
       } else {
-        console.error('create slide failed', await res.text())
+        let errText = ''
+        try {
+          const j = await res.json()
+          errText = j?.error || j?.message || JSON.stringify(j)
+        } catch {
+          errText = await res.text().catch(() => 'create slide failed')
+        }
+        console.error('create slide failed', errText)
+        alert('Create slide failed: ' + errText)
       }
     } catch (err) {
       console.error(err)
+      alert('Error: ' + (err instanceof Error ? err.message : String(err)))
     } finally {
       setLoading(false)
     }

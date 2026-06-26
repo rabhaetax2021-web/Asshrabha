@@ -8,7 +8,7 @@ import AddToCartButton from '@/components/shop/AddToCartButton'
 
 export default async function ShopHomePage() {
   const current = await getCurrentUser()
-  const isShop = !!current && current.role === 'PROVIDER'
+  const isShop = !!current && (current.role === 'PROVIDER' || current.customerType === 'SHOP')
   let preferredLocationId: string | null = null
   if (current) {
     const address = await prisma.address.findFirst({ where: { userId: current.id }, orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }] }) as any

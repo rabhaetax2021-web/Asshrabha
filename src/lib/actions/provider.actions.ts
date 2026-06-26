@@ -27,7 +27,22 @@ export async function updateStoreProfile(providerId: string, data: Record<string
     updateData.defaultWholesaleUnit = (data as any).defaultWholesaleUnit
   }
 
-  return await prisma.providerProfile.update({ where: { id: providerId }, data: updateData })
+  const updated = await prisma.providerProfile.update({ where: { id: providerId }, data: updateData })
+
+  // If a locationPhoto was provided, also update the associated user's avatar
+  const locPhoto = (data as any).locationPhoto
+  if (locPhoto) {
+    try {
+      const prov = await prisma.providerProfile.findUnique({ where: { id: providerId }, select: { userId: true } })
+      if (prov?.userId) {
+        await prisma.user.update({ where: { id: prov.userId }, data: { avatar: locPhoto } })
+      }
+    } catch (err) {
+      console.error('Failed to update user avatar from locationPhoto', err)
+    }
+  }
+
+  return updated
 }
 
 export async function getOrdersByProvider(providerId: string) {

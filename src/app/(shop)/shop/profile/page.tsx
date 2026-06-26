@@ -243,7 +243,7 @@ export default async function ProfilePage() {
           <span className="badge" style={{
             background: 'var(--gradient-primary)', color: 'white', padding: 'var(--space-1) var(--space-3)', borderRadius: 'var(--radius-full)', fontSize: 'var(--text-xs)'
           }}>
-            🛒 Customer
+            {fullUser.customerType === 'SHOP' ? '🏬 Shop Customer' : '🛒 Customer'}
           </span>
           <StatusBadge status={fullUser.status} />
         </div>

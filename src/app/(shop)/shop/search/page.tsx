@@ -6,7 +6,7 @@ import Link from 'next/link'
 export default async function ShopSearchPage({ searchParams }: { searchParams?: any }) {
   const q = (searchParams?.q || '').toString().trim()
   const current = await getCurrentUser()
-  const isShop = !!current && current.role === 'PROVIDER'
+  const isShop = !!current && (current.role === 'PROVIDER' || current.customerType === 'SHOP')
   let preferredLocationId: string | null = null
   if (current) {
     const address = await prisma.address.findFirst({ where: { userId: current.id }, orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }] }) as any

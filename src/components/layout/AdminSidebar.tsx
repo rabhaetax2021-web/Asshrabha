@@ -112,7 +112,7 @@ export default function AdminSidebar({ collapsed = false, initialLocale = 'ar' }
           <li>
             <div className="sidebar-item sidebar-collapsible" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Link href="/admin/wallet" className="no-underline">{t('wallet')}</Link>
-              <button type="button" className="btn-icon btn-sm" onClick={() => setOpen(prev => !prev)} aria-expanded={open} aria-label="Toggle wallet submenu">{open ? '−' : '+'}</button>
+              <button type="button" className="btn-icon btn-sm" onClick={() => setOpen(prev => !prev)} aria-expanded={open} aria-label="Toggle wallet submenu">{open ? '-' : '>'}</button>
             </div>
             {open && (
               <ul className="sidebar-submenu" style={{ paddingLeft: 12, marginTop: 6 }}>

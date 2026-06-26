@@ -7,7 +7,8 @@ import { registerAction } from '@/lib/actions/auth.actions';
 import Link from 'next/link';
 
 type AccountType = 'CUSTOMER' | 'PROVIDER' | null;
-type Step = 'type' | 'info' | 'provider-info';
+type CustomerType = 'SHOP' | 'CUSTOMER' | null;
+type Step = 'type' | 'client-type' | 'info' | 'provider-info';
 
 export default function RegisterPage() {
   const t = useTranslations('auth');
@@ -16,6 +17,7 @@ export default function RegisterPage() {
 
   const [step, setStep] = useState<Step>('type');
   const [accountType, setAccountType] = useState<AccountType>(null);
+  const [customerType, setCustomerType] = useState<CustomerType>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -33,6 +35,7 @@ export default function RegisterPage() {
   const [locationUrl, setLocationUrl] = useState<string>('');
   const [locations, setLocations] = useState<{ id: string; nameEN?: string; nameAR?: string }[]>([]);
   const [locationId, setLocationId] = useState<string>('');
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
 
   useEffect(() => {
     let mounted = true;
@@ -48,8 +51,38 @@ export default function RegisterPage() {
 
   const handleTypeSelect = (type: AccountType) => {
     setAccountType(type);
-    setStep('info');
+    setCustomerType(null);
+    if (type === 'CUSTOMER') {
+      setStep('client-type');
+    } else {
+      setStep('info');
+    }
   };
+
+  async function uploadFile(file: File) {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch('/api/upload', { method: 'POST', body: fd })
+    return res.json()
+  }
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    try {
+      setLoading(true)
+      const data: any = await uploadFile(f)
+      if (data?.ok && data.path) {
+        setAvatarUrl(data.path)
+      } else {
+        setError('Upload failed')
+      }
+    } catch (err) {
+      setError('Upload failed')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleInfoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +105,11 @@ export default function RegisterPage() {
       setError('الرجاء إدخال موقع المتجر / Please enter your store location');
       return;
     }
+    if (accountType === 'CUSTOMER' && !customerType) {
+      setError('Please select customer type');
+      return;
+    }
+
     setError('');
     if (accountType === 'PROVIDER') {
       setStep('provider-info');
@@ -91,6 +129,7 @@ export default function RegisterPage() {
         nameAR,
         nameEN,
         role: accountType!,
+        customerType: accountType === 'CUSTOMER' ? (customerType || 'CUSTOMER') : undefined,
         shopNameAR: accountType === 'PROVIDER' ? shopNameAR : undefined,
         shopNameEN: accountType === 'PROVIDER' ? shopNameEN : undefined,
         // include location for both providers and customers
@@ -99,6 +138,7 @@ export default function RegisterPage() {
         locationLat: locationLat ?? undefined,
         locationLng: locationLng ?? undefined,
         locationUrl: locationUrl || undefined,
+        avatar: avatarUrl || undefined,
       });
 
       if (result.success && result.data) {
@@ -128,13 +168,14 @@ export default function RegisterPage() {
   const getStepNumber = () => {
     switch (step) {
       case 'type': return 1;
-      case 'info': return 2;
+      case 'client-type': return 2;
+      case 'info': return accountType === 'CUSTOMER' ? 3 : 2;
       case 'provider-info': return 3;
       default: return 1;
     }
   };
 
-  const totalSteps = accountType === 'PROVIDER' ? 3 : 2;
+  const totalSteps = accountType === 'PROVIDER' ? 3 : accountType === 'CUSTOMER' ? 3 : 1;
 
   return (
     <div className="login-page">
@@ -214,6 +255,49 @@ export default function RegisterPage() {
           </div>
         )}
 
+        {/* Step: Choose Customer Type */}
+        {step === 'client-type' && (
+          <div style={{ display: 'grid', gap: 'var(--space-4)' }}>
+            <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', textAlign: 'center' }}>
+              اختر نوع الحساب / Choose account type
+            </h2>
+
+            <button
+              onClick={() => { setCustomerType('SHOP'); setStep('info'); }}
+              className="card card-interactive"
+              style={{ padding: 'var(--space-6)', textAlign: 'center', cursor: 'pointer', border: '2px solid transparent' }}
+            >
+              <div style={{ fontSize: 'var(--text-3xl)', marginBottom: 'var(--space-3)' }}>🏬</div>
+              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-2)' }}>
+                Shop
+              </h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+                Wholesale pricing and shop account access.
+              </p>
+            </button>
+
+            <button
+              onClick={() => { setCustomerType('CUSTOMER'); setStep('info'); }}
+              className="card card-interactive"
+              style={{ padding: 'var(--space-6)', textAlign: 'center', cursor: 'pointer', border: '2px solid transparent' }}
+            >
+              <div style={{ fontSize: 'var(--text-3xl)', marginBottom: 'var(--space-3)' }}>🛒</div>
+              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-2)' }}>
+                Customer
+              </h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+                Retail pricing for standard customer orders.
+              </p>
+            </button>
+
+            <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-6)' }}>
+              <button type="button" className="btn-secondary" onClick={() => { setStep('type'); setAccountType(null); setCustomerType(null); }} style={{ flex: 1 }}>
+                {tc('back')}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Step: Personal Info */}
         {step === 'info' && (
           <form onSubmit={handleInfoSubmit}>
@@ -229,6 +313,11 @@ export default function RegisterPage() {
               <div>
                 <label className="label" htmlFor="nameEN">Name (English) *</label>
                 <input id="nameEN" className="input" value={nameEN} onChange={(e) => setNameEN(e.target.value)} required dir="ltr" />
+              </div>
+              <div>
+                <label className="label">{t('profilePhoto') || 'Profile Photo'}</label>
+                <input type="file" accept="image/*" onChange={handleAvatarChange} />
+                {avatarUrl && <div style={{marginTop:8}}><img src={avatarUrl} alt="avatar" style={{maxWidth:120,maxHeight:120,borderRadius:8}}/></div>}
               </div>
               <div>
                 <label className="label" htmlFor="reg-mobile">{t('mobileNumber')} *</label>
@@ -398,12 +487,9 @@ export default function RegisterPage() {
                 ))}
               </div>
               <div>
-                <label className="label">{t('locationPhoto')}</label>
-                <div className="file-upload-zone" style={{ padding: 'var(--space-6)', textAlign: 'center', cursor: 'pointer' }}>
-                  <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-                    📷 {t('locationPhotoHint')}
-                  </p>
-                </div>
+                <label className="label">{t('profilePhoto') || t('locationPhoto') || 'Profile Photo'}</label>
+                <input type="file" accept="image/*" onChange={handleAvatarChange} />
+                {avatarUrl && <div style={{marginTop:8}}><img src={avatarUrl} alt="avatar" style={{maxWidth:240,maxHeight:120}}/></div>}
               </div>
             </div>
 

@@ -55,7 +55,7 @@ export async function rejectDepositRequest(id: string, adminId: string, note?: s
     const updated = await (tx as any).depositRequest.update({ where: { id }, data: { status: 'REJECTED', processedBy: adminId, adminNote: note || null, updatedAt: new Date() } })
     const pendingTx = await tx.walletTransaction.findFirst({ where: { walletId: wr.walletId, type: 'DEPOSIT', status: 'PENDING', reference: id } })
     if (pendingTx) {
-      await tx.walletTransaction.update({ where: { id: pendingTx.id }, data: { status: 'REJECTED' as any } })
+      await tx.walletTransaction.update({ where: { id: pendingTx.id }, data: { status: 'FAILED' } })
     }
     return updated
   })

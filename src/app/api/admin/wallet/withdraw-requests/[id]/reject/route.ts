@@ -22,10 +22,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     const result = await prisma.$transaction(async (tx) => {
       const updated = await tx.withdrawRequest.update({ where: { id }, data: { status: 'REJECTED' as any, processedBy: current.id, updatedAt: new Date() } })
 
-      // mark related wallet transaction as rejected
+      // mark related wallet transaction as failed
       const pendingTx = await tx.walletTransaction.findFirst({ where: { walletId: wr.walletId, type: 'WITHDRAWAL', status: 'PENDING' } })
       if (pendingTx) {
-        await tx.walletTransaction.update({ where: { id: pendingTx.id }, data: { status: 'REJECTED' as any } })
+        await tx.walletTransaction.update({ where: { id: pendingTx.id }, data: { status: 'FAILED' } })
       }
 
       // move funds back to available balance

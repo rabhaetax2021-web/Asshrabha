@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       const unitType = form.get('unitType') as string | null
 
       const current = await getCurrentUser()
-      const buyerIsShop = !!current && current.role === 'PROVIDER'
+      const buyerIsShop = !!current && (current.role === 'PROVIDER' || current.customerType === 'SHOP')
 
       if (providerProductId) {
         pp = await prisma.providerProduct.findUnique({ where: { id: providerProductId }, include: { catalogProduct: true } })

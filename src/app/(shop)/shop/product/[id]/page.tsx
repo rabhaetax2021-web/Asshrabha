@@ -18,7 +18,7 @@ export default async function ProductPage({ params, searchParams }: { params: un
   if (result.kind === 'provider') {
     const pp: any = result.data as any
     const current = await getCurrentUser()
-    const isShop = !!current && current.role === 'PROVIDER'
+    const isShop = !!current && (current.role === 'PROVIDER' || current.customerType === 'SHOP')
     const cp: any = (pp.catalogProduct as any)
     const provider: any = (pp.provider as any)
     return (

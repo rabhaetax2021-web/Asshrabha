@@ -136,6 +136,7 @@ export async function registerAction(data: {
   nameAR: string;
   nameEN: string;
   role: 'CUSTOMER' | 'PROVIDER';
+  customerType?: 'SHOP' | 'CUSTOMER';
   shopNameAR?: string;
   shopNameEN?: string;
   locationAddress?: string;
@@ -143,6 +144,7 @@ export async function registerAction(data: {
   locationLat?: number | null;
   locationLng?: number | null;
   locationUrl?: string;
+  avatar?: string;
 }): Promise<ApiResponse<{ userId: string }>> {
   try {
     // Check if mobile already exists
@@ -195,6 +197,8 @@ export async function registerAction(data: {
           nameAR: data.nameAR,
           nameEN: data.nameEN,
           role: data.role,
+          avatar: data.avatar || undefined,
+          customerType: data.customerType,
           status: 'PENDING',
           locale: 'ar',
         },

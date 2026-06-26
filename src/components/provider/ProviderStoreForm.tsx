@@ -85,7 +85,7 @@ export default function ProviderStoreForm({ provider }: any) {
         <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'banner')} />
         {form.banner && <div style={{marginTop:8}}><img src={form.banner} alt="banner" style={{maxWidth:240,maxHeight:120}}/></div>}
       </label>
-      <label className="label">Location Photo
+      <label className="label">Profile Photo
         <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'locationPhoto')} />
         {form.locationPhoto && <div style={{marginTop:8}}><img src={form.locationPhoto} alt="location" style={{maxWidth:240,maxHeight:120}}/></div>}
       </label>

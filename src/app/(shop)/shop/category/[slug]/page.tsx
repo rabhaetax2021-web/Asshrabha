@@ -7,6 +7,7 @@ import { getCurrentUser } from '@/lib/auth'
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const currentUser = await getCurrentUser()
+  const isShop = !!currentUser && (currentUser.role === 'PROVIDER' || currentUser.customerType === 'SHOP')
   let preferredLocationId: string | null = null
   if (currentUser) {
     const address = await prisma.address.findFirst({ where: { userId: currentUser.id }, orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }] }) as any
@@ -52,8 +53,6 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     }
   })
   const providers = Array.from(providerMap.values())
-
-  const isShop = !!currentUser && currentUser.role === 'PROVIDER'
 
   return (
     <section className="category-page container">

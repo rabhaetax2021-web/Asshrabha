@@ -40,7 +40,7 @@ export default function AddToCart({ providerProductId, catalogProductId }: { pro
         // determine buyer role (client or shop) and cache appropriate price
         try {
           const s = await fetch('/api/auth/session').then(r => r.json()).catch(() => ({}))
-          const shop = !!s?.user && s.user.role === 'PROVIDER'
+          const shop = !!s?.user && (s.user.role === 'PROVIDER' || s.user.customerType === 'SHOP')
           setIsShop(shop)
           const computed = opts.length > 0 ? undefined : (shop ? (j.product?.wholesalePrice ?? j.product?.sellingPrice) : (j.product?.retailPrice ?? j.product?.sellingPrice))
           if (computed) setProductPrice(computed)

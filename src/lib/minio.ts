@@ -26,7 +26,15 @@ if (hasValidMinIOCredentials()) {
     region: process.env.MINIO_REGION || 'us-east-1',
   })
 } else {
-  console.warn('[MinIO] Invalid or missing credentials. Falling back to local filesystem storage.')
+  const accessKey = !!process.env.MINIO_ACCESS_KEY
+  const secretKey = !!process.env.MINIO_SECRET_KEY
+  const endpoint = !!process.env.MINIO_ENDPOINT
+  console.warn('[MinIO] Invalid or missing credentials. Presence:', { accessKey, secretKey, endpoint })
+  if (process.env.NODE_ENV === 'production') {
+    console.error('[MinIO] MinIO is not configured in production. Uploads will fail.')
+  } else {
+    console.warn('[MinIO] Falling back to local filesystem storage for non-production environment.')
+  }
 }
 
 const BUCKET_NAME = process.env.MINIO_BUCKET || 'ashrabha'
@@ -62,16 +70,30 @@ export async function uploadToMinIO(
       console.log('[MinIO] File uploaded successfully:', key)
       return publicUrl
     } else {
-      // Fallback to local filesystem
+      // If running in production, do not silently fallback to local filesystem.
+      if (process.env.NODE_ENV === 'production') {
+        const msg = 'MinIO not configured in production; uploads are disabled'
+        console.error('[upload] ' + msg)
+        throw new Error(msg)
+      }
+
+      // Non-production: allow local filesystem fallback
       return uploadToLocalFilesystem(fileName, fileBuffer, category)
     }
   } catch (error) {
     console.error('[upload] MinIO error:', error)
     // Try local fallback if MinIO fails
+    // If MinIO was available but errored, avoid silent fallback in production
     if (minioClient) {
+      if (process.env.NODE_ENV === 'production') {
+        const msg = `MinIO error in production: ${error instanceof Error ? error.message : String(error)}`
+        console.error('[upload] ' + msg)
+        throw new Error(msg)
+      }
       console.warn('[upload] MinIO failed, falling back to local filesystem')
       return uploadToLocalFilesystem(fileName, fileBuffer, category)
     }
+
     throw new Error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
@@ -85,26 +107,19 @@ function uploadToLocalFilesystem(
   category?: string
 ): string {
   try {
-    const uploadsDir = path.resolve(process.cwd(), 'public', 'uploads')
-    
+    const publicDir = path.resolve(process.cwd(), 'public')
+    const uploadsDir = category ? path.join(publicDir, category) : publicDir
+
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true })
     }
 
-    const relativePath = category ? `${category}/${fileName}` : fileName
-    const fullPath = path.join(uploadsDir, relativePath)
-    
-    // Create category subdirectory if needed
-    const categoryDir = path.dirname(fullPath)
-    if (!fs.existsSync(categoryDir)) {
-      fs.mkdirSync(categoryDir, { recursive: true })
-    }
-
+    const fullPath = path.join(uploadsDir, fileName)
     fs.writeFileSync(fullPath, fileBuffer)
-    
-    const publicPath = `/uploads/${relativePath}`.replace(/\\/g, '/')
+
+    const publicPath = category ? `/${category}/${fileName}` : `/${fileName}`
     console.log('[upload] File saved locally:', publicPath)
-    return publicPath
+    return publicPath.replace(/\\/g, '/')
   } catch (error) {
     console.error('[upload] Local filesystem error:', error)
     throw new Error(`Failed to save file locally: ${error instanceof Error ? error.message : 'Unknown error'}`)

@@ -51,7 +51,7 @@ export async function placeOrder(customerId: string, cartItems: { providerProduc
       const orderNumber = `ASH-${Date.now()}-${Math.floor(Math.random()*900+100)}`
       // Determine buyer role to pick wholesale vs retail
       const buyer = await tx.user.findUnique({ where: { id: customerId } })
-      const buyerIsShop = !!buyer && buyer.role === 'PROVIDER'
+      const buyerIsShop = !!buyer && (buyer.role === 'PROVIDER' || buyer.customerType === 'SHOP')
 
       const totalAmount = items.reduce((s: number, i: any) => {
         const pp = i.providerProduct

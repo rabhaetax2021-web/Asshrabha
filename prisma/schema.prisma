@@ -19,6 +19,11 @@ enum UserRole {
   CUSTOMER
 }
 
+enum CustomerType {
+  SHOP
+  CUSTOMER
+}
+
 enum AccountStatus {
   PENDING
   APPROVED
@@ -130,6 +135,7 @@ model User {
   nameEN             String?
   avatar             String?
   role               UserRole
+  customerType       CustomerType   @default(CUSTOMER)
   status             AccountStatus @default(PENDING)
   forcePasswordReset Boolean       @default(false)
   locale             String        @default("ar")

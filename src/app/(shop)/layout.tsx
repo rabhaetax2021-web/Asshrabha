@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 
 export async function generateMetadata(): Promise<Metadata> {
   const current = await getCurrentUser()
-  const isShop = current?.role === 'PROVIDER'
+  const isShop = current?.role === 'PROVIDER' || current?.customerType === 'SHOP'
 
   return {
     title: 'Shop - Asshrabha',

@@ -1,5 +1,6 @@
 import type {
   UserRole,
+  CustomerType,
   AccountStatus,
   ProductStatus,
   ProviderProductStatus,
@@ -35,6 +36,7 @@ export interface SessionUser {
   nameAR: string | null;
   nameEN: string | null;
   role: UserRole;
+  customerType?: CustomerType;
   status: AccountStatus;
   forcePasswordReset: boolean;
   locale: string;
@@ -162,6 +164,7 @@ export interface RegisterFormData {
   nameAR: string;
   nameEN: string;
   role: 'CUSTOMER' | 'PROVIDER';
+  customerType?: 'SHOP' | 'CUSTOMER';
   // Provider-specific
   shopNameAR?: string;
   shopNameEN?: string;
