@@ -144,6 +144,11 @@ export async function DELETE(request: NextRequest) {
         await (prisma as any).wallet.deleteMany({ where: { userId: id } })
       }
 
+      // delete addresses
+      if ((prisma as any)?.address?.deleteMany) {
+        await (prisma as any).address.deleteMany({ where: { userId: id } })
+      }
+
       // finally delete the user
       if ((prisma as any)?.user?.delete) {
         await (prisma as any).user.delete({ where: { id } })

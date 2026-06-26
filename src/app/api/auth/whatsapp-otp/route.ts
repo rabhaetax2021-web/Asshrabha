@@ -114,15 +114,43 @@ export async function POST(req: NextRequest) {
           .replace(/{{3}}/g, String(OTP_EXPIRY_MINUTES))
           .replace(/{{4}}/g, supportNumber)
 
-        console.log('[WhatsApp OTP] Message body:', bodyText.substring(0, 100) + '...')
+        const templateName = process.env.WHATSAPP_TEMPLATE_NAME?.trim()
+        const templateLanguage = process.env.WHATSAPP_TEMPLATE_LANGUAGE?.trim() || 'en_US'
 
-        const payload = {
-          messaging_product: 'whatsapp',
-          to: recipientPhone,
-          type: 'text',
-          text: { body: bodyText },
+        let payload: Record<string, unknown>
+        if (templateName) {
+          console.log('[WhatsApp OTP] Sending template message using template:', templateName)
+          payload = {
+            messaging_product: 'whatsapp',
+            to: recipientPhone,
+            type: 'template',
+            template: {
+              name: templateName,
+              language: { code: templateLanguage },
+              components: [
+                {
+                  type: 'body',
+                  parameters: [
+                    { type: 'text', text: code },
+                    { type: 'text', text: appName },
+                    { type: 'text', text: String(OTP_EXPIRY_MINUTES) },
+                    { type: 'text', text: supportNumber },
+                  ],
+                },
+              ],
+            },
+          }
+        } else {
+          console.log('[WhatsApp OTP] Sending plain text message (fallback)')
+          payload = {
+            messaging_product: 'whatsapp',
+            to: recipientPhone,
+            type: 'text',
+            text: { body: bodyText },
+          }
         }
 
+        console.log('[WhatsApp OTP] Message body:', bodyText.substring(0, 100) + '...')
         console.log('[WhatsApp OTP] Sending payload:', JSON.stringify({ ...payload, to: recipientPhone }))
 
         const res = await fetch(endpoint, {

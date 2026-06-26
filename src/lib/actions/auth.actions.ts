@@ -186,8 +186,8 @@ export async function registerAction(data: {
     // Hash password
     const passwordHash = await bcrypt.hash(data.password, BCRYPT_SALT_ROUNDS);
 
-    // Create user + related records in transaction
-    const user = await prisma.$transaction(async (tx) => {
+    // Create user + related records in transaction and return OTP
+    const userWithOtp = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
           mobile: data.mobile,
@@ -298,22 +298,86 @@ export async function registerAction(data: {
         },
       });
 
-      return newUser;
+      return { user: newUser, otp: otpCode };
     });
-
-    // Send OTP via WhatsApp API (non-blocking)
+    // Send OTP via WhatsApp Cloud (Meta) directly (non-blocking)
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/auth/whatsapp-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, mobile: data.mobile }),
-      });
+      const token = process.env.WHATSAPP_META_TOKEN;
+      const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+      const templateName = process.env.WHATSAPP_TEMPLATE_NAME?.trim();
+      const templateLanguage = process.env.WHATSAPP_TEMPLATE_LANGUAGE?.trim() || 'en_US';
+
+      if (process.env.WHATSAPP_PROVIDER === 'meta' && token && phoneId) {
+        // normalize phone
+        let cleaned = String(data.mobile).replace(/\D/g, '');
+        if (cleaned.startsWith('0')) cleaned = '20' + cleaned.substring(1);
+        else if (!cleaned.startsWith('20') && !cleaned.startsWith('+')) {
+          if (cleaned.length === 10) cleaned = '20' + cleaned;
+        }
+        if (!cleaned.startsWith('+')) cleaned = '+' + cleaned;
+
+        const bodyText = (await (async () => {
+          try {
+            const t = await prisma.systemSetting.findUnique({ where: { key: 'otp_en' } });
+            return String(t?.value || `OTP Code: {{1}}`).replace(/{{1}}/g, userWithOtp.otp).replace(/{{2}}/g, process.env.NEXT_PUBLIC_APP_NAME || 'Asshrabha').replace(/{{3}}/g, String(OTP_EXPIRY_MINUTES)).replace(/{{4}}/g, process.env.SUPPORT_PHONE || '');
+          } catch (e) {
+            return `رمز التحقق الخاص بك هو ${userWithOtp.otp}`;
+          }
+        }))();
+
+        let payload: any;
+        if (templateName) {
+          payload = {
+            messaging_product: 'whatsapp',
+            to: cleaned,
+            type: 'template',
+            template: {
+              name: templateName,
+              language: { code: templateLanguage },
+              components: [
+                {
+                  type: 'body',
+                  parameters: [
+                    { type: 'text', text: userWithOtp.otp },
+                    { type: 'text', text: process.env.NEXT_PUBLIC_APP_NAME || 'Asshrabha' },
+                    { type: 'text', text: String(OTP_EXPIRY_MINUTES) },
+                    { type: 'text', text: process.env.SUPPORT_PHONE || '' },
+                  ],
+                },
+                {
+                  type: 'button',
+                  sub_type: 'url',
+                  index: '0',
+                  parameters: [
+                    {
+                      type: 'text',
+                      text: userWithOtp.otp,
+                    },
+                  ],
+                },
+              ],
+            },
+          };
+        } else {
+          payload = { messaging_product: 'whatsapp', to: cleaned, type: 'text', text: { body: bodyText } };
+        }
+
+        const res = await fetch(`https://graph.facebook.com/v17.0/${phoneId}/messages`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const respText = await res.text();
+        console.log('[Registration] WhatsApp send status:', res.status, 'body:', respText);
+      } else {
+        console.warn('[Registration] WhatsApp meta not configured, skipping send');
+      }
     } catch (e) {
-      console.error('Failed to send WhatsApp OTP:', e);
-      // Don't block registration if WhatsApp send fails
+      console.error('Failed to send WhatsApp OTP during registration:', e);
     }
 
-    return { success: true, data: { userId: user.id } };
+    return { success: true, data: { userId: userWithOtp.user.id } };
   } catch (error) {
     console.error('Registration error:', error);
     return { success: false, error: 'REGISTRATION_FAILED' };
