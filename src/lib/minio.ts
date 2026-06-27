@@ -6,11 +6,31 @@ import path from 'path'
 const hasValidMinIOCredentials = () => {
   const accessKey = process.env.MINIO_ACCESS_KEY
   const secretKey = process.env.MINIO_SECRET_KEY
-  
-  // Check if credentials are placeholder values
-  if (!accessKey || accessKey === 'your-access-key' || accessKey === 'admin') return false
-  if (!secretKey || secretKey === 'your-secret-key' || secretKey === 'Admin123456') return false
-  
+  const endpoint = process.env.MINIO_ENDPOINT
+
+  // Presence booleans (do NOT log actual values)
+  const accessKeyExists = !!accessKey
+  const secretKeyExists = !!secretKey
+  const endpointExists = !!endpoint
+
+  // Treat obvious placeholders as invalid, but do not blacklist other values
+  const accessKeyIsPlaceholder = accessKey === 'your-access-key'
+  const secretKeyIsPlaceholder = secretKey === 'your-secret-key'
+
+  const accessKeyInvalid = !accessKeyExists || accessKeyIsPlaceholder
+  const secretKeyInvalid = !secretKeyExists || secretKeyIsPlaceholder
+  const endpointMissing = !endpointExists
+
+  if (accessKeyInvalid || secretKeyInvalid || endpointMissing) {
+    console.warn('[MinIO] MinIO env presence:', {
+      accessKeyExists,
+      secretKeyExists,
+      endpointExists,
+      NODE_ENV: process.env.NODE_ENV || 'undefined',
+    })
+    return false
+  }
+
   return true
 }
 
@@ -18,7 +38,7 @@ let minioClient: Client | null = null
 
 if (hasValidMinIOCredentials()) {
   minioClient = new Client({
-    endPoint: process.env.MINIO_ENDPOINT || 'files.marymatelier.com',
+    endPoint: process.env.MINIO_ENDPOINT!,
     port: parseInt(process.env.MINIO_PORT || '443'),
     useSSL: process.env.MINIO_USE_SSL !== 'false',
     accessKey: process.env.MINIO_ACCESS_KEY!,
@@ -26,10 +46,10 @@ if (hasValidMinIOCredentials()) {
     region: process.env.MINIO_REGION || 'us-east-1',
   })
 } else {
-  const accessKey = !!process.env.MINIO_ACCESS_KEY
-  const secretKey = !!process.env.MINIO_SECRET_KEY
-  const endpoint = !!process.env.MINIO_ENDPOINT
-  console.warn('[MinIO] Invalid or missing credentials. Presence:', { accessKey, secretKey, endpoint })
+  const accessKeyExists = !!process.env.MINIO_ACCESS_KEY
+  const secretKeyExists = !!process.env.MINIO_SECRET_KEY
+  const endpointExists = !!process.env.MINIO_ENDPOINT
+  console.warn('[MinIO] MinIO not initialized. Env presence:', { accessKeyExists, secretKeyExists, endpointExists, NODE_ENV: process.env.NODE_ENV || 'undefined' })
   if (process.env.NODE_ENV === 'production') {
     console.error('[MinIO] MinIO is not configured in production. Uploads will fail.')
   } else {
