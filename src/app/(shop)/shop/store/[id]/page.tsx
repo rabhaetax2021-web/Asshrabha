@@ -20,7 +20,10 @@ export default async function StorePage({ params, searchParams }: { params: any;
   // Fetch all approved products with catalog details and categories
   const allProducts = await prisma.providerProduct.findMany({
     where: { providerId: store.id, status: 'APPROVED' },
-    include: { catalogProduct: { include: { category: true } } },
+    include: {
+      catalogProduct: { include: { category: true } },
+      providerProductOptions: true,
+    },
     orderBy: { createdAt: 'desc' },
   })
 
@@ -92,34 +95,47 @@ export default async function StorePage({ params, searchParams }: { params: any;
       {products.length > 0 ? (
         categoryFilter ? (
           <div className="product-grid">
-            {products.map((p) => (
-              <Link href={`/shop/product/${p.catalogProduct?.id || p.id}`} key={p.id} className="product-card">
-                <div className="product-image-wrap">
-                  {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
-                    <img src={p.catalogProduct.images[0]} alt={p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'} className="product-image" />
-                  ) : (
-                    <div className="product-image-placeholder">📦</div>
-                  )}
-                  {p.stockQuantity <= 5 && p.stockQuantity > 0 && (
-                    <span className="badge badge-warning" style={{ fontSize: 'var(--text-2xs)' }}>
-                      Only {p.stockQuantity} left
-                    </span>
-                  )}
-                </div>
-                <div className="product-card-body">
-                  <div className="product-card-title">
-                    {p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'}
-                  </div>
-                  <div className="product-card-provider">{p.catalogProduct?.category?.nameEN || ''}</div>
-                  <div className="product-card-footer">
-                    <div className="price" style={{ fontSize: 'var(--text-sm)' }}>{isShop ? `Wholesale: ${ (p.wholesalePrice ?? p.sellingPrice) } EGP` : `Retail: ${ (p.retailPrice ?? p.sellingPrice) } EGP` }</div>
-                    {Number(p.retailPrice) > 0 && (
-                      <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>Retail: {p.retailPrice} EGP</div>
+            {products.map((p) => {
+              const nameEN = p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'
+              const nameAR = p.catalogProduct?.nameAR || ''
+              const descriptionEN = p.catalogProduct?.descriptionEN || ''
+              const descriptionAR = p.catalogProduct?.descriptionAR || ''
+              const unit = p.wholesaleUnit || p.catalogProduct?.unitType || 'UNIT'
+              const conditionsText = p.providerProductOptions && p.providerProductOptions.length > 0
+                ? `Options: ${p.providerProductOptions.map((o: any) => o.unitType).join(', ')}`
+                : 'Provider conditions will be shown on the detail page.'
+
+              return (
+                <Link href={`/shop/product/${p.catalogProduct?.id || p.id}`} key={p.id} className="product-card">
+                  <div className="product-image-wrap">
+                    {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
+                      <img src={p.catalogProduct.images[0]} alt={nameEN} className="product-image" />
+                    ) : (
+                      <div className="product-image-placeholder">📦</div>
+                    )}
+                    {p.stockQuantity <= 5 && p.stockQuantity > 0 && (
+                      <span className="badge badge-warning" style={{ fontSize: 'var(--text-2xs)' }}>
+                        Only {p.stockQuantity} left
+                      </span>
                     )}
                   </div>
-                </div>
-              </Link>
-            ))}
+                  <div className="product-card-body">
+                    <div className="product-card-title">{nameEN}</div>
+                    <div className="product-card-subtitle">{nameAR}</div>
+                    {descriptionEN && <div className="product-card-description">{descriptionEN}</div>}
+                    {descriptionAR && <div className="product-card-description" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{descriptionAR}</div>}
+                    <div className="product-card-provider">{p.catalogProduct?.category?.nameEN || p.catalogProduct?.category?.nameAR || ''}</div>
+                    <div className="product-card-footer">
+                      <div className="price" style={{ fontSize: 'var(--text-sm)' }}>{isShop ? `Wholesale: ${ (p.wholesalePrice ?? p.sellingPrice) } EGP / ${unit}` : `Retail: ${ (p.retailPrice ?? p.sellingPrice) } EGP / ${unit}`}</div>
+                      {Number(p.retailPrice) > 0 && (
+                        <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>Retail: {p.retailPrice} EGP</div>
+                      )}
+                    </div>
+                    <div className="product-card-condition">{conditionsText}</div>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         ) : (
           // Render each category and its products
@@ -131,23 +147,38 @@ export default async function StorePage({ params, searchParams }: { params: any;
                 <section key={cat.id} style={{ marginBottom: 'var(--space-8)' }}>
                   <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-4)' }}>{cat.nameEN || cat.nameAR}</h3>
                   <div className="product-grid">
-                    {items.map((p) => (
-                      <Link key={p.id} href={`/shop/product/${p.id}`} className="product-card">
-                        <div className="product-image-wrap">
-                          {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
-                            <img src={p.catalogProduct.images[0]} alt={p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'} className="product-image" />
-                          ) : (
-                            <div className="product-image-placeholder">📦</div>
-                          )}
-                        </div>
-                        <div className="product-card-body">
-                          <div className="product-card-title">{p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'}</div>
-                          <div className="product-card-footer">
-                            <div className="price" style={{ fontSize: 'var(--text-sm)' }}>{isShop ? `Wholesale: ${ (p.wholesalePrice ?? p.sellingPrice) } EGP` : `Retail: ${ (p.retailPrice ?? p.sellingPrice) } EGP` }</div>
+                    {items.map((p) => {
+                      const nameEN = p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'
+                      const nameAR = p.catalogProduct?.nameAR || ''
+                      const descriptionEN = p.catalogProduct?.descriptionEN || ''
+                      const descriptionAR = p.catalogProduct?.descriptionAR || ''
+                      const unit = p.wholesaleUnit || p.catalogProduct?.unitType || 'UNIT'
+                      const conditionsText = p.providerProductOptions && p.providerProductOptions.length > 0
+                        ? `Options: ${p.providerProductOptions.map((o: any) => o.unitType).join(', ')}`
+                        : 'Provider conditions will be shown on the detail page.'
+
+                      return (
+                        <Link key={p.id} href={`/shop/product/${p.id}`} className="product-card">
+                          <div className="product-image-wrap">
+                            {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
+                              <img src={p.catalogProduct.images[0]} alt={nameEN} className="product-image" />
+                            ) : (
+                              <div className="product-image-placeholder">📦</div>
+                            )}
                           </div>
-                        </div>
-                      </Link>
-                    ))}
+                          <div className="product-card-body">
+                            <div className="product-card-title">{nameEN}</div>
+                            <div className="product-card-subtitle">{nameAR}</div>
+                            {descriptionEN && <div className="product-card-description">{descriptionEN}</div>}
+                            {descriptionAR && <div className="product-card-description" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{descriptionAR}</div>}
+                            <div className="product-card-footer">
+                              <div className="price" style={{ fontSize: 'var(--text-sm)' }}>{isShop ? `Wholesale: ${ (p.wholesalePrice ?? p.sellingPrice) } EGP / ${unit}` : `Retail: ${ (p.retailPrice ?? p.sellingPrice) } EGP / ${unit}` }</div>
+                            </div>
+                            <div className="product-card-condition">{conditionsText}</div>
+                          </div>
+                        </Link>
+                      )
+                    })}
                   </div>
                 </section>
               )

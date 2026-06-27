@@ -38,6 +38,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     include: {
       catalogProduct: { include: { category: true } },
       provider: true,
+      providerProductOptions: true,
     },
     orderBy: { createdAt: 'desc' },
   })
@@ -64,51 +65,64 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       {/* Products */}
       {products.length > 0 ? (
         <div className="product-grid">
-          {products.map((p) => (
-            <Link key={p.id} href={`/shop/product/${p.id}`} className="product-card">
-              <div className="product-image-wrap">
-                {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
-                  <img
-                    src={p.catalogProduct.images[0]}
-                    alt={p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'}
-                    className="product-image"
-                  />
-                ) : (
-                  <div className="product-image-placeholder">📦</div>
-                )}
-                {p.stockQuantity <= 5 && p.stockQuantity > 0 && (
-                  <span className="badge badge-warning" style={{ fontSize: 'var(--text-2xs)' }}>
-                    Only {p.stockQuantity} left
-                  </span>
-                )}
-              </div>
-                <div className="product-card-body">
-                <div className="product-card-title">
-                  {p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'}
-                </div>
-                <div className="product-card-provider">
-                  {p.provider?.logo ? (
-                    <img src={p.provider.logo} alt="" className="provider-logo-sm" />
+          {products.map((p) => {
+            const nameEN = p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'
+            const nameAR = p.catalogProduct?.nameAR || ''
+            const descriptionEN = p.catalogProduct?.descriptionEN || ''
+            const descriptionAR = p.catalogProduct?.descriptionAR || ''
+            const unit = p.wholesaleUnit || p.catalogProduct?.unitType || 'UNIT'
+            const conditionsText = p.providerProductOptions && p.providerProductOptions.length > 0
+              ? `Options: ${p.providerProductOptions.map((o: any) => o.unitType).join(', ')}`
+              : 'Provider conditions will be shown on the detail page.'
+
+            return (
+              <Link key={p.id} href={`/shop/product/${p.id}`} className="product-card">
+                <div className="product-image-wrap">
+                  {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
+                    <img
+                      src={p.catalogProduct.images[0]}
+                      alt={nameEN}
+                      className="product-image"
+                    />
                   ) : (
-                    <div className="provider-logo-sm" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--gradient-primary)', color: 'white', fontWeight: 'var(--font-bold)', fontSize: 'var(--text-xs)' }}>
-                      {(p.provider?.shopNameEN || p.provider?.shopNameAR || 'S')?.charAt(0).toUpperCase()}
-                    </div>
+                    <div className="product-image-placeholder">📦</div>
                   )}
-                  <div style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{p.provider?.shopNameEN || p.provider?.shopNameAR}</div>
-                </div>
-                <div className="product-card-footer">
-                  <div className="price" style={{ fontSize: 'var(--text-sm)' }}>
-                    {isShop ? `Wholesale: ${ (p.wholesalePrice ?? p.sellingPrice) } EGP` : `Retail: ${ (p.retailPrice ?? p.sellingPrice) } EGP` }
-                  </div>
-                  {Number(p.retailPrice) > 0 && (
-                    <span style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>
-                      Retail: {p.retailPrice} EGP
+                  {p.stockQuantity <= 5 && p.stockQuantity > 0 && (
+                    <span className="badge badge-warning" style={{ fontSize: 'var(--text-2xs)' }}>
+                      Only {p.stockQuantity} left
                     </span>
                   )}
                 </div>
-              </div>
-            </Link>
-          ))}
+                <div className="product-card-body">
+                  <div className="product-card-title">{nameEN}</div>
+                  <div className="product-card-subtitle">{nameAR}</div>
+                  {descriptionEN && <div className="product-card-description">{descriptionEN}</div>}
+                  {descriptionAR && <div className="product-card-description" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{descriptionAR}</div>}
+                  <div className="product-card-provider">
+                    {p.provider?.logo ? (
+                      <img src={p.provider.logo} alt="" className="provider-logo-sm" />
+                    ) : (
+                      <div className="provider-logo-sm" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--gradient-primary)', color: 'white', fontWeight: 'var(--font-bold)', fontSize: 'var(--text-xs)' }}>
+                        {(p.provider?.shopNameEN || p.provider?.shopNameAR || 'S')?.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{p.provider?.shopNameEN || p.provider?.shopNameAR}</div>
+                  </div>
+                  <div className="product-card-footer">
+                    <div className="price" style={{ fontSize: 'var(--text-sm)' }}>
+                      {isShop ? `Wholesale: ${ (p.wholesalePrice ?? p.sellingPrice) } EGP / ${unit}` : `Retail: ${ (p.retailPrice ?? p.sellingPrice) } EGP / ${unit}` }
+                    </div>
+                    {Number(p.retailPrice) > 0 && (
+                      <span style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>
+                        Retail: {p.retailPrice} EGP
+                      </span>
+                    )}
+                  </div>
+                  <div className="product-card-condition">{conditionsText}</div>
+                </div>
+              </Link>
+            )
+          })}
         </div>
       ) : (
         <div className="card" style={{ textAlign: 'center', padding: 'var(--space-12)' }}>

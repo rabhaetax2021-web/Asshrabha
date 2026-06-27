@@ -40,7 +40,7 @@ export default async function ShopSearchPage({ searchParams }: { searchParams?: 
 
     products = await prisma.providerProduct.findMany({
       where: productWhere,
-      include: { catalogProduct: true, provider: { include: { user: true } } },
+      include: { catalogProduct: true, provider: { include: { user: true } }, providerProductOptions: true },
       take: 50,
       orderBy: { updatedAt: 'desc' }
     })
@@ -105,24 +105,39 @@ export default async function ShopSearchPage({ searchParams }: { searchParams?: 
           <h3 style={{ marginTop: 18 }}>Products</h3>
           {products.length === 0 ? <div style={{ color: 'var(--text-muted)' }}>No products found.</div> : (
             <div className="product-grid">
-              {products.map((p) => (
-                <Link key={p.id} href={`/shop/product/${p.catalogProduct?.id || p.id}`} className="product-card">
-                  <div className="product-image-wrap">
-                    {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
-                      <img src={p.catalogProduct.images[0]} alt={p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'} className="product-image" />
-                    ) : (
-                      <div className="product-image-placeholder">📦</div>
-                    )}
-                  </div>
-                  <div className="product-card-body">
-                    <div className="product-card-title">{p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'}</div>
-                    <div className="product-card-provider" style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>{p.provider?.shopNameEN || p.provider?.shopNameAR}</div>
-                    <div className="product-card-footer">
-                      <div className="price">{isShop ? `Wholesale: ${p.wholesalePrice ?? p.sellingPrice} EGP` : (p.retailPrice ? `${p.retailPrice} EGP` : `${p.sellingPrice} EGP`)}</div>
+              {products.map((p) => {
+                const nameEN = p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'
+                const nameAR = p.catalogProduct?.nameAR || ''
+                const descriptionEN = p.catalogProduct?.descriptionEN || ''
+                const descriptionAR = p.catalogProduct?.descriptionAR || ''
+                const unit = p.wholesaleUnit || p.catalogProduct?.unitType || 'UNIT'
+                const conditionsText = p.providerProductOptions && p.providerProductOptions.length > 0
+                  ? `Options: ${p.providerProductOptions.map((o: any) => o.unitType).join(', ')}`
+                  : 'Provider conditions will be shown on the detail page.'
+
+                return (
+                  <Link key={p.id} href={`/shop/product/${p.catalogProduct?.id || p.id}`} className="product-card">
+                    <div className="product-image-wrap">
+                      {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
+                        <img src={p.catalogProduct.images[0]} alt={nameEN} className="product-image" />
+                      ) : (
+                        <div className="product-image-placeholder">📦</div>
+                      )}
                     </div>
-                  </div>
-                </Link>
-              ))}
+                    <div className="product-card-body">
+                      <div className="product-card-title">{nameEN}</div>
+                      <div className="product-card-subtitle">{nameAR}</div>
+                      {descriptionEN && <div className="product-card-description">{descriptionEN}</div>}
+                      {descriptionAR && <div className="product-card-description" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{descriptionAR}</div>}
+                      <div className="product-card-provider" style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>{p.provider?.shopNameEN || p.provider?.shopNameAR}</div>
+                      <div className="product-card-footer">
+                        <div className="price">{isShop ? `Wholesale: ${p.wholesalePrice ?? p.sellingPrice} EGP / ${unit}` : (p.retailPrice ? `${p.retailPrice} EGP / ${unit}` : `${p.sellingPrice} EGP / ${unit}`)}</div>
+                      </div>
+                      <div className="product-card-condition">{conditionsText}</div>
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           )}
         </div>
