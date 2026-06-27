@@ -94,6 +94,9 @@ export default async function ProductPage({ params, searchParams }: { params: un
             </div>
             <div className="product-card-condition" style={{ marginBottom: 'var(--space-6)' }}>
               {conditionText}
+            </div>
+            <AddToCart providerProductId={pp.id} />
+          </div>
         </div>
       </section>
     )
