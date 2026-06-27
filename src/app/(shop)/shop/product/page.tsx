@@ -31,6 +31,7 @@ export default async function ProductListingPage() {
     include: {
       catalogProduct: { include: { category: true } },
       provider: true,
+      providerProductOptions: true,
     },
     orderBy: { createdAt: 'desc' },
     take: 100,
@@ -57,15 +58,23 @@ export default async function ProductListingPage() {
         <div className="product-grid">
           {products.map((product) => {
             const image = product.catalogProduct?.images?.[0]
-            const name = product.catalogProduct?.nameEN || product.catalogProduct?.nameAR || 'Product'
+            const nameEN = product.catalogProduct?.nameEN || 'Untitled'
+            const nameAR = product.catalogProduct?.nameAR || 'بدون عنوان'
+            const descriptionEN = product.catalogProduct?.descriptionEN || 'No details available.'
+            const descriptionAR = product.catalogProduct?.descriptionAR || 'لا توجد تفاصيل.'
             const category = product.catalogProduct?.category?.nameEN || product.catalogProduct?.category?.nameAR || ''
             const price = isShop ? (product.wholesalePrice ?? product.sellingPrice) : (product.retailPrice ?? product.sellingPrice)
             const priceLabel = isShop ? 'Wholesale' : 'Retail'
+            const unit = product.wholesaleUnit || product.catalogProduct?.unitType || 'UNIT'
+            const conditionsText = product.providerProductOptions && product.providerProductOptions.length > 0
+              ? `Options: ${product.providerProductOptions.map((o: any) => o.unitType).join(', ')}`
+              : 'Conditions will appear on provider page.'
+
             return (
               <Link key={product.id} href={`/shop/product/${product.id}`} className="product-card">
                 <div className="product-image-wrap">
                   {image ? (
-                    <img src={image} alt={name} className="product-image" />
+                    <img src={image} alt={nameEN} className="product-image" />
                   ) : (
                     <div className="product-image-placeholder">📦</div>
                   )}
@@ -76,10 +85,15 @@ export default async function ProductListingPage() {
                   )}
                 </div>
                 <div className="product-card-body">
-                  <div className="product-card-title">{name}</div>
-                  <div className="product-card-provider">{category}</div>
+                  <div className="product-card-title">{nameEN}</div>
+                  <div className="product-card-subtitle">{nameAR}</div>
+                  <div className="product-card-description">{descriptionEN}</div>
+                  <div className="product-card-description" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{descriptionAR}</div>
                   <div className="product-card-footer">
-                    <div className="price">{priceLabel}: {price} EGP</div>
+                    <div>
+                      <div className="price">{priceLabel}: {price} EGP / {unit}</div>
+                      <div className="product-card-condition">{conditionsText}</div>
+                    </div>
                     <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>
                       {product.provider?.shopNameEN || product.provider?.shopNameAR}
                     </div>

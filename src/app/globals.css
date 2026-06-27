@@ -5154,6 +5154,32 @@ html {
   color: var(--primary);
 }
 
+.product-card .product-card-subtitle {
+  font-weight: var(--font-medium);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.product-card .product-card-description {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-relaxed);
+  max-height: 3.6rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  margin-bottom: var(--space-3);
+}
+
+.product-card .product-card-condition {
+  font-size: var(--text-2xs);
+  color: var(--text-secondary);
+  margin-top: var(--space-2);
+}
+
 .product-card .product-card-provider {
   font-size: var(--text-2xs);
   color: var(--text-muted);
