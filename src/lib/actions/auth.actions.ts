@@ -262,7 +262,7 @@ export async function registerAction(data: {
 
       // Fetch OTP template (same as Meta WhatsApp template)
       let templateEN = 'OTP Code: {{1}}. This is your OTP for {{2}}. The OTP is valid for {{3}} minutes. Call {{4}} if you did not perform this request. For your security, do not share this code.\nExpires in {{3}} minutes.';
-      let templateAR = 'رمز التحقق الخاص بك هو: {{1}}';
+      const templateAR = 'رمز التحقق الخاص بك هو: {{1}}';
       try {
         const template = await tx.systemSetting.findUnique({
           where: { key: 'otp_en' },
@@ -509,7 +509,7 @@ export async function resendOTPAction(userId: string): Promise<ApiResponse> {
 
       // Fetch OTP template (same as Meta WhatsApp template)
       let templateEN = 'OTP Code: {{1}}. This is your OTP for {{2}}. The OTP is valid for {{3}} minutes. Call {{4}} if you did not perform this request. For your security, do not share this code.\nExpires in {{3}} minutes.';
-      let templateAR = 'رمز التحقق الخاص بك هو: {{1}}';
+      const templateAR = 'رمز التحقق الخاص بك هو: {{1}}';
       try {
         const template = await tx.systemSetting.findUnique({
           where: { key: 'otp_en' },

@@ -1,5 +1,5 @@
 import React from 'react'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import Link from 'next/link'
 import FooterTabs from '@/components/shop/FooterTabs'
 import MobileHeader from '@/components/ui/MobileHeader'
@@ -9,20 +9,23 @@ import { getCurrentUser } from '@/lib/auth'
 export const dynamic = 'force-dynamic'
 
 export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'Shop - Asshrabha',
+  }
+}
+
+export async function generateViewport(): Promise<Viewport | undefined> {
   const current = await getCurrentUser()
   const isShop = current?.role === 'PROVIDER' || current?.customerType === 'SHOP'
 
+  if (!isShop) return undefined
+
   return {
-    title: 'Shop - Asshrabha',
-    viewport: isShop
-      ? {
-          width: 'device-width',
-          initialScale: 1,
-          minimumScale: 1,
-          maximumScale: 1,
-          userScalable: false,
-        }
-      : undefined,
+    width: 'device-width',
+    initialScale: 1,
+    minimumScale: 1,
+    maximumScale: 1,
+    userScalable: false,
   }
 }
 

@@ -14,73 +14,70 @@ export default async function ProductPage({ params, searchParams }: { params: un
   const result = await getProductById(rp.id as string)
   if (!result) return <div>Product not found</div>
 
-  // If provider product, show listing details (price, stock, provider info)
+  const current = await getCurrentUser()
+  const isShop = !!current && (current.role === 'PROVIDER' || current.customerType === 'SHOP')
+
   if (result.kind === 'provider') {
     const pp: any = result.data as any
-    const current = await getCurrentUser()
-    const isShop = !!current && (current.role === 'PROVIDER' || current.customerType === 'SHOP')
-    const cp: any = (pp.catalogProduct as any)
-    const provider: any = (pp.provider as any)
+    const cp: any = pp.catalogProduct
+    const provider: any = pp.provider
+
     return (
       <section className="product-page container">
-        <div style={{ display: 'grid', gap: 'var(--space-8)', gridTemplateColumns: '1fr', marginTop: 'var(--space-4)' }}>
-          {/* Left: Photos */}
+        <div className="product-layout">
           <div>
-            {cp && Array.isArray(cp.images) && cp.images.length > 0 ? (
+            {cp?.images && cp.images.length > 0 ? (
               <div className="photo-gallery">
                 {cp.images.map((img: string, idx: number) => (
-                  <img key={idx} src={img} alt={`${(cp.nameEN as string) || (cp.nameAR as string) || 'Product'} ${idx + 1}`} />
+                  <img key={idx} src={img} alt={`${cp.nameEN || cp.nameAR || 'Product'} ${idx + 1}`} />
                 ))}
               </div>
             ) : (
-              <div className="product-image-placeholder" style={{ maxWidth: 400, margin: '0 auto', aspectRatio: '1', borderRadius: 'var(--radius-xl)', fontSize: 'var(--text-5xl)' }}>
+              <div className="product-image-placeholder" style={{ maxWidth: 540, margin: '0 auto' }}>
                 📦
               </div>
             )}
           </div>
 
-          {/* Right: Info */}
           <div>
-            {/* Provider badge */}
             {provider && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
                 {provider.logo ? (
-                  <img src={provider.logo} alt="" className="provider-logo-sm" />
+                  <img src={provider.logo} alt={provider.shopNameEN || provider.shopNameAR} className="provider-logo-sm" />
                 ) : (
-                  <div className="provider-logo-sm" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--gradient-primary)', color: 'white', fontWeight: 'var(--font-bold)', fontSize: 'var(--text-xs)' }}>
-                    {(provider.shopNameEN || provider.shopNameAR || 'S')?.charAt(0).toUpperCase()}
+                  <div className="provider-logo-sm" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--gradient-primary)', color: 'white', fontWeight: 'var(--font-bold)' }}>
+                    {(provider.shopNameEN || provider.shopNameAR || 'S').charAt(0).toUpperCase()}
                   </div>
                 )}
-                <Link href={`/shop/store/${provider.id}`} style={{ fontSize: 'var(--text-sm)', color: 'var(--primary)', fontWeight: 'var(--font-semibold)', textDecoration: 'none' }}>
-                  {provider.shopNameEN || provider.shopNameAR}
-                </Link>
+                <div>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)', color: 'var(--text-primary)' }}>
+                    <Link href={`/shop/store/${provider.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      {provider.shopNameEN || provider.shopNameAR}
+                    </Link>
+                  </div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
+                    {provider.user?.nameEN || provider.user?.nameAR}
+                  </div>
+                </div>
               </div>
             )}
 
-            <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 'var(--font-bold)', marginBottom: 'var(--space-3)', color: 'var(--text-primary)' }}>
-              {cp?.nameEN || cp?.nameAR || 'Product'}
-            </h1>
-            <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--space-4)', lineHeight: 'var(--leading-relaxed)' }}>
+            <h1>{cp?.nameEN || cp?.nameAR || 'Product'}</h1>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-5)', lineHeight: 'var(--leading-relaxed)' }}>
               {cp?.descriptionEN || cp?.descriptionAR || 'No description available.'}
             </p>
 
-            <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'baseline', marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
-              <div className="price" style={{ fontSize: 'var(--text-3xl)' }}>
-                {isShop ? ((pp['wholesalePrice'] ?? pp['sellingPrice']) as unknown as number) : ((pp['retailPrice'] ?? pp['sellingPrice']) as unknown as number)} EGP
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
+              <div className="price" style={{ fontSize: 'var(--text-4xl)' }}>
+                {isShop ? (pp.wholesalePrice ?? pp.sellingPrice) : (pp.retailPrice ?? pp.sellingPrice)} EGP
               </div>
-              {!isShop && Number(pp['retailPrice'] as unknown as number) > 0 && (
-                <span className="badge" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', background: 'var(--bg-tertiary)' }}>
-                  Retail: {pp.retailPrice} EGP
-                </span>
-              )}
               {pp.stockQuantity > 0 ? (
-                <span className="badge badge-success" style={{ fontSize: 'var(--text-xs)' }}>
-                  In Stock ({pp.stockQuantity})
-                </span>
+                <span className="badge badge-success">In Stock {pp.stockQuantity}</span>
               ) : (
-                <span className="badge badge-error" style={{ fontSize: 'var(--text-xs)' }}>
-                  Out of Stock
-                </span>
+                <span className="badge badge-error">Out of Stock</span>
+              )}
+              {!isShop && Number(pp.retailPrice) > 0 && (
+                <span className="badge badge-primary">Retail: {pp.retailPrice} EGP</span>
               )}
             </div>
 
@@ -91,13 +88,12 @@ export default async function ProductPage({ params, searchParams }: { params: un
     )
   }
 
-  // catalog product view
   const cp: any = result.data as any
   const addedPP: any = resolvedSearch && (resolvedSearch as any).addedProviderProduct
 
   return (
     <section className="product-page container">
-      <div style={{ display: 'grid', gap: 'var(--space-8)', gridTemplateColumns: '1fr', marginTop: 'var(--space-4)' }}>
+      <div className="product-layout">
         <div>
           {cp.images && cp.images.length > 0 ? (
             <div className="photo-gallery">
@@ -106,17 +102,15 @@ export default async function ProductPage({ params, searchParams }: { params: un
               ))}
             </div>
           ) : (
-            <div className="product-image-placeholder" style={{ maxWidth: 400, margin: '0 auto', aspectRatio: '1', borderRadius: 'var(--radius-xl)', fontSize: 'var(--text-5xl)' }}>
+            <div className="product-image-placeholder" style={{ maxWidth: 540, margin: '0 auto' }}>
               📦
             </div>
           )}
         </div>
 
         <div>
-          <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 'var(--font-bold)', marginBottom: 'var(--space-3)', color: 'var(--text-primary)' }}>
-            {cp.nameEN || cp.nameAR}
-          </h1>
-          <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--space-4)', lineHeight: 'var(--leading-relaxed)' }}>
+          <h1>{cp.nameEN || cp.nameAR}</h1>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-5)', lineHeight: 'var(--leading-relaxed)' }}>
             {cp.descriptionEN || cp.descriptionAR || 'No description available.'}
           </p>
 
@@ -125,6 +119,7 @@ export default async function ProductPage({ params, searchParams }: { params: un
               ✅ Added listing: {String(addedPP)}
             </div>
           )}
+
           <AddToCart catalogProductId={cp.id} />
         </div>
       </div>
