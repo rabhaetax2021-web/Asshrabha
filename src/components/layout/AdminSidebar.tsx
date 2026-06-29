@@ -1,8 +1,9 @@
 "use client"
 
-import Link from "next/link";
-import React from "react";
+import { useState } from 'react'
+import Link from 'next/link'
 import { useTranslations } from 'next-intl'
+import { cn } from '@/lib/utils/helpers'
 
 interface Props {
   collapsed?: boolean;
@@ -10,13 +11,13 @@ interface Props {
 }
 
 export default function AdminSidebar({ collapsed = false, initialLocale = 'ar' }: Props) {
-  const [locale, setLocaleState] = React.useState<'ar'|'en'>(() => {
+  const [locale, setLocaleState] = useState<'ar'|'en'>(() => {
     if (typeof document === 'undefined') return initialLocale
     const m = document.cookie.match(/(?:^|; )NEXT_LOCALE=([^;]+)/)
     const cookieLocale = (m ? decodeURIComponent(m[1]) : null) as 'ar'|'en'|null
     return cookieLocale || initialLocale
   })
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = useState(false)
   const t = useTranslations('admin')
   const tc = useTranslations('common')
 
@@ -47,7 +48,7 @@ export default function AdminSidebar({ collapsed = false, initialLocale = 'ar' }
         <svg width="20" height="14" viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 1.5H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M0 7H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M0 12.5H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
       </button>
 
-      <aside className={"sidebar admin-sidebar " + (collapsed ? "sidebar-collapsed" : "") + (open ? ' sidebar-open' : '') }>
+      <aside className={cn('sidebar admin-sidebar', collapsed && 'sidebar-collapsed', open && 'sidebar-open')}>
       <div className="sidebar-header admin-sidebar-header">
         <Link href="/admin" className="logo">
           <span className="logo-text">{tc('appName')}</span>
@@ -136,13 +137,13 @@ export default function AdminSidebar({ collapsed = false, initialLocale = 'ar' }
                 <div className="lang-toggle" role="tablist" aria-label="Language">
                   <button
                     type="button"
-                    className={"btn btn-sm " + (locale === 'ar' ? 'btn-primary' : 'btn-ghost')}
+                    className={cn('btn btn-sm', locale === 'ar' ? 'btn-primary' : 'btn-ghost')}
                     onClick={() => setLocale('ar')}
                     aria-pressed={locale === 'ar'}
                   >{tc('arabic')}</button>
                   <button
                     type="button"
-                    className={"btn btn-sm " + (locale === 'en' ? 'btn-primary' : 'btn-ghost')}
+                    className={cn('btn btn-sm', locale === 'en' ? 'btn-primary' : 'btn-ghost')}
                     onClick={() => setLocale('en')}
                     aria-pressed={locale === 'en'}
                   >{tc('english')}</button>
@@ -156,7 +157,7 @@ export default function AdminSidebar({ collapsed = false, initialLocale = 'ar' }
       </div>
       </aside>
 
-      <div className={"sidebar-overlay " + (open ? "sidebar-overlay-visible" : "")} onClick={() => setOpen(false)} />
+      <div className={cn('sidebar-overlay', open && 'sidebar-overlay-visible')} onClick={() => setOpen(false)} />
     </>
   );
 }

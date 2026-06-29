@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { showToast } from '@/components/ui/toast'
 import './support.css'
 

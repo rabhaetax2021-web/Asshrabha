@@ -1,29 +1,30 @@
 "use client"
-import React from 'react'
+
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getErrorMessage } from '@/lib/errors'
 
 export default function CustomerEditForm({ user }: { user: any }) {
   const router = useRouter()
-  const [nameEN, setNameEN] = React.useState(user?.nameEN || '')
-  const [nameAR, setNameAR] = React.useState(user?.nameAR || '')
-  const [mobile, setMobile] = React.useState(user?.mobile || '')
-  const [email, setEmail] = React.useState(user?.email || '')
-  const [avatar, setAvatar] = React.useState(user?.avatar || '')
-  const [loading, setLoading] = React.useState(false)
-  const [error, setError] = React.useState<string | null>(null)
+  const [nameEN, setNameEN] = useState(user?.nameEN || '')
+  const [nameAR, setNameAR] = useState(user?.nameAR || '')
+  const [mobile, setMobile] = useState(user?.mobile || '')
+  const [email, setEmail] = useState(user?.email || '')
+  const [avatar, setAvatar] = useState(user?.avatar || '')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Address fields
-  const [addressLabel, setAddressLabel] = React.useState('Home')
-  const [fullName, setFullName] = React.useState(user?.nameEN || user?.nameAR || '')
-  const [addressMobile, setAddressMobile] = React.useState(user?.mobile || '')
-  const [addressLine, setAddressLine] = React.useState('')
-  const [locationId, setLocationId] = React.useState('')
-  const [city, setCity] = React.useState('')
-  const [area, setArea] = React.useState('')
-  const [landmark, setLandmark] = React.useState('')
-  const [isDefault, setIsDefault] = React.useState(false)
-  const [locations, setLocations] = React.useState<{ id: string; nameEN?: string; nameAR?: string }[]>([])
+  const [addressLabel, setAddressLabel] = useState('Home')
+  const [fullName, setFullName] = useState(user?.nameEN || user?.nameAR || '')
+  const [addressMobile, setAddressMobile] = useState(user?.mobile || '')
+  const [addressLine, setAddressLine] = useState('')
+  const [locationId, setLocationId] = useState('')
+  const [city, setCity] = useState('')
+  const [area, setArea] = useState('')
+  const [landmark, setLandmark] = useState('')
+  const [isDefault, setIsDefault] = useState(false)
+  const [locations, setLocations] = useState<{ id: string; nameEN?: string; nameAR?: string }[]>([])
 
   async function uploadFile(f: File) {
     const fd = new FormData()
@@ -34,7 +35,7 @@ export default function CustomerEditForm({ user }: { user: any }) {
     return j?.path || j?.data?.path || ''
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     let mounted = true
     fetch('/api/admin/locations')
       .then(r => r.json())

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react';
 import { showToast } from '@/components/ui/toast'
 import { getErrorMessage } from '@/lib/errors'
 import { useCartStore } from '@/stores/cartStore'

@@ -1,8 +1,8 @@
 "use client"
-import React from 'react'
 import Button from './Button'
 import { useTheme } from './ThemeProvider'
 import Link from 'next/link'
+import NotificationBell from './NotificationBell'
 
 export default function Topbar({ title }: { title?: string }) {
   const { theme, toggle } = useTheme()
@@ -13,6 +13,7 @@ export default function Topbar({ title }: { title?: string }) {
         {title && <h2 style={{ margin: 0, fontSize: 'var(--text-lg)' }}>{title}</h2>}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <NotificationBell />
         <Button variant="ghost" onClick={() => toggle()} aria-label="Toggle theme">{theme === 'dark' ? '🌙' : '☀️'}</Button>
       </div>
     </header>

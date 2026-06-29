@@ -1,5 +1,6 @@
 "use client"
-import React from 'react'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import IntlText from '@/components/IntlText'
 
@@ -18,7 +19,7 @@ type Product = {
 }
 
 export default function CatalogList({ products: initial }: { products: Product[] }) {
-  const [products, setProducts] = React.useState<Product[]>(initial || [])
+  const [products, setProducts] = useState<Product[]>(initial || [])
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this product?')) return
     try {

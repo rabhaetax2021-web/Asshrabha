@@ -1,13 +1,14 @@
 "use client"
-import React from 'react'
+
+import { useEffect, useState } from 'react'
 import { useCartStore } from '@/stores/cartStore'
 import { showToast } from '@/components/ui/toast'
 
 export default function AddToCartButton({ product }: { product: any }) {
   const add = useCartStore(state => state.addItem)
-  const [isShop, setIsShop] = React.useState(false)
+  const [isShop, setIsShop] = useState(false)
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetch('/api/auth/session')
       .then((r) => r.json())
       .then((data) => {

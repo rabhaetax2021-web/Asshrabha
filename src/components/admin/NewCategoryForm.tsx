@@ -1,16 +1,17 @@
 "use client"
-import React from 'react'
+
+import { FormEvent, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { getErrorMessage } from '@/lib/errors'
 
 export default function NewCategoryForm({ onCreated }: { onCreated?: () => void }) {
   const t = useTranslations('admin')
   const tc = useTranslations('common')
-  const [nameEN, setNameEN] = React.useState('')
-  const [nameAR, setNameAR] = React.useState('')
-  const [slug, setSlug] = React.useState('')
-  const [loading, setLoading] = React.useState(false)
-  const [error, setError] = React.useState<string | null>(null)
+  const [nameEN, setNameEN] = useState('')
+  const [nameAR, setNameAR] = useState('')
+  const [slug, setSlug] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -1,5 +1,6 @@
 "use client"
-import React from 'react'
+
+import { FormEvent, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { getErrorMessage } from '@/lib/errors'
 
@@ -8,21 +9,21 @@ type CategoryOption = { id: string; nameEN?: string | null; nameAR?: string | nu
 export default function NewProductForm({ categories, initial }: { categories: CategoryOption[]; initial?: any }) {
   const t = useTranslations('admin')
   const tc = useTranslations('common')
-  const [categoryId, setCategoryId] = React.useState(categories[0]?.id || '')
-  const [nameEN, setNameEN] = React.useState('')
-  const [nameAR, setNameAR] = React.useState('')
-  const [descriptionEN, setDescriptionEN] = React.useState('')
-  const [descriptionAR, setDescriptionAR] = React.useState('')
-  const [wholesaleMinPrice, setWholesaleMinPrice] = React.useState('')
-  const [wholesaleMaxPrice, setWholesaleMaxPrice] = React.useState('')
-  const [retailMinPrice, setRetailMinPrice] = React.useState('')
-  const [retailMaxPrice, setRetailMaxPrice] = React.useState('')
-  const [unitType, setUnitType] = React.useState('PIECE')
-  const [images, setImages] = React.useState<string[]>([])
-  const [loading, setLoading] = React.useState(false)
-  const [error, setError] = React.useState<string | null>(null)
+  const [categoryId, setCategoryId] = useState(categories[0]?.id || '')
+  const [nameEN, setNameEN] = useState('')
+  const [nameAR, setNameAR] = useState('')
+  const [descriptionEN, setDescriptionEN] = useState('')
+  const [descriptionAR, setDescriptionAR] = useState('')
+  const [wholesaleMinPrice, setWholesaleMinPrice] = useState('')
+  const [wholesaleMaxPrice, setWholesaleMaxPrice] = useState('')
+  const [retailMinPrice, setRetailMinPrice] = useState('')
+  const [retailMaxPrice, setRetailMaxPrice] = useState('')
+  const [unitType, setUnitType] = useState('PIECE')
+  const [images, setImages] = useState<string[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
@@ -64,7 +65,7 @@ export default function NewProductForm({ categories, initial }: { categories: Ca
   }
 
   // populate initial values when editing
-  React.useEffect(() => {
+  useEffect(() => {
     if (!initial) return
     setCategoryId(initial.categoryId || categories[0]?.id || '')
     setNameEN(initial.nameEN || '')

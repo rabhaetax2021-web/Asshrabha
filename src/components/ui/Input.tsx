@@ -1,8 +1,7 @@
 "use client"
-import React from 'react'
+import type { InputHTMLAttributes } from 'react'
+import { cn } from '@/lib/utils/helpers'
 
-export default function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input {...props} className={(props.className ? props.className + ' ' : '') + 'input'} />
-  )
+export default function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
+  return <input {...props} className={cn('input', className)} />
 }

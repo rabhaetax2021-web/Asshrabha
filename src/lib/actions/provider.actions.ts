@@ -53,6 +53,10 @@ export async function getOrdersByProvider(providerId: string) {
   })
 }
 
+export async function getOrderByIdForProvider(providerId: string, orderId: string) {
+  return await prisma.order.findFirst({ where: { id: orderId, providerId }, include: { items: { include: { providerProduct: { include: { catalogProduct: true } } } }, customer: true, address: true } })
+}
+
 export async function listCatalogProducts(filter?: Record<string, unknown>) {
   return await prisma.catalogProduct.findMany({
     where: { status: 'ACTIVE' },

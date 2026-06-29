@@ -1,20 +1,65 @@
 self.addEventListener('install', (event) => {
   self.skipWaiting();
+  event.waitUntil(
+    caches.open('asshrabha-shell').then((cache) =>
+      cache.addAll([
+        '/',
+        '/login',
+        '/manifest.webmanifest',
+        '/vercel.svg',
+      ]).catch(() => undefined)
+    )
+  )
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// Basic fetch handler: fallback to network, then cache (no complex caching strategy)
 self.addEventListener('fetch', (event) => {
   const req = event.request
-  // Forward non-GET requests (POST/PUT/DELETE) directly to network.
-  // This prevents the service worker from returning cached responses for API calls.
   if (req.method !== 'GET') {
     event.respondWith(fetch(req).catch(() => new Response(null, { status: 503 })))
     return
   }
 
-  event.respondWith(fetch(req).catch(() => caches.match(req)))
+  event.respondWith(
+    fetch(req)
+      .then((response) => {
+        const cloned = response.clone()
+        if (req.destination === '' || req.destination === 'document' || req.destination === 'script' || req.destination === 'style' || req.destination === 'image') {
+          caches.open('asshrabha-shell').then((cache) => cache.put(req, cloned)).catch(() => undefined)
+        }
+        return response
+      })
+      .catch(() => caches.match(req).then((cached) => cached || new Response(null, { status: 503 })))
+  )
+});
+
+self.addEventListener('push', (event) => {
+  let payload = { title: 'Asshrabha', body: 'You have a new notification.', data: { url: '/' } }
+  try {
+    if (event.data) {
+      payload = event.data.json()
+    }
+  } catch (e) {
+    // malformed payload
+  }
+
+  const options = {
+    body: payload.body,
+    icon: '/vercel.svg',
+    badge: '/vercel.svg',
+    data: payload.data || {},
+    vibrate: [100, 50, 100],
+    tag: payload.data?.tag || 'asshrabha-push',
+  }
+
+  event.waitUntil(self.registration.showNotification(payload.title, options))
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const targetUrl = event.notification.data?.url || '/'
+  event.waitUntil(clients.openWindow(targetUrl))
 });

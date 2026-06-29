@@ -1276,7 +1276,7 @@ uploads/
 #### [NEW] `prisma/seed.ts` (complete)
 ```
 ADMIN:
-  mobile: "01094056919"
+  mobile: "01061422799"
   password: bcrypt("2463")
   role: ROOT_ADMIN, status: ACTIVE
   forcePasswordReset: true

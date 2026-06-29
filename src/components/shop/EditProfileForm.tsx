@@ -1,5 +1,6 @@
 "use client"
-import React from 'react'
+
+import { FormEvent, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { getErrorMessage } from '@/lib/errors'
@@ -7,18 +8,18 @@ import { getErrorMessage } from '@/lib/errors'
 export default function EditProfileForm({ profile, user }: { profile: Record<string, any>; user: Record<string, any> }) {
   const t = useTranslations('auth')
   const router = useRouter()
-  const [shopNameEN, setShopNameEN] = React.useState(profile?.shopNameEN || '')
-  const [shopNameAR, setShopNameAR] = React.useState(profile?.shopNameAR || '')
-  const [descriptionEN, setDescriptionEN] = React.useState(profile?.descriptionEN || '')
-  const [descriptionAR, setDescriptionAR] = React.useState(profile?.descriptionAR || '')
-  const [locationAddress, setLocationAddress] = React.useState(profile?.locationAddress || '')
-  const [locationLat, setLocationLat] = React.useState(profile?.locationLat || '')
-  const [locationLng, setLocationLng] = React.useState(profile?.locationLng || '')
-  const [mobile, setMobile] = React.useState(user?.mobile || '')
-  const [loading, setLoading] = React.useState(false)
-  const [error, setError] = React.useState<string | null>(null)
-  const [logo, setLogo] = React.useState(profile?.logo || '')
-  const [banner, setBanner] = React.useState(profile?.banner || '')
+  const [shopNameEN, setShopNameEN] = useState(profile?.shopNameEN || '')
+  const [shopNameAR, setShopNameAR] = useState(profile?.shopNameAR || '')
+  const [descriptionEN, setDescriptionEN] = useState(profile?.descriptionEN || '')
+  const [descriptionAR, setDescriptionAR] = useState(profile?.descriptionAR || '')
+  const [locationAddress, setLocationAddress] = useState(profile?.locationAddress || '')
+  const [locationLat, setLocationLat] = useState(profile?.locationLat || '')
+  const [locationLng, setLocationLng] = useState(profile?.locationLng || '')
+  const [mobile, setMobile] = useState(user?.mobile || '')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [logo, setLogo] = useState(profile?.logo || '')
+  const [banner, setBanner] = useState(profile?.banner || '')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

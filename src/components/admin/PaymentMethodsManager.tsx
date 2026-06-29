@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react'
+import { useState } from 'react';
 import { showToast } from '@/components/ui/toast'
 
 export default function PaymentMethodsManager({ initial }: { initial: any[] }) {

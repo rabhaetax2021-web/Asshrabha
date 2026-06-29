@@ -1,16 +1,17 @@
 "use client"
-import React from 'react'
+
+import { FormEvent, useState } from 'react'
 import { getErrorMessage } from '@/lib/errors'
 
 export default function AddListingForm({ catalog }: { catalog: any }) {
-  const [sellingPrice, setSellingPrice] = React.useState(String(catalog.wholesaleMinPrice || catalog.wholesalePrice || ''))
-  const [wholesalePrice, setWholesalePrice] = React.useState(String(catalog.wholesaleMinPrice || catalog.wholesalePrice || catalog.retailMinPrice || ''))
-  const [retailPrice, setRetailPrice] = React.useState(String(catalog.retailMinPrice || 0))
-  const [wholesaleUnit, setWholesaleUnit] = React.useState('BOX')
-  const [stockQuantity, setStockQuantity] = React.useState('0')
-  const [loading, setLoading] = React.useState(false)
-  const [error, setError] = React.useState<string | null>(null)
-  const [showSuccess, setShowSuccess] = React.useState(false)
+  const [sellingPrice, setSellingPrice] = useState(String(catalog.wholesaleMinPrice || catalog.wholesalePrice || ''))
+  const [wholesalePrice, setWholesalePrice] = useState(String(catalog.wholesaleMinPrice || catalog.wholesalePrice || catalog.retailMinPrice || ''))
+  const [retailPrice, setRetailPrice] = useState(String(catalog.retailMinPrice || 0))
+  const [wholesaleUnit, setWholesaleUnit] = useState('BOX')
+  const [stockQuantity, setStockQuantity] = useState('0')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [showSuccess, setShowSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

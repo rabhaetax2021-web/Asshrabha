@@ -1,5 +1,6 @@
 "use client"
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import Button from './Button'
 
 export default function PWAInstallPrompt() {
   const [deferred, setDeferred] = useState<any>(null)
@@ -19,7 +20,7 @@ export default function PWAInstallPrompt() {
     if (!deferred) return
     try {
       deferred.prompt()
-      const choice = await deferred.userChoice
+      await deferred.userChoice
       setVisible(false)
     } catch (e) {
       console.error(e)
@@ -32,8 +33,8 @@ export default function PWAInstallPrompt() {
       <div className="pwa-install-inner">
         <div>Install Asshrabha for quicker access</div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-primary" onClick={install}>Install</button>
-          <button className="btn" onClick={() => setVisible(false)}>Dismiss</button>
+          <Button className="btn-primary" onClick={install}>Install</Button>
+          <Button onClick={() => setVisible(false)}>Dismiss</Button>
         </div>
       </div>
     </div>

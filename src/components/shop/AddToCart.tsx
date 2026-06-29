@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react'
+import { useEffect, useState } from 'react';
 import { showToast } from '@/components/ui/toast'
 import { getErrorMessage } from '@/lib/errors'
 import { useCartStore } from '@/stores/cartStore'
@@ -21,7 +21,7 @@ export default function AddToCart({ providerProductId, catalogProductId }: { pro
   const [catalogOptions, setCatalogOptions] = useState<CatalogOption[]>([])
   const [selectedCatalogOption, setSelectedCatalogOption] = useState<string | null>(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!providerProductId) return
     ;(async () => {
       try {
@@ -53,7 +53,7 @@ export default function AddToCart({ providerProductId, catalogProductId }: { pro
     })()
   }, [providerProductId])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!catalogProductId) return
     ;(async () => {
       try {

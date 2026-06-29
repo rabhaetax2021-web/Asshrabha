@@ -44,6 +44,7 @@ enum ProviderProductStatus {
   APPROVED
   REJECTED
   SUSPENDED
+  REQUIRES_ADMIN_REAPPROVAL
 }
 
 enum SuggestionStatus {
@@ -58,9 +59,51 @@ enum OrderStatus {
   CONFIRMED
   SHIPPED
   DELIVERED
+  PENDING_MODIFICATION_APPROVAL
   COMPLETED
   CANCELLED
   REFUNDED
+}
+
+enum ApprovalType {
+  ORDER_PRODUCT_REMOVAL
+  ORDER_QUANTITY_REDUCTION
+  PRODUCT_MODIFICATION
+  STORE_MODIFICATION
+  PRICE_CHANGE
+  INVENTORY_CHANGE
+  LOCATION_EXCEPTION
+}
+
+enum ApprovalState {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+model ApprovalRequest {
+  id           String        @id @default(cuid())
+  type         ApprovalType
+  state        ApprovalState @default(PENDING)
+  providerId   String
+  orderId      String?
+  orderItemId  String?
+  productId    String?
+  reason       String?
+  data         Json?
+  comments     Json?
+  submittedBy  String?
+  reviewedBy   String?
+  resolvedAt   DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  provider ProviderProfile @relation(fields: [providerId], references: [id])
+
+  @@index([providerId])
+  @@index([orderId])
+  @@index([state])
 }
 
 enum WalletTxType {
@@ -157,6 +200,7 @@ model User {
   profileEditRequests             ProviderProfileEdit[]
   customerProfileEdits            CustomerProfileEdit[] @relation("CustomerProfileEdit_user")
   customerProfileEditRequestsMade CustomerProfileEdit[] @relation("CustomerProfileEdit_requester")
+  pushSubscriptions               Json?
 
   @@index([role, status])
   @@index([mobile])
@@ -212,6 +256,7 @@ model ProviderProfile {
   products      ProviderProduct[]
   deliveryZones DeliveryZone[]
   orders        Order[]               @relation("ProviderOrders")
+  approvals     ApprovalRequest[]
   suggestions   ProductSuggestion[]
   reviews       Review[]
   edits         ProviderProfileEdit[]

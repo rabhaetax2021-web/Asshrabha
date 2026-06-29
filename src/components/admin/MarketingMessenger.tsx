@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
 import { showToast } from '@/components/ui/toast'
 
 type UserRow = { id: string; mobile: string; nameEN?: string | null; nameAR?: string | null }

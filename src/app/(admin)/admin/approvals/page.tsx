@@ -1,5 +1,6 @@
 import React from 'react'
 import { getPendingProviders, getPendingProviderProducts, getPendingSuggestions } from '@/lib/actions/admin.actions'
+import { listPendingApprovals } from '@/lib/actions/approval.actions'
 import ProviderProductActions from '@/components/admin/ProviderProductActions'
 import SuggestionActions from '@/components/admin/SuggestionActions'
 import ProviderActions from '@/components/admin/ProviderActions'
@@ -10,7 +11,11 @@ export default async function ApprovalsPage() {
     getPendingProviders(),
     getPendingProviderProducts(),
     getPendingSuggestions(),
+    
   ])
+
+  const approvalRequests = await listPendingApprovals()
+  
 
   return (
     <section className="admin-approvals container">
@@ -74,6 +79,36 @@ export default async function ApprovalsPage() {
             </tr>
           ))}
           {suggestions.length === 0 && <tr><td colSpan={4}>No suggestions.</td></tr>}
+        </tbody>
+        </table>
+      </div>
+
+      <h2>Order Modification Requests</h2>
+      <div className="ui-table-wrap">
+        <table className="ui-table">
+        <thead>
+          <tr><th>Request ID</th><th className="hide-sm">Provider</th><th>Order</th><th>Action</th><th>Submitted</th><th>Status</th><th>Admin</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {approvalRequests.map(r => (
+            <tr key={r.id}>
+              <td>{r.id}</td>
+              <td>{r.provider?.shopNameEN || r.provider?.shopNameAR}</td>
+              <td>{r.orderId}</td>
+              <td>{r.type}</td>
+              <td>{new Date(r.createdAt).toLocaleString()}</td>
+              <td>{r.state}</td>
+              <td>{r.reviewedBy}</td>
+              <td>
+                <form method="post" action="/api/admin/approvals/requests">
+                  <input type="hidden" name="id" value={r.id} />
+                  <button name="action" value="approve" className="btn btn-primary">Approve</button>
+                  <button name="action" value="reject" className="btn btn-outline">Reject</button>
+                </form>
+              </td>
+            </tr>
+          ))}
+          {approvalRequests.length === 0 && <tr><td colSpan={8}>No pending requests.</td></tr>}
         </tbody>
         </table>
       </div>

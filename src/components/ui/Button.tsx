@@ -1,15 +1,23 @@
 "use client"
-import React from 'react'
-import clsx from 'clsx'
+import type { ButtonHTMLAttributes } from 'react'
+import { cn } from '@/lib/utils/helpers'
 
 type Variant = 'primary' | 'outline' | 'ghost'
 type Size = 'sm' | 'md' | 'lg'
 
-export default function Button({ children, className, variant = 'primary', size = 'md', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: Size }) {
-  const variantClass = variant === 'primary' ? 'btn-primary' : variant === 'outline' ? 'btn-outline' : 'btn-ghost'
-  const sizeClass = size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : ''
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: Size }
+
+export default function Button({ children, className, variant = 'primary', size = 'md', ...props }: ButtonProps) {
   return (
-    <button className={clsx('btn', variantClass, sizeClass, className)} {...props}>
+    <button
+      className={cn(
+        'btn',
+        variant === 'primary' ? 'btn-primary' : variant === 'outline' ? 'btn-outline' : 'btn-ghost',
+        size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : undefined,
+        className
+      )}
+      {...props}
+    >
       {children}
     </button>
   )
