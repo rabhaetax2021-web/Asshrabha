@@ -15,15 +15,24 @@ export default function PwaInstallPage() {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false
+    if (typeof window === 'undefined') return false;
     try {
-      return window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true
-    } catch (e) { return false }
+      return (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true
+      );
+    } catch (e) {
+      return false;
+    }
   });
-  const [isIos, setIsIos] = useState<boolean>(() => typeof window !== 'undefined' && /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase()));
-  const [isAndroid, setIsAndroid] = useState<boolean>(() => typeof window !== 'undefined' && /android/.test(navigator.userAgent.toLowerCase()));
 
-  // Detect if already installed as PWA and platform
+  const [isIos, setIsIos] = useState<boolean>(() =>
+    typeof window !== 'undefined' && /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase())
+  );
+  const [isAndroid, setIsAndroid] = useState<boolean>(() =>
+    typeof window !== 'undefined' && /android/.test(navigator.userAgent.toLowerCase())
+  );
+
   useEffect(() => {
     const checkStandalone = () => {
       const standalone =
@@ -37,7 +46,6 @@ export default function PwaInstallPage() {
 
     checkStandalone();
 
-    // Listen for display-mode changes
     const mediaQuery = window.matchMedia('(display-mode: standalone)');
     const handleChange = (e: MediaQueryListEvent) => {
       if (e.matches) {
@@ -46,14 +54,12 @@ export default function PwaInstallPage() {
     };
     mediaQuery.addEventListener('change', handleChange);
 
-    // Capture Android install prompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Listen for appinstalled event
     const handleAppInstalled = () => {
       setDeferredPrompt(null);
       router.push('/login');
@@ -68,12 +74,11 @@ export default function PwaInstallPage() {
   }, [router]);
 
   const handleInstallAndroid = useCallback(async () => {
-    if (deferredPrompt) {
-      await deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      if (choice.outcome === 'accepted') {
-        router.push('/login');
-      }
+    if (!deferredPrompt) return;
+    await deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    if (choice.outcome === 'accepted') {
+      router.push('/login');
     }
   }, [deferredPrompt, router]);
 
@@ -115,275 +120,96 @@ export default function PwaInstallPage() {
   const steps = selectedPlatform === 'android' ? androidSteps : iphoneSteps;
 
   if (isStandalone) {
-    return null; // Will redirect
+    return null;
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 'var(--space-6)',
-        background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0f0f23 100%)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Background glow */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '-20%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '600px',
-          height: '600px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '420px' }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
-          <div
-            style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: 'var(--radius-xl)',
-              background: 'var(--gradient-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto var(--space-4)',
-              fontSize: 'var(--text-3xl)',
-              fontWeight: 'var(--font-bold)',
-              color: 'white',
-              boxShadow: 'var(--shadow-primary-lg)',
-              animation: 'scaleIn var(--transition-slow) ease-out',
-            }}
-          >
-            أ
+    <main className="pwa-page" dir={isIos || isAndroid ? 'rtl' : undefined}>
+      <div className="pwa-card">
+        <header className="pwa-card-header">
+          <div style={{ display: 'grid', gap: '0.5rem', alignItems: 'center' }}>
+            <div
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: '24px',
+                background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+                display: 'grid',
+                placeItems: 'center',
+                color: 'white',
+                fontSize: '1.75rem',
+                fontWeight: 700,
+                boxShadow: 'var(--shadow-primary-lg)',
+              }}
+            >
+              أ
+            </div>
           </div>
-          <h1
-            style={{
-              fontSize: 'var(--text-2xl)',
-              fontWeight: 'var(--font-bold)',
-              color: 'white',
-              marginBottom: 'var(--space-2)',
-              animation: 'fadeInUp var(--transition-slow) ease-out 0.1s both',
-            }}
-          >
-            Welcome to Ashrabha
-          </h1>
-          <p
-            dir="rtl"
-            style={{
-              fontSize: 'var(--text-xl)',
-              fontWeight: 'var(--font-semibold)',
-              color: 'white',
-              marginBottom: 'var(--space-2)',
-              textAlign: 'center',
-              animation: 'fadeInUp var(--transition-slow) ease-out 0.2s both',
-            }}
-          >
-            مرحبا بك في أشربها
-          </p>
-          <p
-            style={{
-              color: 'var(--text-muted)',
-              fontSize: 'var(--text-sm)',
-              animation: 'fadeInUp var(--transition-slow) ease-out 0.3s both',
-            }}
-          >
-            Choose your phone type to install the app
-          </p>
-          <p
-            style={{
-              color: 'var(--text-muted)',
-              fontSize: 'var(--text-sm)',
-              animation: 'fadeInUp var(--transition-slow) ease-out 0.3s both',
-            }}
-          >
-            اختر نوع هاتفك لتثبيت التطبيق
-          </p>
-        </div>
+          <div>
+            <h1>Welcome to Ashrabha</h1>
+            <p>Choose your phone type to install the app</p>
+            <p>اختر نوع هاتفك لتثبيت التطبيق</p>
+          </div>
+        </header>
 
-        {/* Platform Selection */}
         {!selectedPlatform && (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 'var(--space-4)',
-              animation: 'fadeInUp var(--transition-slow) ease-out 0.4s both',
-            }}
-          >
+          <div className="pwa-platform-grid">
             {platformButtons.map((btn) => (
               <button
                 key={btn.key}
+                type="button"
+                className={`pwa-platform-card${selectedPlatform === btn.key ? ' active' : ''}`}
                 onClick={() => setSelectedPlatform(btn.key)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 'var(--space-3)',
-                  padding: 'var(--space-6) var(--space-4)',
-                  borderRadius: 'var(--radius-xl)',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  backdropFilter: 'blur(10px)',
-                  color: 'white',
-                  cursor: 'pointer',
-                  transition: 'all var(--transition-fast) ease',
-                  fontSize: 'var(--text-lg)',
-                  fontWeight: 'var(--font-semibold)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(99,102,241,0.15)';
-                  e.currentTarget.style.borderColor = 'rgba(99,102,241,0.4)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
               >
                 {btn.icon}
-                {btn.label}
+                <span>{btn.label}</span>
               </button>
             ))}
           </div>
         )}
 
-        {/* Install Instructions */}
         {selectedPlatform && (
-          <div
-            className="glass"
-            style={{
-              borderRadius: 'var(--radius-xl)',
-              padding: 'var(--space-6)',
-              animation: 'fadeInUp var(--transition-normal) ease-out',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
+          <section className="glass" style={{ borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
               <button
+                type="button"
                 onClick={() => setSelectedPlatform(null)}
                 style={{
                   background: 'none',
                   border: 'none',
                   color: 'var(--text-muted)',
                   cursor: 'pointer',
-                  fontSize: 'var(--text-lg)',
-                  padding: 'var(--space-1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  fontSize: '1rem',
+                  padding: 0,
                 }}
               >
                 ←
               </button>
-              <h2
-                style={{
-                  fontSize: 'var(--text-lg)',
-                  fontWeight: 'var(--font-bold)',
-                  color: 'white',
-                }}
-              >
+              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'white' }}>
                 {selectedPlatform === 'android' ? 'Android' : 'iPhone'} Installation
               </h2>
             </div>
 
-            {/* Native install button for Android */}
             {selectedPlatform === 'android' && deferredPrompt && (
-              <button
-                onClick={handleInstallAndroid}
-                style={{
-                  width: '100%',
-                  padding: 'var(--space-3) var(--space-4)',
-                  borderRadius: 'var(--radius-lg)',
-                  background: 'var(--gradient-primary)',
-                  color: 'white',
-                  fontSize: 'var(--text-base)',
-                  fontWeight: 'var(--font-semibold)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  marginBottom: 'var(--space-6)',
-                  boxShadow: 'var(--shadow-primary)',
-                  transition: 'transform var(--transition-fast) ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.02)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
-              >
+              <button type="button" className="btn btn-primary pwa-install-button" onClick={handleInstallAndroid}>
                 تثبيت التطبيق الآن / Install App Now
               </button>
             )}
 
-            <ol
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 'var(--space-4)',
-                padding: 0,
-                margin: 0,
-                listStyle: 'none',
-              }}
-            >
+            <ol className="pwa-steps">
               {steps.map((step, index) => (
-                <li
-                  key={index}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 'var(--space-3)',
-                    animation: `fadeInUp var(--transition-normal) ease-out ${index * 0.1}s both`,
-                  }}
-                >
-                  <span
-                    style={{
-                      minWidth: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      background: 'var(--gradient-primary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 'var(--text-sm)',
-                      fontWeight: 'var(--font-bold)',
-                      color: 'white',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {index + 1}
-                  </span>
+                <li key={index} style={{ animationDelay: `${index * 0.08}s` }}>
+                  <span>{index + 1}</span>
                   <div>
-                    <p style={{ color: 'white', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-medium)' }}>
-                      {step.text}
-                    </p>
-                    <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', marginTop: '2px' }}>
-                      {step.en}
-                    </p>
+                    <p>{step.text}</p>
+                    <p>{step.en}</p>
                   </div>
                 </li>
               ))}
             </ol>
-
-            {/* In-card login hint removed: login only from PWA */}
-          </div>
+          </section>
         )}
-
-        {/* Bottom fallback removed: login only available from PWA */}
       </div>
-    </div>
+    </main>
   );
 }

@@ -73,6 +73,8 @@ function getFieldLabel(field: string) {
       return { en: 'Landmark', ar: 'المعلم' }
     case 'isDefault':
       return { en: 'Default address', ar: 'العنوان الافتراضي' }
+    case 'defaultAddress':
+      return { en: 'Default address', ar: 'العنوان الافتراضي' }
     default:
       return { en: field, ar: field }
   }
