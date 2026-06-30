@@ -274,10 +274,12 @@ export default async function ProfilePage() {
         </DetailCard>
 
         {/* Saved Addresses */}
-        {fullUser.addresses.length > 0 && (
-          <DetailCard title="Saved Addresses" icon="🏠">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-              {fullUser.addresses.map((addr) => (
+        <DetailCard title="Saved Addresses" icon="🏠">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            {fullUser.addresses.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>No saved addresses yet.</p>
+            ) : (
+              fullUser.addresses.map((addr) => (
                 <div key={addr.id} style={{
                   padding: 'var(--space-3)',
                   borderRadius: 'var(--radius-md)',
@@ -295,10 +297,13 @@ export default async function ProfilePage() {
                     {addr.addressLine}, {addr.city}{addr.area ? `, ${addr.area}` : ''}
                   </p>
                 </div>
-              ))}
-            </div>
-          </DetailCard>
-        )}
+              ))
+            )}
+            <Link href="/shop/profile/addresses" className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', marginTop: 'var(--space-2)' }}>
+              Manage Addresses
+            </Link>
+          </div>
+        </DetailCard>
       </div>
 
       <ProfileActions />

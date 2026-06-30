@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { getErrorMessage } from '@/lib/errors'
 
 export default function CustomerEditForm({ user }: { user: any }) {
@@ -14,18 +15,6 @@ export default function CustomerEditForm({ user }: { user: any }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Address fields
-  const [addressLabel, setAddressLabel] = useState('Home')
-  const [fullName, setFullName] = useState(user?.nameEN || user?.nameAR || '')
-  const [addressMobile, setAddressMobile] = useState(user?.mobile || '')
-  const [addressLine, setAddressLine] = useState('')
-  const [locationId, setLocationId] = useState('')
-  const [city, setCity] = useState('')
-  const [area, setArea] = useState('')
-  const [landmark, setLandmark] = useState('')
-  const [isDefault, setIsDefault] = useState(false)
-  const [locations, setLocations] = useState<{ id: string; nameEN?: string; nameAR?: string }[]>([])
-
   async function uploadFile(f: File) {
     const fd = new FormData()
     fd.append('file', f)
@@ -34,15 +23,6 @@ export default function CustomerEditForm({ user }: { user: any }) {
     const j = await r.json()
     return j?.path || j?.data?.path || ''
   }
-
-  useEffect(() => {
-    let mounted = true
-    fetch('/api/admin/locations')
-      .then(r => r.json())
-      .then(j => { if (!mounted) return; setLocations(j?.ok ? j.locations : []) })
-      .catch(() => { if (mounted) setLocations([]) })
-    return () => { mounted = false }
-  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,21 +36,6 @@ export default function CustomerEditForm({ user }: { user: any }) {
           mobile: mobile || null,
           email: email || null,
           avatar: avatar || null,
-        }
-      }
-
-      // Include address if address line and governorate are provided
-      if (addressLine && locationId) {
-        changes.address = {
-          label: addressLabel || 'Home',
-          fullName: fullName || nameEN || nameAR || 'Customer',
-          mobile: addressMobile || mobile || '',
-          addressLine: addressLine || '',
-          city: city || '',
-          locationId,
-          area: area || null,
-          landmark: landmark || null,
-          isDefault,
         }
       }
 
@@ -126,50 +91,13 @@ export default function CustomerEditForm({ user }: { user: any }) {
 
       <hr style={{ margin: 'var(--space-6) 0', border: '1px solid var(--border-light)' }} />
 
-      <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-4)', color: 'var(--text-primary)' }}>
-        📍 Address Information
-      </h3>
-      <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-4)' }}>
-        Fill in your delivery address. Select your governorate from the list and add street details.
-      </p>
-      <div className="form-row">
-        <label className="label">Address Label</label>
-        <select className="input" value={addressLabel} onChange={e => setAddressLabel(e.target.value)}>
-          <option value="Home">Home</option>
-          <option value="Work">Work</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      <div className="form-row">
-        <label className="label">Full Name</label>
-        <input className="input" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Name for delivery" />
-      </div>
-      <div className="form-row">
-        <label className="label">Address Phone</label>
-        <input className="input" value={addressMobile} onChange={e => setAddressMobile(e.target.value)} placeholder="Phone number for delivery" />
-      </div>
-      <div className="form-row">
-        <label className="label">Address Line</label>
-        <input className="input" value={addressLine} onChange={e => setAddressLine(e.target.value)} placeholder="Street, building, apartment number" required />
-      </div>
-      <div className="form-row">
-        <label className="label">Governorate</label>
-        <select className="input" value={locationId} onChange={e => { setLocationId(e.target.value); const sel = locations.find(l => l.id === e.target.value); setCity(sel ? (sel.nameEN || sel.nameAR || '') : '') }} required>
-          <option value="">-- Select Governorate --</option>
-          {locations.map(l => <option key={l.id} value={l.id}>{l.nameAR || l.nameEN || l.id}</option>)}
-        </select>
-      </div>
-      <div className="form-row">
-        <label className="label">Area / Neighborhood</label>
-        <input className="input" value={area} onChange={e => setArea(e.target.value)} placeholder="Area or neighborhood" />
-      </div>
-      <div className="form-row">
-        <label className="label">Landmark</label>
-        <input className="input" value={landmark} onChange={e => setLandmark(e.target.value)} placeholder="Nearby landmark (optional)" />
-      </div>
-      <div className="form-row" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-        <input type="checkbox" id="isDefault" checked={isDefault} onChange={e => setIsDefault(e.target.checked)} />
-        <label htmlFor="isDefault" style={{ margin: 0, fontWeight: 'var(--font-medium)' }}>Set as default address</label>
+      <div className="card" style={{ padding: 'var(--space-4)', background: 'var(--bg-secondary)' }}>
+        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+          Addresses are managed separately. Use the dedicated address manager to add, remove, or update your saved delivery addresses.
+        </p>
+        <Link href="/shop/profile/addresses" className="btn btn-ghost" style={{ marginTop: 'var(--space-3)', width: 'fit-content' }}>
+          Manage Addresses
+        </Link>
       </div>
 
       {error && <div className="form-error" style={{ marginTop: 'var(--space-4)' }}>{error}</div>}

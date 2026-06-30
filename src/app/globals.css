@@ -3376,10 +3376,11 @@ html {
 
 .notification-menu {
   position: absolute;
-  right: 0;
+  inset-inline-end: 0;
   top: calc(100% + var(--space-2));
-  width: min(360px, 100vw - var(--space-4));
-  max-height: 520px;
+  width: min(360px, calc(100vw - var(--space-4)));
+  max-width: calc(100vw - var(--space-4));
+  max-height: min(520px, calc(100dvh - var(--space-4)));
   background: var(--bg-elevated);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-xl);
@@ -3447,7 +3448,29 @@ html {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-3);
   background: var(--bg-secondary);
+}
+
+@media (max-width: 640px) {
+  .notification-menu {
+    inset-inline: var(--space-2);
+    right: var(--space-2);
+    left: var(--space-2);
+    width: auto;
+    max-width: none;
+    max-height: min(480px, calc(100dvh - var(--space-4)));
+  }
+
+  .notification-menu-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .notification-permission-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .notification-error {

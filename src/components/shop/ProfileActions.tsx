@@ -22,6 +22,9 @@ export default function ProfileActions() {
       <Link href="/shop/profile/edit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)' }}>
         <span>✏️</span> Edit Profile
       </Link>
+      <Link href="/shop/profile/addresses" className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)' }}>
+        <span>📍</span> Manage Addresses
+      </Link>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
         <Link href="/shop/wallet" className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)', fontSize: 'var(--text-sm)' }}>
           <span>💰</span> Wallet

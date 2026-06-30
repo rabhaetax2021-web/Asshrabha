@@ -2,6 +2,7 @@ import React from 'react'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import AdminEditActions from '@/components/admin/AdminEditActions'
+import { buildProviderEditChangeSummary } from '@/lib/utils/customer-profile-edit-summary'
 
 export default async function ProviderProfileEditsPage() {
   const current = await getCurrentUser()
@@ -21,12 +22,23 @@ export default async function ProviderProfileEditsPage() {
                 <div>Requester: {e.requester?.nameEN || e.requester?.nameAR || e.requester?.mobile}</div>
                 <div>Status: {e.status}</div>
                 <div>Created: {new Date(e.createdAt).toLocaleString()}</div>
+                {e.adminNote ? <div style={{ marginTop: 4 }}>Admin note: {e.adminNote}</div> : null}
               </div>
               <div>
                 <AdminEditActions editId={e.id} type="provider" />
               </div>
             </div>
-            <pre style={{ marginTop: 8, whiteSpace: 'pre-wrap' }}>{JSON.stringify(e.changes, null, 2)}</pre>
+            <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
+              {buildProviderEditChangeSummary(e.changes as Record<string, unknown> | null | undefined, e.provider as Record<string, unknown> | null | undefined, undefined).map((item) => (
+                <div key={item.key} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 10, background: '#f8fafc' }}>
+                  <div style={{ fontWeight: 700, marginBottom: 6 }}>{item.titleAR} / {item.titleEN}</div>
+                  <div style={{ color: '#334155' }}>
+                    <div><strong>من:</strong> {item.oldValueAR} / {item.oldValueEN}</div>
+                    <div><strong>إلى:</strong> {item.newValueAR} / {item.newValueEN}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Button from './Button'
 import Icon from './Icon'
 import { formatRelativeTime } from '@/lib/utils/helpers'
@@ -18,6 +19,7 @@ function urlBase64ToUint8Array(base64String: string) {
 }
 
 export default function NotificationBell() {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<NotificationItem[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -25,6 +27,53 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+
+  const playNotificationSound = async () => {
+    if (typeof window === 'undefined') return
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
+    }
+
+    const audioCtx = audioContextRef.current
+    if (audioCtx.state === 'suspended') {
+      await audioCtx.resume().catch(() => null)
+    }
+
+    const gainNode = audioCtx.createGain()
+    const filter = audioCtx.createBiquadFilter()
+    const oscillator = audioCtx.createOscillator()
+    const oscillator2 = audioCtx.createOscillator()
+
+    const now = audioCtx.currentTime
+    gainNode.gain.setValueAtTime(0.001, now)
+    gainNode.gain.exponentialRampToValueAtTime(0.85, now + 0.03)
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.8)
+
+    filter.type = 'bandpass'
+    filter.frequency.setValueAtTime(880, now)
+    filter.Q.setValueAtTime(8, now)
+
+    oscillator.type = 'triangle'
+    oscillator.frequency.setValueAtTime(920, now)
+    oscillator.frequency.exponentialRampToValueAtTime(520, now + 0.45)
+
+    oscillator2.type = 'sawtooth'
+    oscillator2.frequency.setValueAtTime(1320, now)
+    oscillator2.detune.setValueAtTime(40, now)
+    oscillator2.frequency.exponentialRampToValueAtTime(660, now + 0.45)
+
+    oscillator.connect(filter)
+    oscillator2.connect(filter)
+    filter.connect(gainNode)
+    gainNode.connect(audioCtx.destination)
+
+    oscillator.start(now)
+    oscillator2.start(now)
+    oscillator.stop(now + 0.8)
+    oscillator2.stop(now + 0.8)
+  }
+  const lastUnreadCount = useRef(0)
 
   const canPush = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'Notification' in window
 
@@ -67,6 +116,9 @@ export default function NotificationBell() {
           const notification = payload.payload as NotificationItem
           setItems((prev) => [notification, ...prev].slice(0, 20))
           setUnreadCount((count) => count + (notification.isRead ? 0 : 1))
+          if (!notification.isRead) {
+            playNotificationSound()
+          }
         }
         if (payload?.type === 'initial' && Array.isArray(payload.payload)) {
           setItems(payload.payload)
@@ -117,7 +169,7 @@ export default function NotificationBell() {
 
   const requestPermission = async () => {
     if (!canPush) {
-      setError('Browser notifications are not supported in this environment.')
+      setError(labels.unsupported)
       return
     }
 
@@ -127,8 +179,8 @@ export default function NotificationBell() {
       if (result === 'granted') {
         await registerSubscription()
       }
-    } catch (err) {
-      setError('Unable to request notification permission.')
+    } catch {
+      setError(labels.permissionError)
     }
   }
 
@@ -140,7 +192,7 @@ export default function NotificationBell() {
 
       if (!subscription) {
         if (!publicKey) {
-          setError('Push subscription is not configured. Please provide NEXT_PUBLIC_VAPID_PUBLIC_KEY.')
+          setError(labels.subscriptionError)
           return
         }
         subscription = await registration.pushManager.subscribe({
@@ -156,24 +208,38 @@ export default function NotificationBell() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscription }),
       })
-    } catch (err) {
-      setError('Unable to register push subscription.')
+    } catch {
+      setError(labels.registerError)
     } finally {
       setLoading(false)
     }
   }
 
   const panelLabel = useMemo(() => {
-    if (unreadCount === 0) return 'No new notifications'
-    return `${unreadCount} new notification${unreadCount > 1 ? 's' : ''}`
+    if (unreadCount === 0) return 'لا توجد إشعارات جديدة'
+    return unreadCount === 1 ? 'إشعار جديد واحد' : `${unreadCount} إشعارات جديدة`
   }, [unreadCount])
+
+  const labels = {
+    open: 'فتح الإشعارات',
+    title: 'الإشعارات',
+    markAllRead: 'تحديد الكل كمقروء',
+    enableBrowser: 'فعّل إشعارات المتصفح للتحديثات الفورية.',
+    enable: 'تفعيل',
+    saving: 'جارٍ الحفظ…',
+    empty: 'لا توجد إشعارات بعد.',
+    unsupported: 'إشعارات المتصفح غير مدعومة في هذه البيئة.',
+    permissionError: 'تعذر طلب إذن الإشعارات.',
+    registerError: 'تعذر تسجيل اشتراك الإشعارات.',
+    subscriptionError: 'تعذر تهيئة اشتراك الإشعارات. يرجى توفير NEXT_PUBLIC_VAPID_PUBLIC_KEY.',
+  }
 
   return (
     <div className="notification-bell" ref={panelRef}>
       <button
         type="button"
         className="btn-icon btn-ghost"
-        aria-label="Open notifications"
+        aria-label={labels.open}
         onClick={() => setOpen((prev) => !prev)}
       >
         <Icon name="Bell" size={20} />
@@ -183,19 +249,19 @@ export default function NotificationBell() {
         <div className="notification-menu">
           <div className="notification-menu-header">
             <div>
-              <strong>Notifications</strong>
+              <strong>{labels.title}</strong>
               <div className="notification-menu-subtitle">{panelLabel}</div>
             </div>
             <button type="button" className="btn btn-sm btn-ghost" onClick={markAllRead}>
-              Mark all read
+              {labels.markAllRead}
             </button>
           </div>
 
           {canPush && permission !== 'granted' && (
             <div className="notification-permission-banner">
-              <div>Enable browser notifications for push updates.</div>
+              <div>{labels.enableBrowser}</div>
               <Button size="sm" onClick={requestPermission} disabled={loading}>
-                {loading ? 'Saving…' : 'Enable' }
+                {loading ? labels.saving : labels.enable}
               </Button>
             </div>
           )}
@@ -204,27 +270,82 @@ export default function NotificationBell() {
 
           <div className="notification-list">
             {items.length === 0 ? (
-              <div className="notification-empty">No notifications yet.</div>
+              <div className="notification-empty">{labels.empty}</div>
             ) : (
-              items.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`notification-item ${item.isRead ? '' : 'notification-item-unread'}`}
-                  onClick={() => {
-                    if (!item.isRead) updateReadState([item.id])
-                    if (item.data?.url && typeof item.data.url === 'string') {
-                      window.location.href = item.data.url
-                    }
-                  }}
-                >
-                  <div className="notification-item-body">
-                    <div className="notification-item-title">{item.titleEN || item.titleAR}</div>
-                    <div className="notification-item-text">{item.bodyEN || item.bodyAR || ''}</div>
-                  </div>
-                  <div className="notification-item-time">{formatRelativeTime(item.createdAt, document.documentElement.lang === 'ar' ? 'ar' : 'en')}</div>
-                </button>
-              ))
+              items.map((item) => {
+                const data = item.data as Record<string, unknown> | null
+                const url = data && typeof data.url === 'string' ? data.url : undefined
+                const type = data && typeof data.type === 'string' ? data.type : undefined
+                const editId = data && typeof data.editId === 'string' ? data.editId : undefined
+                const defaultRoute = (() => {
+                  if (!type) return undefined
+                  switch (type) {
+                    case 'customer_profile_edit_request':
+                      return `/admin/customer-profile-edits${editId ? `?editId=${encodeURIComponent(editId)}` : ''}`
+                    case 'provider_profile_edit_request':
+                      return `/admin/provider-profile-edits${editId ? `?editId=${encodeURIComponent(editId)}` : ''}`
+                    case 'customer_profile_edit_submitted':
+                      return `/admin/customer-profile-edits${editId ? `?editId=${encodeURIComponent(editId)}` : ''}`
+                    case 'provider_profile_edit_submitted':
+                      return `/admin/provider-profile-edits${editId ? `?editId=${encodeURIComponent(editId)}` : ''}`
+                    case 'address_change_request':
+                      return `/admin/customer-profile-edits${editId ? `?editId=${encodeURIComponent(editId)}` : ''}`
+                    case 'address_change_submitted':
+                      return `/admin/customer-profile-edits${editId ? `?editId=${encodeURIComponent(editId)}` : ''}`
+                    case 'customer_profile_edit_approved':
+                    case 'customer_profile_edit_rejected':
+                      return `/admin/customer-profile-edits${editId ? `?editId=${encodeURIComponent(editId)}` : ''}`
+                    case 'provider_profile_edit_approved':
+                    case 'provider_profile_edit_rejected':
+                      return `/admin/provider-profile-edits${editId ? `?editId=${encodeURIComponent(editId)}` : ''}`
+                    default:
+                      return undefined
+                  }
+                })()
+                const href = url || defaultRoute
+                const itemClassName = `notification-item ${item.isRead ? '' : 'notification-item-unread'}`
+
+                const content = (
+                  <>
+                    <div className="notification-item-body">
+                      <div className="notification-item-title">{item.titleAR || item.titleEN}</div>
+                      <div className="notification-item-text">{item.bodyAR || item.bodyEN || ''}</div>
+                    </div>
+                    <div className="notification-item-time">
+                      {formatRelativeTime(item.createdAt, document.documentElement.lang === 'ar' ? 'ar' : 'en')}
+                    </div>
+                  </>
+                )
+
+                if (href) {
+                  return (
+                    <button
+                      key={item.id}
+                      className={itemClassName}
+                      type="button"
+                      onClick={() => {
+                        if (!item.isRead) updateReadState([item.id])
+                        router.push(href)
+                      }}
+                    >
+                      {content}
+                    </button>
+                  )
+                }
+
+                return (
+                  <button
+                    key={item.id}
+                    className={itemClassName}
+                    type="button"
+                    onClick={() => {
+                      if (!item.isRead) updateReadState([item.id])
+                    }}
+                  >
+                    {content}
+                  </button>
+                )
+              })
             )}
           </div>
         </div>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { getErrorMessage } from '@/lib/errors'
+import { createNotification } from '@/lib/actions/notification.actions'
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,11 +48,49 @@ export async function POST(request: NextRequest) {
         }
       }
       await prisma.providerProfileEdit.update({ where: { id }, data: { status: 'APPROVED', adminNote: adminNote || null } })
+      try {
+        const prov = await prisma.providerProfile.findUnique({ where: { id: edit.providerId }, select: { userId: true } })
+        if (prov) {
+          await createNotification(
+            prov.userId,
+            'SYSTEM',
+            'Provider profile edit approved',
+            'تمت الموافقة على تعديل ملف المزود',
+            {
+              type: 'provider_profile_edit_approved',
+              editId: edit.id,
+              bodyEN: `Your provider profile changes were approved by admin.${adminNote ? ` Note: ${adminNote}` : ''}`,
+              bodyAR: `تمت الموافقة على تعديلات ملف المزود الخاص بك من الإدارة.${adminNote ? ` ملاحظة: ${adminNote}` : ''}`,
+            }
+          )
+        }
+      } catch (e) {
+        console.error('notify provider approved error', e)
+      }
       return NextResponse.json({ ok: true })
     }
 
     if (action === 'reject') {
       await prisma.providerProfileEdit.update({ where: { id }, data: { status: 'REJECTED', adminNote: adminNote || null } })
+      try {
+        const prov = await prisma.providerProfile.findUnique({ where: { id: edit.providerId }, select: { userId: true } })
+        if (prov) {
+          await createNotification(
+            prov.userId,
+            'SYSTEM',
+            'Provider profile edit rejected',
+            'تم رفض تعديل ملف المزود',
+            {
+              type: 'provider_profile_edit_rejected',
+              editId: edit.id,
+              bodyEN: `Your provider profile changes were rejected by admin.${adminNote ? ` Note: ${adminNote}` : ''}`,
+              bodyAR: `تم رفض تعديلات ملف المزود الخاص بك من الإدارة.${adminNote ? ` ملاحظة: ${adminNote}` : ''}`,
+            }
+          )
+        }
+      } catch (e) {
+        console.error('notify provider rejected error', e)
+      }
       return NextResponse.json({ ok: true })
     }
 

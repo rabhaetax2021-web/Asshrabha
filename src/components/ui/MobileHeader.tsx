@@ -1,8 +1,15 @@
 "use client"
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import Icon from './Icon'
 
 export default function MobileHeader() {
+  const pathname = usePathname()
+
+  if (!pathname || !pathname.startsWith('/shop')) {
+    return null
+  }
+
   return (
     <header className="mobile-header">
       <div className="mobile-header-left">
@@ -14,7 +21,7 @@ export default function MobileHeader() {
         </Link>
       </div>
       <div className="mobile-header-center">
-        <Link href="/shop/search" className="search-link">Search</Link>
+        <Link href="/shop/search" className="search-link">Ashrabha-أشربها</Link>
       </div>
       <div className="mobile-header-right">
         <Link href="/shop/cart" aria-label="Cart"><Icon name="ShoppingCart" /></Link>

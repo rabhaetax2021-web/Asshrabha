@@ -33,7 +33,7 @@ export default async function AdminRootLayout({ children }: { children: React.Re
         <ErrorRecovery />
         <MobileHeader />
         <AdminSidebar initialLocale={initialLocale} />
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <Topbar />
           <main className="admin-main">{children}</main>
         </div>

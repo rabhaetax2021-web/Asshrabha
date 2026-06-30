@@ -7,7 +7,7 @@ import NotificationBell from './NotificationBell'
 export default function Topbar({ title }: { title?: string }) {
   const { theme, toggle } = useTheme()
   return (
-    <header className="topbar" style={{ height: 'var(--topbar-height)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 var(--space-6)', borderBottom: '1px solid var(--border-light)', background: 'var(--bg-elevated)' }}>
+    <header className="topbar" style={{ height: 'var(--topbar-height)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 var(--space-6)', borderBottom: '1px solid var(--border-light)', background: 'var(--bg-elevated)', position: 'sticky', top: 0, zIndex: 1100, width: '100%', flexShrink: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <Link href="/" className="logo"><strong>Asshrabha</strong></Link>
         {title && <h2 style={{ margin: 0, fontSize: 'var(--text-lg)' }}>{title}</h2>}

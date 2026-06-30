@@ -26,7 +26,7 @@ export default async function ProviderRootLayout({ children }: { children: React
   return (
     <div className="provider-root" style={{ display: 'flex', minHeight: '100vh' }}>
       <ProviderSidebar initialLocale={initialLocale} />
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Topbar />
         <main className="provider-main">{children}</main>
       </div>
