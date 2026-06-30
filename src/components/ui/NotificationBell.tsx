@@ -188,7 +188,15 @@ export default function NotificationBell() {
     try {
       const registration = await navigator.serviceWorker.ready
       let subscription = await registration.pushManager.getSubscription()
-      const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+      let publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+
+      if (!publicKey) {
+        const keyRes = await fetch('/api/notifications/vapid-key')
+        if (keyRes.ok) {
+          const keyData = await keyRes.json()
+          publicKey = typeof keyData.publicKey === 'string' ? keyData.publicKey : undefined
+        }
+      }
 
       if (!subscription) {
         if (!publicKey) {

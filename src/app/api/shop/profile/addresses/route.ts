@@ -4,6 +4,8 @@ import { getCurrentUser } from '@/lib/auth'
 import { getErrorMessage } from '@/lib/errors'
 import { createNotification } from '@/lib/actions/notification.actions'
 
+const MAX_ADDRESSES = 5
+
 export async function GET() {
   try {
     const current = await getCurrentUser()
@@ -27,8 +29,70 @@ export async function POST(request: NextRequest) {
     if (!current) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
     const body = await request.json()
-    const { address } = body as { address?: Record<string, unknown> }
+    const action = typeof body.action === 'string' ? body.action : 'create'
+    const address = body.address as Record<string, unknown> | undefined
+    const addressId = typeof body.addressId === 'string' ? body.addressId : undefined
+
+    if (action === 'set_default') {
+      if (!addressId) return NextResponse.json({ error: 'missing address id' }, { status: 400 })
+
+      const existing = await prisma.address.findFirst({ where: { id: addressId, userId: current.id } })
+      if (!existing) return NextResponse.json({ error: 'address not found' }, { status: 404 })
+
+      const requestRecord = await prisma.customerProfileEdit.create({
+        data: {
+          userId: current.id,
+          requestedBy: current.id,
+          changes: {
+            type: 'address_change',
+            action: 'set_default',
+            addressId,
+          },
+          status: 'PENDING',
+        },
+      })
+
+      const admins = await prisma.user.findMany({ where: { role: { in: ['ROOT_ADMIN', 'SUB_ADMIN'] } }, select: { id: true } })
+      await Promise.all(
+        admins.map((admin) =>
+          createNotification(
+            admin.id,
+            'SYSTEM',
+            'Address default change requested',
+            'تم طلب تغيير العنوان الافتراضي للمراجعة',
+            {
+              type: 'address_change_request',
+              editId: requestRecord.id,
+              userId: current.id,
+              bodyEN: 'A customer requested a default address change for review.',
+              bodyAR: 'طلب العميل تغيير العنوان الافتراضي للمراجعة.',
+            }
+          )
+        )
+      )
+
+      await createNotification(
+        current.id,
+        'SYSTEM',
+        'Default address update submitted',
+        'تم إرسال طلب تغيير العنوان الافتراضي للمراجعة',
+        {
+          type: 'address_change_submitted',
+          editId: requestRecord.id,
+          bodyEN: 'Your default address request was submitted for admin approval.',
+          bodyAR: 'تم إرسال طلب تغيير العنوان الافتراضي للموافقة من الإدارة.',
+        }
+      )
+
+      return NextResponse.json({ ok: true, pending: true, id: requestRecord.id })
+    }
+
     if (!address) return NextResponse.json({ error: 'missing fields' }, { status: 400 })
+
+    const count = await prisma.address.count({ where: { userId: current.id } })
+    if (count >= MAX_ADDRESSES) {
+      return NextResponse.json({ error: `Maximum of ${MAX_ADDRESSES} addresses reached` }, { status: 400 })
+    }
 
     const requestRecord = await prisma.customerProfileEdit.create({
       data: {

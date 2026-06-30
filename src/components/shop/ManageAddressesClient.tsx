@@ -23,6 +23,8 @@ type LocationOption = {
   nameAR?: string | null
 }
 
+const MAX_ADDRESSES = 5
+
 export default function ManageAddressesClient({ initialAddresses }: { initialAddresses: Address[] }) {
   const router = useRouter()
   const [addresses, setAddresses] = useState(initialAddresses)
@@ -64,6 +66,11 @@ export default function ManageAddressesClient({ initialAddresses }: { initialAdd
       return
     }
 
+    if (addresses.length >= MAX_ADDRESSES) {
+      showToast(`You can save up to ${MAX_ADDRESSES} addresses only.`, 'error')
+      return
+    }
+
     setLoading(true)
     try {
       const selectedLocation = locations.find((location) => location.id === selectedLocationId)
@@ -83,6 +90,27 @@ export default function ManageAddressesClient({ initialAddresses }: { initialAdd
       setForm({ label: 'Home', fullName: '', mobile: '', addressLine: '', city: '', area: '', landmark: '', isDefault: false })
       setSelectedLocationId('')
       showToast('Address change submitted for admin approval', 'success')
+      router.refresh()
+    } catch (err: unknown) {
+      showToast(getErrorMessage(err), 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function setDefaultAddress(id: string) {
+    if (addresses.find((address) => address.id === id)?.isDefault) return
+
+    setLoading(true)
+    try {
+      const res = await fetch('/api/shop/profile/addresses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'set_default', addressId: id }),
+      })
+      const j = await res.json()
+      if (!res.ok) throw new Error(j?.error || 'Failed to set default address')
+      showToast('Default address request submitted for admin approval', 'success')
       router.refresh()
     } catch (err: unknown) {
       showToast(getErrorMessage(err), 'error')
@@ -158,7 +186,14 @@ export default function ManageAddressesClient({ initialAddresses }: { initialAdd
           <input type="checkbox" checked={form.isDefault} onChange={(e) => setForm({ ...form, isDefault: e.target.checked })} />
           <label style={{ margin: 0 }}>Set as default address</label>
         </div>
-        <button type="submit" className="btn btn-primary" disabled={loading || !selectedLocationId}>{loading ? 'Saving...' : 'Save Address'}</button>
+        {addresses.length >= MAX_ADDRESSES ? (
+          <div style={{ color: 'var(--text-error)', fontSize: 'var(--text-sm)' }}>
+            You have reached the maximum of {MAX_ADDRESSES} saved addresses.
+          </div>
+        ) : null}
+        <button type="submit" className="btn btn-primary" disabled={loading || !selectedLocationId || addresses.length >= MAX_ADDRESSES}>
+          {loading ? 'Saving...' : 'Save Address'}
+        </button>
       </form>
 
       <div className="card" style={{ padding: 'var(--space-5)' }}>
@@ -179,7 +214,26 @@ export default function ManageAddressesClient({ initialAddresses }: { initialAdd
                   <div>{address.city}{address.area ? `, ${address.area}` : ''}</div>
                   {address.landmark ? <div>Landmark: {address.landmark}</div> : null}
                 </div>
-                <button type="button" className="btn btn-danger" style={{ marginTop: 'var(--space-3)' }} onClick={() => removeAddress(address.id)} disabled={loading}>Remove</button>
+                <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={() => removeAddress(address.id)}
+                    disabled={loading}
+                  >
+                    Remove
+                  </button>
+                  {!address.isDefault ? (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setDefaultAddress(address.id)}
+                      disabled={loading}
+                    >
+                      Mark as default
+                    </button>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>

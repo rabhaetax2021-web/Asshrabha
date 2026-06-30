@@ -69,6 +69,12 @@ export async function POST(request: NextRequest) {
             if (addressId) {
               await prisma.address.deleteMany({ where: { id: addressId, userId: edit.userId } })
             }
+          } else if (changes.action === 'set_default') {
+            const addressId = changes.addressId as string | undefined
+            if (addressId) {
+              await prisma.address.updateMany({ where: { userId: edit.userId }, data: { isDefault: false } })
+              await prisma.address.updateMany({ where: { id: addressId, userId: edit.userId }, data: { isDefault: true } })
+            }
           }
         } catch (e) { console.error('apply address change error', e) }
       } else if (changes.address) {
