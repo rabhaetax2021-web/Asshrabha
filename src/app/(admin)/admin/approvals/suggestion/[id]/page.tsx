@@ -12,8 +12,13 @@ export default async function SuggestionApprovalPage({ params }: { params: { id:
     return <div>Unauthorized</div>
   }
 
+  const suggestionId = params?.id
+  if (!suggestionId) {
+    return <div>Suggestion not found</div>
+  }
+
   const suggestion = await prisma.productSuggestion.findUnique({
-    where: { id: params.id },
+    where: { id: suggestionId },
     include: { provider: { include: { user: true } } },
   })
 
