@@ -1,25 +1,20 @@
-import React from 'react'
-import { prisma } from '@/lib/prisma'
+import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
 
 export default async function AdminWalletPage() {
-  const wallets = await prisma.wallet.findMany({ take: 100, orderBy: { updatedAt: 'desc' } })
+  const t = await getTranslations('admin')
 
   return (
     <section className="admin-wallet container">
-      <h1>Wallets</h1>
-      <div className="ui-table-wrap">
-        <table className="ui-table">
-          <thead><tr><th>User</th><th>Available</th><th className="hide-sm">Pending</th></tr></thead>
-          <tbody>
-            {wallets.map(w => (
-              <tr key={w.id}>
-                <td>{w.userId}</td>
-                <td>{w.availableBalance}</td>
-                <td className="hide-sm">{w.pendingBalance}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <h1>{t('clientWallets')}</h1>
+      <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--space-6)' }}>{t('clientWalletsDescription')}</p>
+      <div className="card" style={{ padding: 'var(--space-6)' }}>
+        <ul style={{ display: 'grid', gap: 'var(--space-3)', paddingLeft: 20 }}>
+          <li><Link href="/admin/wallet/deposit-requests">{t('depositRequests')}</Link></li>
+          <li><Link href="/admin/wallet/withdraw-requests">{t('withdrawRequests')}</Link></li>
+          <li><Link href="/admin/wallet/history">{t('history')}</Link></li>
+          <li><Link href="/admin/wallet/payment-methods">{t('paymentMethods')}</Link></li>
+        </ul>
       </div>
     </section>
   )

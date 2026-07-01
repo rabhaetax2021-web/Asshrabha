@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { isProvider } from '@/lib/utils/permissions'
 import { prisma } from '@/lib/prisma'
 import { getErrorMessage } from '@/lib/errors'
+import { createNotification } from '@/lib/actions/notification.actions'
 
 export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
@@ -94,21 +95,41 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     // If price was changed and we moved an APPROVED product to PENDING_APPROVAL,
     // notify admins and create an audit log entry
     if (priceChanged && prod.status === 'APPROVED') {
-      // create notifications for all admin users
       try {
         const admins = await prisma.user.findMany({ where: { role: { in: ['ROOT_ADMIN', 'SUB_ADMIN'] } }, select: { id: true } })
-        if (admins.length) {
-          const records = admins.map(a => ({
-            userId: a.id,
-            type: 'SYSTEM',
-            titleAR: 'طلب تغيير سعر',
-            titleEN: 'Price change requested',
-            bodyAR: `المزود طلب تغيير سعر المنتج ${prod.catalogProduct?.nameAR || prod.catalogProduct?.nameEN || ''}`,
-            bodyEN: `Provider requested a price change for ${prod.catalogProduct?.nameEN || prod.catalogProduct?.nameAR || ''}`,
-            data: { providerId: prod.providerId, providerProductId: updated.id, catalogProductId: prod.catalogProductId },
-          }))
-          try { await prisma.notification.createMany({ data: records as any }) } catch (e) { /* ignore */ }
-        }
+        const providerUser = await prisma.providerProfile.findUnique({ where: { id: prod.providerId }, select: { userId: true } })
+        await Promise.all([
+          ...admins.map((admin) =>
+            createNotification(
+              admin.id,
+              'PRICE_CHANGE_REQUEST',
+              'Price change requested',
+              'تم طلب تغيير سعر',
+              {
+                type: 'provider_price_change_request',
+                providerId: prod.providerId,
+                providerProductId: updated.id,
+                catalogProductId: prod.catalogProductId,
+                bodyEN: `Provider requested a price change for ${prod.catalogProduct?.nameEN || prod.catalogProduct?.nameAR || 'the product'}.`,
+                bodyAR: `طلب مزود تغيير سعر المنتج ${prod.catalogProduct?.nameAR || prod.catalogProduct?.nameEN || 'المنتج'}.`,
+              }
+            )
+          ),
+          ...(providerUser?.userId ? [createNotification(
+            providerUser.userId,
+            'PRICE_CHANGE_REQUEST',
+            'Price change submitted',
+            'تم إرسال طلب تغيير السعر للمراجعة',
+            {
+              type: 'provider_price_change_request',
+              providerId: prod.providerId,
+              providerProductId: updated.id,
+              catalogProductId: prod.catalogProductId,
+              bodyEN: 'Your price change request was submitted for admin approval.',
+              bodyAR: 'تم إرسال طلب تغيير السعر الخاص بك للموافقة من الإدارة.',
+            }
+          )] : []),
+        ])
       } catch (e) {
         console.error('[provider-products] notify admins error', (e as any)?.message ?? e)
       }

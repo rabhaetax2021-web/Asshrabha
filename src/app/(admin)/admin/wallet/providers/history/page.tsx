@@ -3,13 +3,13 @@ import { getCurrentUser } from '@/lib/auth'
 import { isAdmin } from '@/lib/utils/permissions'
 import { prisma } from '@/lib/prisma'
 
-export default async function WalletHistoryPage({ searchParams }: { searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
+export default async function ProviderWalletHistoryPage({ searchParams }: { searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
   const current = await getCurrentUser()
   if (!current || !isAdmin(current.role as any)) return <div>Forbidden</div>
 
   const params = await searchParams
   const q = (params?.q || '').toString().trim()
-  const where: any = { wallet: { user: { role: 'CUSTOMER' } } }
+  const where: any = { wallet: { user: { role: 'PROVIDER' } } }
   if (q) {
     where.OR = [
       { wallet: { user: { mobile: { contains: q, mode: 'insensitive' } } } },
@@ -21,9 +21,9 @@ export default async function WalletHistoryPage({ searchParams }: { searchParams
 
   return (
     <section className="admin-page container">
-      <h1>Wallet History</h1>
-      <form style={{ marginBottom: 12 }} action="/admin/wallet/history" method="get">
-        <input name="q" defaultValue={q} placeholder="Search by user mobile or reference" className="input" style={{ width: 320 }} />
+      <h1>Provider Wallet History</h1>
+      <form style={{ marginBottom: 12 }} action="/admin/wallet/providers/history" method="get">
+        <input name="q" defaultValue={q} placeholder="Search by provider mobile or reference" className="input" style={{ width: 320 }} />
         <button className="btn btn-primary" style={{ marginLeft: 8 }}>Search</button>
       </form>
       <div className="card">

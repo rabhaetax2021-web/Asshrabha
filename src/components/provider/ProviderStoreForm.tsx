@@ -12,7 +12,6 @@ export default function ProviderStoreForm({ provider }: any) {
     descriptionAR: provider.descriptionAR || '',
     logo: provider?.logo || '',
     banner: provider?.banner || '',
-    locationPhoto: provider?.locationPhoto || '',
     defaultWholesaleUnit: (provider as any)?.defaultWholesaleUnit || '',
   })
   const [loading, setLoading] = useState(false)
@@ -28,7 +27,7 @@ export default function ProviderStoreForm({ provider }: any) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Failed')
-      showToast('Saved', 'success')
+      showToast(data?.status === 'pending-review' ? 'Your store changes were submitted for admin approval.' : 'Saved', 'success')
       window.location.reload()
     } catch (err: unknown) {
       showToast(getErrorMessage(err), 'error')
@@ -44,7 +43,7 @@ export default function ProviderStoreForm({ provider }: any) {
     return res.json()
   }
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, key: 'logo' | 'banner' | 'locationPhoto') => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, key: 'logo' | 'banner') => {
     const f = e.target.files?.[0]
     if (!f) return
     try {
@@ -84,10 +83,6 @@ export default function ProviderStoreForm({ provider }: any) {
       <label className="label">Banner
         <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'banner')} />
         {form.banner && <div style={{marginTop:8}}><img src={form.banner} alt="banner" style={{maxWidth:240,maxHeight:120}}/></div>}
-      </label>
-      <label className="label">Profile Photo
-        <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'locationPhoto')} />
-        {form.locationPhoto && <div style={{marginTop:8}}><img src={form.locationPhoto} alt="location" style={{maxWidth:240,maxHeight:120}}/></div>}
       </label>
       <label className="label">Default Wholesale Unit
         <select value={form.defaultWholesaleUnit} onChange={e => setForm({...form, defaultWholesaleUnit: e.target.value})}>

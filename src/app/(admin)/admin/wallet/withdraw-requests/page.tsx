@@ -8,7 +8,12 @@ export default async function WithdrawRequestsPage() {
   const current = await getCurrentUser()
   if (!current || !isAdmin(current.role as any)) return <div>Forbidden</div>
 
-  const requests = await prisma.withdrawRequest.findMany({ orderBy: { createdAt: 'desc' }, include: { wallet: { include: { user: true } } }, take: 200 })
+  const requests = await prisma.withdrawRequest.findMany({
+    where: { wallet: { user: { role: 'CUSTOMER' } } },
+    orderBy: { createdAt: 'desc' },
+    include: { wallet: { include: { user: true } } },
+    take: 200,
+  })
   return (
     <section className="admin-page container">
       <h1>Withdraw Requests</h1>

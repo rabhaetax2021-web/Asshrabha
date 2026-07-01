@@ -3,8 +3,9 @@ import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 
-export default async function ShopSearchPage({ searchParams }: { searchParams?: any }) {
-  const q = (searchParams?.q || '').toString().trim()
+export default async function ShopSearchPage({ searchParams }: { searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
+  const params = await searchParams
+  const q = (params?.q || '').toString().trim()
   const current = await getCurrentUser()
   const isShop = !!current && (current.role === 'PROVIDER' || current.customerType === 'SHOP')
   let preferredLocationId: string | null = null

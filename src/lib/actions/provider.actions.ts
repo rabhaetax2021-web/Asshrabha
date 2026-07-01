@@ -1,7 +1,16 @@
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { createNotification } from './notification.actions'
+import { getCurrentUser } from '@/lib/auth'
 
 export async function getFirstProvider() {
-  return await prisma.providerProfile.findFirst({ include: { user: true } })
+  const currentUser = await getCurrentUser()
+  if (!currentUser?.id) return null
+
+  return await prisma.providerProfile.findFirst({
+    where: { userId: currentUser.id },
+    include: { user: true },
+  })
 }
 
 export async function getProductsByProviderId(providerId: string) {
@@ -13,36 +22,73 @@ export async function getProductsByProviderId(providerId: string) {
 }
 
 export async function updateStoreProfile(providerId: string, data: Record<string, unknown>) {
-  const updateData: any = {
-    shopNameAR: (data as any).shopNameAR,
-    shopNameEN: (data as any).shopNameEN,
-    descriptionAR: (data as any).descriptionAR,
-    descriptionEN: (data as any).descriptionEN,
-    logo: (data as any).logo || undefined,
-    banner: (data as any).banner || undefined,
-    locationPhoto: (data as any).locationPhoto || undefined,
-  }
+  const provider = await prisma.providerProfile.findUnique({ where: { id: providerId }, select: { id: true, userId: true, shopNameAR: true, shopNameEN: true, descriptionAR: true, descriptionEN: true, logo: true, banner: true, locationPhoto: true, defaultWholesaleUnit: true } })
+  if (!provider) throw new Error('provider not found')
 
-  if ((data as any).defaultWholesaleUnit !== undefined) {
-    updateData.defaultWholesaleUnit = (data as any).defaultWholesaleUnit
-  }
+  const changedFields: Record<string, unknown> = {}
+  const knownFields = [
+    ['shopNameAR', (data as any).shopNameAR],
+    ['shopNameEN', (data as any).shopNameEN],
+    ['descriptionAR', (data as any).descriptionAR],
+    ['descriptionEN', (data as any).descriptionEN],
+    ['logo', (data as any).logo || undefined],
+    ['banner', (data as any).banner || undefined],
+    ['defaultWholesaleUnit', (data as any).defaultWholesaleUnit],
+  ] as const
 
-  const updated = await prisma.providerProfile.update({ where: { id: providerId }, data: updateData })
-
-  // If a locationPhoto was provided, also update the associated user's avatar
-  const locPhoto = (data as any).locationPhoto
-  if (locPhoto) {
-    try {
-      const prov = await prisma.providerProfile.findUnique({ where: { id: providerId }, select: { userId: true } })
-      if (prov?.userId) {
-        await prisma.user.update({ where: { id: prov.userId }, data: { avatar: locPhoto } })
-      }
-    } catch (err) {
-      console.error('Failed to update user avatar from locationPhoto', err)
+  for (const [field, value] of knownFields) {
+    const currentValue = (provider as Record<string, unknown>)[field]
+    if (value !== undefined && value !== currentValue) {
+      changedFields[field] = value
     }
   }
 
-  return updated
+  if (Object.keys(changedFields).length === 0) {
+    return { ok: true, status: 'no-change', provider }
+  }
+
+  const edit = await prisma.providerProfileEdit.create({
+    data: {
+      providerId,
+      requestedBy: provider.userId,
+      changes: { providerProfile: changedFields } as Prisma.InputJsonValue,
+      status: 'PENDING',
+    },
+  })
+
+  const admins = await prisma.user.findMany({ where: { role: { in: ['ROOT_ADMIN', 'SUB_ADMIN'] } }, select: { id: true } })
+  await Promise.all([
+    ...admins.map((admin) =>
+      createNotification(
+        admin.id,
+        'STORE_MODIFICATION_REQUEST',
+        'Store update requested',
+        'تم طلب تعديل على متجر المزود',
+        {
+          type: 'provider_profile_edit_request',
+          editId: edit.id,
+          providerId,
+          bodyEN: 'A provider submitted store profile changes for admin review.',
+          bodyAR: 'قدم مزود تعديلات على ملف المتجر للمراجعة من الإدارة.',
+        }
+      )
+    ),
+    createNotification(
+      provider.userId,
+      'STORE_MODIFICATION_REQUEST',
+      'Store update submitted',
+      'تم إرسال طلب تعديل المتجر للمراجعة',
+      {
+        type: 'provider_profile_edit_submitted',
+        editId: edit.id,
+        providerId,
+        bodyEN: 'Your store changes were submitted for admin approval.',
+        bodyAR: 'تم إرسال تعديلات متجرك للموافقة من الإدارة.',
+      }
+    ),
+  ])
+
+  return { ok: true, status: 'pending-review', provider, edit }
 }
 
 export async function getOrdersByProvider(providerId: string) {
@@ -105,6 +151,41 @@ export async function createProviderProduct(providerId: string, catalogProductId
       console.error('createProviderProduct options error', err)
     }
   }
+
+  const provider = await prisma.providerProfile.findUnique({ where: { id: providerId }, select: { userId: true, shopNameEN: true, shopNameAR: true } })
+  const admins = await prisma.user.findMany({ where: { role: { in: ['ROOT_ADMIN', 'SUB_ADMIN'] } }, select: { id: true } })
+  await Promise.all([
+    ...admins.map((admin) =>
+      createNotification(
+        admin.id,
+        'PRODUCT_SUBMISSION',
+        'New product submitted for approval',
+        'تم إرسال منتج جديد للموافقة',
+        {
+          type: 'provider_product_submitted',
+          providerProductId: pp.id,
+          providerId,
+          catalogProductId,
+          bodyEN: 'A provider submitted a new product listing for admin approval.',
+          bodyAR: 'قدم مزود منتجًا جديدًا للموافقة من الإدارة.',
+        }
+      )
+    ),
+    ...(provider?.userId ? [createNotification(
+      provider.userId,
+      'PRODUCT_SUBMISSION',
+      'Product submitted for approval',
+      'تم إرسال المنتج للموافقة',
+      {
+        type: 'provider_product_submitted',
+        providerProductId: pp.id,
+        providerId,
+        catalogProductId,
+        bodyEN: 'Your product listing was submitted for admin approval.',
+        bodyAR: 'تم إرسال قائمة منتجك للموافقة من الإدارة.',
+      }
+    )] : []),
+  ])
 
   return pp
 }

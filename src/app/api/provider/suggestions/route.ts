@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getErrorMessage } from '@/lib/errors'
 import { createSuggestionSchema } from '@/lib/validations/provider'
+import { createNotification } from '@/lib/actions/notification.actions'
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,6 +32,38 @@ export async function POST(request: NextRequest) {
         categorySuggestion: parsed.data.categorySuggestion || null,
       },
     })
+
+    const admins = await prisma.user.findMany({ where: { role: { in: ['ROOT_ADMIN', 'SUB_ADMIN'] } }, select: { id: true } })
+    await Promise.all([
+      ...admins.map((admin) =>
+        createNotification(
+          admin.id,
+          'SUGGESTION_SUBMISSION',
+          'New product suggestion submitted',
+          'تم إرسال اقتراح منتج جديد',
+          {
+            type: 'provider_suggestion_submitted',
+            suggestionId: suggestion.id,
+            providerId: provider.id,
+            bodyEN: 'A provider submitted a new product suggestion for admin review.',
+            bodyAR: 'قدم مزود اقتراح منتج جديد للمراجعة من الإدارة.',
+          }
+        )
+      ),
+      createNotification(
+        current.id,
+        'SUGGESTION_SUBMISSION',
+        'Suggestion submitted',
+        'تم إرسال الاقتراح للمراجعة',
+        {
+          type: 'provider_suggestion_submitted',
+          suggestionId: suggestion.id,
+          providerId: provider.id,
+          bodyEN: 'Your product suggestion was submitted for admin approval.',
+          bodyAR: 'تم إرسال اقتراح منتجك للموافقة من الإدارة.',
+        }
+      ),
+    ])
 
     return NextResponse.json({ ok: true, suggestion })
   } catch (err: unknown) {

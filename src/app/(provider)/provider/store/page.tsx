@@ -1,60 +1,128 @@
 import React from 'react'
-import { getFirstProvider } from '@/lib/actions/provider.actions'
+import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import ProviderStoreForm from '@/components/provider/ProviderStoreForm'
 import ProviderStoreClient from '@/components/provider/ProviderStoreClient'
 
 export default async function StorePage() {
-  // Load the provider for the current logged-in user
   const current = await getCurrentUser()
   if (!current) return <div>Please sign in as a provider to manage your store.</div>
 
   const provider = await prisma.providerProfile.findFirst({ where: { userId: current.id }, include: { user: true } })
   if (!provider) return <div>No provider account found for your user.</div>
 
+  const allProducts = await prisma.providerProduct.findMany({
+    where: { providerId: provider.id, status: 'APPROVED' },
+    include: {
+      catalogProduct: { include: { category: true } },
+      providerProductOptions: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  const categories = Array.from(
+    new Map(
+      allProducts
+        .map((p) => p.catalogProduct?.category)
+        .filter(Boolean)
+        .map((cat) => [cat.id, cat])
+    ).values()
+  )
+
   return (
     <section className="provider-store container">
-      <h1>Store Profile</h1>
       <div className="store-grid">
         <div className="store-card">
-          <h3>Store Details</h3>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
-            {provider.logo ? (
-              <img src={provider.logo} alt="logo" style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 8 }} />
+          <section className="store-page container" style={{ padding: 0 }}>
+            {provider.banner ? (
+              <div className="store-banner" style={{ backgroundImage: `url(${provider.banner})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                <div className="store-banner-overlay">
+                  <h1>{provider.shopNameEN || provider.shopNameAR}</h1>
+                </div>
+              </div>
             ) : (
-              <div style={{ width: 96, height: 96, borderRadius: 8, background: '#f3f3f3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{(provider.shopNameEN || provider.shopNameAR || 'S')?.charAt(0)}</div>
+              <div className="store-banner-placeholder">🏪</div>
             )}
-            <div style={{ minWidth: 0 }}>
-              <h4 style={{ margin: 0 }}>{provider.shopNameEN || provider.shopNameAR}</h4>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>{provider.user?.nameEN || provider.user?.nameAR}</div>
-                {provider.user?.avatar && (
-                  <img src={provider.user.avatar} alt="user avatar" style={{ width: 40, height: 40, borderRadius: 999, objectFit: 'cover' }} />
-                )}
+
+            <div className="store-header">
+              {provider.logo ? (
+                <img src={provider.logo} alt={provider.shopNameEN || provider.shopNameAR} className="provider-logo-lg" />
+              ) : (
+                <div className="provider-logo-lg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--gradient-primary)', color: 'white', fontWeight: 'var(--font-bold)', fontSize: 'var(--text-2xl)' }}>
+                  {(provider.shopNameEN || provider.shopNameAR)?.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="store-header-info">
+                <h1>{provider.shopNameEN || provider.shopNameAR}</h1>
+                <p>{provider.descriptionEN || provider.descriptionAR || 'No description available.'}</p>
+                <div className="store-header-meta">
+                  {provider.rating && provider.rating > 0 && <span>⭐ {provider.rating.toFixed(1)}</span>}
+                  <span>📦 {allProducts.length} products</span>
+                  {provider.locationAddress && <span>📍 {provider.locationAddress}</span>}
+                </div>
               </div>
             </div>
-          </div>
 
-          {provider.banner && <div style={{ marginBottom: 12 }}><img src={provider.banner} alt="banner" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 8 }} /></div>}
+            {categories.length > 0 && (
+              <div className="category-pills">
+                <span className="category-pill active">All</span>
+                {categories.map((cat: any) => (
+                  <span key={cat.id} className="category-pill">{cat.nameEN || cat.nameAR}</span>
+                ))}
+              </div>
+            )}
 
-          <div style={{ marginBottom: 8 }}><strong>Names:</strong> {provider.shopNameEN || '-'} / {provider.shopNameAR || '-'}</div>
-          <div style={{ marginBottom: 8 }}><strong>Descriptions:</strong>
-            <div style={{ marginTop: 6 }}>{provider.descriptionEN || '-'} </div>
-            <div style={{ marginTop: 6, direction: 'rtl' }}>{provider.descriptionAR || '-'}</div>
-          </div>
+            {allProducts.length > 0 ? (
+              <div>
+                {categories.map((cat: any) => {
+                  const items = allProducts.filter((p) => p.catalogProduct?.category?.id === cat.id)
+                  if (!items.length) return null
 
-          {provider.locationPhoto && <div style={{ marginTop: 12 }}><strong>Location Photo</strong><div><img src={provider.locationPhoto} alt="location" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 8 }} /></div></div>}
+                  return (
+                    <section key={cat.id} style={{ marginBottom: 'var(--space-8)' }}>
+                      <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-4)' }}>{cat.nameEN || cat.nameAR}</h3>
+                      <div className="product-grid">
+                        {items.map((p) => {
+                          const nameEN = p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'
+                          const nameAR = p.catalogProduct?.nameAR || ''
+                          const descriptionEN = p.catalogProduct?.descriptionEN || ''
+                          const descriptionAR = p.catalogProduct?.descriptionAR || ''
+                          const unit = p.wholesaleUnit || p.catalogProduct?.unitType || 'UNIT'
 
-          <div style={{ marginTop: 12 }}>
-            <div><strong>Address:</strong> {provider.locationAddress || '-'}</div>
-            <div><strong>Visible:</strong> {provider.isVisible ? 'Yes' : 'No'}</div>
-            <div><strong>Rating:</strong> {provider.rating?.toFixed ? provider.rating.toFixed(1) : provider.rating || 0} ({provider.reviewCount || 0} reviews)</div>
-            <div><strong>Created:</strong> {new Date(provider.createdAt).toLocaleString()}</div>
-            <div><strong>Updated:</strong> {new Date(provider.updatedAt).toLocaleString()}</div>
-          </div>
-
-          
+                          return (
+                            <div key={p.id} className="product-card">
+                              <div className="product-image-wrap">
+                                {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
+                                  <img src={p.catalogProduct.images[0]} alt={nameEN} className="product-image" />
+                                ) : (
+                                  <div className="product-image-placeholder">📦</div>
+                                )}
+                              </div>
+                              <div className="product-card-body">
+                                <div className="product-card-title">{nameEN}</div>
+                                <div className="product-card-subtitle">{nameAR}</div>
+                                {descriptionEN && <div className="product-card-description">{descriptionEN}</div>}
+                                {descriptionAR && <div className="product-card-description" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{descriptionAR}</div>}
+                                <div className="product-card-footer">
+                                  <div className="price" style={{ fontSize: 'var(--text-sm)' }}>Wholesale: {(p.wholesalePrice ?? p.sellingPrice)} EGP / {unit}</div>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </section>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="card" style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
+                <div style={{ fontSize: 'var(--text-4xl)', marginBottom: 'var(--space-4)' }}>📦</div>
+                <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-bold)', marginBottom: 'var(--space-2)' }}>No products yet</h3>
+                <p style={{ color: 'var(--text-muted)' }}>This store hasn&apos;t added any products yet.</p>
+              </div>
+            )}
+          </section>
         </div>
 
         <div className="store-form">

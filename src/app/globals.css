@@ -5,12 +5,7 @@
    ================================================================ */
 
 /* ----------------------------------------------------------------
-   0. GOOGLE FONTS
-   ---------------------------------------------------------------- */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Kufi+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
-/* ----------------------------------------------------------------
-   1. DESIGN TOKENS — CSS Custom Properties
+   0. DESIGN TOKENS — CSS Custom Properties
    ---------------------------------------------------------------- */
 :root {
   /* ── Primary Palette ──────────────────────────────────────────── */
@@ -89,9 +84,9 @@
   --border-error: var(--error);
 
   /* ── Typography ───────────────────────────────────────────────── */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-arabic: 'Noto Kufi Arabic', 'Segoe UI', Tahoma, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-arabic: var(--font-noto-kufi-arabic), 'Segoe UI', Tahoma, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), 'Fira Code', 'Cascadia Code', monospace;
 
   /* Modular Type Scale (1.25 ratio) */
   --text-2xs: 0.625rem;   /* 10px */
@@ -969,7 +964,7 @@ table {
 
 @media (max-width: 640px) {
   .mobile-header { display: flex }
-  .shop-header, .provider-sidebar, .admin-sidebar { display: none }
+  .shop-header { display: none }
   .shop-main, .provider-main, .admin-main { padding-bottom: calc(var(--bottom-nav-height) + 16px) }
   .topbar { display: none }
 }
@@ -1559,7 +1554,7 @@ table {
   border-inline-end: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
-  z-index: var(--z-sticky);
+  z-index: 1200;
   transition: width var(--transition-normal),
               transform var(--transition-normal);
   overflow: hidden;
@@ -1672,7 +1667,7 @@ table {
   background: hsla(0, 0%, 0%, 0.5);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
-  z-index: calc(var(--z-sticky) - 1);
+  z-index: 1150;
   opacity: 0;
   visibility: hidden;
   transition: opacity var(--transition-normal),
@@ -1700,6 +1695,25 @@ table {
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
   color: var(--text-primary);
+}
+
+.sidebar-header-toggle {
+  display: none;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+@media (max-width: 1023px) {
+  .sidebar-header-toggle {
+    display: inline-flex;
+  }
 }
 
 [dir='rtl'] .sidebar-hamburger {
@@ -1747,6 +1761,7 @@ table {
 /* Mobile sidebar behavior */
 @media (max-width: 1023px) {
   .sidebar {
+    z-index: 1200;
     transform: translateX(-100%);
   }
 
@@ -3655,6 +3670,48 @@ html {
     box-shadow: none;
     border: 1px solid #ddd;
     break-inside: avoid;
+  }
+
+  /* ── Report-only print mode ─────────────────────────────────── */
+  body.print-report-only {
+    visibility: hidden !important;
+  }
+
+  body.print-report-only .report-printable {
+    visibility: visible !important;
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    background: white !important;
+    color: black !important;
+    z-index: 999999 !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+  }
+
+  body.print-report-only .report-printable * {
+    visibility: visible !important;
+  }
+
+  .print-only-heading {
+    display: none !important;
+  }
+
+  body.print-report-only .print-only-heading {
+    display: block !important;
+    margin-bottom: 16px;
+    text-align: center;
+    font-size: 1.25rem;
+    color: black;
+  }
+
+  body.print-report-only .print-only-heading p {
+    margin: 0.25rem 0 0;
+    font-size: 1rem;
+    color: black;
   }
 }
 

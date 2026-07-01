@@ -13,7 +13,7 @@ export async function getProviders() {
 export async function getProviderById(id: string) {
   return await prisma.providerProfile.findUnique({
     where: { id },
-    include: { user: true, products: true },
+    include: { user: true, products: true, orders: true },
   });
 }
 

@@ -32,13 +32,28 @@ export default function ProviderSidebar({ collapsed = false, initialLocale = 'ar
     window.location.href = '/login'
   }
 
+  const setSidebarOpen = (nextOpen: boolean) => {
+    setOpen(nextOpen)
+    if (typeof document === 'undefined') return
+
+    const sidebar = document.querySelector('.provider-sidebar') as HTMLElement | null
+    const overlay = document.querySelector('.sidebar-overlay') as HTMLElement | null
+
+    if (sidebar) {
+      sidebar.classList.toggle('sidebar-open', nextOpen)
+    }
+    if (overlay) {
+      overlay.classList.toggle('sidebar-overlay-visible', nextOpen)
+    }
+  }
+
   return (
     <>
       <button
         type="button"
         aria-label="Open menu"
         className="btn-icon sidebar-hamburger hide-desktop"
-        onClick={() => setOpen(true)}
+        onClick={() => setSidebarOpen(true)}
       >
         <svg width="20" height="14" viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 1.5H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M0 7H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M0 12.5H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
       </button>
@@ -52,7 +67,7 @@ export default function ProviderSidebar({ collapsed = false, initialLocale = 'ar
           type="button"
           aria-label="Close menu"
           className="btn-icon sidebar-close hide-desktop"
-          onClick={() => setOpen(false)}
+          onClick={() => setSidebarOpen(false)}
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 3L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M15 3L3 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
         </button>
@@ -91,7 +106,7 @@ export default function ProviderSidebar({ collapsed = false, initialLocale = 'ar
       </div>
       </aside>
 
-      <div className={cn('sidebar-overlay', open && 'sidebar-overlay-visible')} onClick={() => setOpen(false)} />
+      <div className={cn('sidebar-overlay', open && 'sidebar-overlay-visible')} onClick={() => setSidebarOpen(false)} />
     </>
   )
 }

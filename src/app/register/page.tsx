@@ -36,6 +36,8 @@ export default function RegisterPage() {
   const [locations, setLocations] = useState<{ id: string; nameEN?: string; nameAR?: string }[]>([]);
   const [locationId, setLocationId] = useState<string>('');
   const [avatarUrl, setAvatarUrl] = useState<string>('');
+  const [logoUrl, setLogoUrl] = useState<string>('');
+  const [bannerUrl, setBannerUrl] = useState<string>('');
 
   useEffect(() => {
     let mounted = true;
@@ -74,6 +76,42 @@ export default function RegisterPage() {
       const data: any = await uploadFile(f)
       if (data?.ok && data.path) {
         setAvatarUrl(data.path)
+      } else {
+        setError('Upload failed')
+      }
+    } catch (err) {
+      setError('Upload failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleProviderLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    try {
+      setLoading(true)
+      const data: any = await uploadFile(f)
+      if (data?.ok && data.path) {
+        setLogoUrl(data.path)
+      } else {
+        setError('Upload failed')
+      }
+    } catch (err) {
+      setError('Upload failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleProviderBannerChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    try {
+      setLoading(true)
+      const data: any = await uploadFile(f)
+      if (data?.ok && data.path) {
+        setBannerUrl(data.path)
       } else {
         setError('Upload failed')
       }
@@ -139,6 +177,8 @@ export default function RegisterPage() {
         locationLng: locationLng ?? undefined,
         locationUrl: locationUrl || undefined,
         avatar: avatarUrl || undefined,
+        logo: accountType === 'PROVIDER' ? (logoUrl || avatarUrl || undefined) : undefined,
+        banner: accountType === 'PROVIDER' ? (bannerUrl || undefined) : undefined,
       });
 
       if (result.success && result.data) {
@@ -487,9 +527,14 @@ export default function RegisterPage() {
                 ))}
               </div>
               <div>
-                <label className="label">{t('profilePhoto') || t('locationPhoto') || 'Profile Photo'}</label>
-                <input type="file" accept="image/*" onChange={handleAvatarChange} />
-                {avatarUrl && <div style={{marginTop:8}}><img src={avatarUrl} alt="avatar" style={{maxWidth:240,maxHeight:120}}/></div>}
+                <label className="label">Store Logo</label>
+                <input type="file" accept="image/*" onChange={handleProviderLogoChange} />
+                {logoUrl && <div style={{marginTop:8}}><img src={logoUrl} alt="store logo" style={{maxWidth:240,maxHeight:120}}/></div>}
+              </div>
+              <div>
+                <label className="label">Store Cover</label>
+                <input type="file" accept="image/*" onChange={handleProviderBannerChange} />
+                {bannerUrl && <div style={{marginTop:8}}><img src={bannerUrl} alt="store cover" style={{maxWidth:240,maxHeight:120}}/></div>}
               </div>
             </div>
 

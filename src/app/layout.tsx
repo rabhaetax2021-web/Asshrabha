@@ -1,10 +1,28 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter, JetBrains_Mono, Noto_Kufi_Arabic } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
-import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
+import ClientBootstrap from '@/components/ClientBootstrap'
 import ThemeProvider from '@/components/ui/ThemeProvider'
-import PWAInstallPrompt from '@/components/ui/PWAInstallPrompt'
+
+const inter = Inter({
+  subsets: ['latin', 'latin-ext'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const notoKufiArabic = Noto_Kufi_Arabic({
+  subsets: ['arabic'],
+  variable: '--font-noto-kufi-arabic',
+  display: 'swap',
+});
+
+const jetBrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-jetbrains-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: {
@@ -43,20 +61,16 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Kufi+Arabic:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html
+      lang={locale}
+      dir={locale === 'ar' ? 'rtl' : 'ltr'}
+      suppressHydrationWarning
+      className={`${inter.variable} ${notoKufiArabic.variable} ${jetBrainsMono.variable}`}
+    >
       <body>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider>
-            <ServiceWorkerRegister />
-            <PWAInstallPrompt />
+            <ClientBootstrap />
             {children}
           </ThemeProvider>
         </NextIntlClientProvider>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Button from './Button'
 import Icon from './Icon'
@@ -28,52 +28,83 @@ export default function NotificationBell() {
   const [error, setError] = useState<string | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
+  const audioElementRef = useRef<HTMLAudioElement | null>(null)
+  const prepareAudioContextRef = useRef<(() => Promise<void>) | null>(null)
 
-  const playNotificationSound = async () => {
+  const prepareAudioContext = useCallback(async () => {
     if (typeof window === 'undefined') return
+
     if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const AudioCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+      if (!AudioCtor) return
+      audioContextRef.current = new AudioCtor()
     }
 
-    const audioCtx = audioContextRef.current
-    if (audioCtx.state === 'suspended') {
-      await audioCtx.resume().catch(() => null)
+    if (audioContextRef.current.state === 'suspended') {
+      await audioContextRef.current.resume().catch(() => null)
     }
+  }, [])
 
-    const gainNode = audioCtx.createGain()
-    const filter = audioCtx.createBiquadFilter()
-    const oscillator = audioCtx.createOscillator()
-    const oscillator2 = audioCtx.createOscillator()
+  useEffect(() => {
+    prepareAudioContextRef.current = prepareAudioContext
+  }, [prepareAudioContext])
 
-    const now = audioCtx.currentTime
-    gainNode.gain.setValueAtTime(0.001, now)
-    gainNode.gain.exponentialRampToValueAtTime(0.85, now + 0.03)
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.8)
+  const playNotificationSound = useCallback(async () => {
+    if (typeof window === 'undefined') return
 
-    filter.type = 'bandpass'
-    filter.frequency.setValueAtTime(880, now)
-    filter.Q.setValueAtTime(8, now)
+    const customSoundUrl = process.env.NEXT_PUBLIC_NOTIFICATION_SOUND_URL?.trim()
 
-    oscillator.type = 'triangle'
-    oscillator.frequency.setValueAtTime(920, now)
-    oscillator.frequency.exponentialRampToValueAtTime(520, now + 0.45)
+    try {
+      if (customSoundUrl) {
+        if (!audioElementRef.current) {
+          audioElementRef.current = new Audio(customSoundUrl)
+          audioElementRef.current.preload = 'auto'
+          audioElementRef.current.volume = 1
+        }
+        await audioElementRef.current.play()
+        return
+      }
 
-    oscillator2.type = 'sawtooth'
-    oscillator2.frequency.setValueAtTime(1320, now)
-    oscillator2.detune.setValueAtTime(40, now)
-    oscillator2.frequency.exponentialRampToValueAtTime(660, now + 0.45)
+      await prepareAudioContextRef.current?.()
+      const audioCtx = audioContextRef.current
+      if (!audioCtx) return
 
-    oscillator.connect(filter)
-    oscillator2.connect(filter)
-    filter.connect(gainNode)
-    gainNode.connect(audioCtx.destination)
+      const gainNode = audioCtx.createGain()
+      const filter = audioCtx.createBiquadFilter()
+      const oscillator = audioCtx.createOscillator()
+      const oscillator2 = audioCtx.createOscillator()
 
-    oscillator.start(now)
-    oscillator2.start(now)
-    oscillator.stop(now + 0.8)
-    oscillator2.stop(now + 0.8)
-  }
-  const lastUnreadCount = useRef(0)
+      const now = audioCtx.currentTime
+      gainNode.gain.setValueAtTime(0.001, now)
+      gainNode.gain.exponentialRampToValueAtTime(0.85, now + 0.03)
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.8)
+
+      filter.type = 'bandpass'
+      filter.frequency.setValueAtTime(880, now)
+      filter.Q.setValueAtTime(8, now)
+
+      oscillator.type = 'triangle'
+      oscillator.frequency.setValueAtTime(920, now)
+      oscillator.frequency.exponentialRampToValueAtTime(520, now + 0.45)
+
+      oscillator2.type = 'sawtooth'
+      oscillator2.frequency.setValueAtTime(1320, now)
+      oscillator2.detune.setValueAtTime(40, now)
+      oscillator2.frequency.exponentialRampToValueAtTime(660, now + 0.45)
+
+      oscillator.connect(filter)
+      oscillator2.connect(filter)
+      filter.connect(gainNode)
+      gainNode.connect(audioCtx.destination)
+
+      oscillator.start(now)
+      oscillator2.start(now)
+      oscillator.stop(now + 0.8)
+      oscillator2.stop(now + 0.8)
+    } catch {
+      // Ignore autoplay restrictions; a later user interaction will re-enable the sound.
+    }
+  }, [])
 
   const canPush = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'Notification' in window
 
@@ -82,9 +113,26 @@ export default function NotificationBell() {
   }, [])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const handleUserInteraction = () => {
+      void prepareAudioContextRef.current?.()
+    }
+
+    window.addEventListener('pointerdown', handleUserInteraction, { once: true, passive: true })
+    window.addEventListener('keydown', handleUserInteraction, { once: true })
+
+    return () => {
+      window.removeEventListener('pointerdown', handleUserInteraction)
+      window.removeEventListener('keydown', handleUserInteraction)
+    }
+  }, [])
+
+  useEffect(() => {
     let active = true
     const loadNotifications = async () => {
       try {
+        setError(null)
         setLoading(true)
         const res = await fetch('/api/notifications', { cache: 'no-store' })
         if (!res.ok) return
@@ -92,6 +140,8 @@ export default function NotificationBell() {
         if (!active) return
         setItems(data.notifications || [])
         setUnreadCount(data.unreadCount || 0)
+      } catch {
+        if (active) setError(labels.loadError)
       } finally {
         if (active) setLoading(false)
       }
@@ -105,6 +155,14 @@ export default function NotificationBell() {
     }
   }, [])
 
+  const playNotificationSoundRef = useRef<(() => void) | null>(null)
+
+  useEffect(() => {
+    playNotificationSoundRef.current = () => {
+      void playNotificationSound()
+    }
+  }, [playNotificationSound])
+
   useEffect(() => {
     if (typeof window === 'undefined' || !window.EventSource) return
 
@@ -117,7 +175,7 @@ export default function NotificationBell() {
           setItems((prev) => [notification, ...prev].slice(0, 20))
           setUnreadCount((count) => count + (notification.isRead ? 0 : 1))
           if (!notification.isRead) {
-            playNotificationSound()
+            playNotificationSoundRef.current?.()
           }
         }
         if (payload?.type === 'initial' && Array.isArray(payload.payload)) {
@@ -238,6 +296,7 @@ export default function NotificationBell() {
     empty: 'لا توجد إشعارات بعد.',
     unsupported: 'إشعارات المتصفح غير مدعومة في هذه البيئة.',
     permissionError: 'تعذر طلب إذن الإشعارات.',
+    loadError: 'تعذر تحميل الإشعارات. يرجى المحاولة مرة أخرى.',
     registerError: 'تعذر تسجيل اشتراك الإشعارات.',
     subscriptionError: 'تعذر تهيئة اشتراك الإشعارات. يرجى توفير NEXT_PUBLIC_VAPID_PUBLIC_KEY.',
   }
