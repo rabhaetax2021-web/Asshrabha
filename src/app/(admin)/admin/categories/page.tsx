@@ -1,9 +1,20 @@
 import React from "react";
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import CategoryManager from '@/components/admin/CategoryManager'
+import { getCurrentUser } from '@/lib/auth'
 
 export default async function CategoriesPage() {
-  const categories = await prisma.category.findMany({ orderBy: { createdAt: 'desc' }, take: 200 })
+  const current = await getCurrentUser()
+  if (!current || !['ROOT_ADMIN', 'SUB_ADMIN'].includes(current.role) || current.status !== 'APPROVED') {
+    return <div className="container">Unauthorized</div>
+  }
+
+  const categories = await prisma.category.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 200,
+    include: { _count: { select: { products: true } } },
+  })
 
   return (
     <section className="admin-categories container">
@@ -14,32 +25,15 @@ export default async function CategoriesPage() {
         </div>
       </div>
 
-      <div className="ui-table-wrap">
-        <table className="ui-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th className="hide-sm">Slug</th>
-              <th className="hide-sm">Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {categories.length === 0 && (
-              <tr>
-                <td colSpan={3}>No categories found.</td>
-              </tr>
-            )}
-
-            {categories.map((c) => (
-              <tr key={c.id}>
-                <td>{c.nameEN || c.nameAR || '-'}</td>
-                <td>{c.slug}</td>
-                <td>{new Date(c.createdAt).toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <CategoryManager initialCategories={categories.map((category) => ({
+        id: category.id,
+        nameEN: category.nameEN,
+        nameAR: category.nameAR,
+        slug: category.slug,
+        createdAt: category.createdAt.toISOString(),
+        updatedAt: category.updatedAt.toISOString(),
+        _count: category._count,
+      }))} />
     </section>
   );
 }

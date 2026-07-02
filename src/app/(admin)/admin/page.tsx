@@ -1,8 +1,10 @@
 import React from 'react'
+import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import OrdersChart from '@/components/admin/OrdersChart'
+import { getPendingAccountApprovalsCount } from '@/lib/actions/admin.actions'
 
 export default async function AdminDashboardPage() {
   // fetch basic analytics
@@ -13,11 +15,11 @@ export default async function AdminDashboardPage() {
   since.setDate(since.getDate() - 6)
   since.setHours(0, 0, 0, 0)
 
-  const [ordersToday, completedRevenueAgg, activeProviders, pendingApprovals, recentOrders] = await Promise.all([
+  const [ordersToday, completedRevenueAgg, activeProviders, pendingAccountApprovals, recentOrders] = await Promise.all([
     prisma.order.count({ where: { createdAt: { gte: startOfDay } } }),
     prisma.order.aggregate({ where: { status: 'COMPLETED' }, _sum: { totalAmount: true } }),
     prisma.providerProfile.count({ where: { isVisible: true } }),
-    prisma.providerProduct.count({ where: { status: 'PENDING_APPROVAL' } }),
+    getPendingAccountApprovalsCount(),
     prisma.order.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } }),
   ])
 
@@ -60,10 +62,12 @@ export default async function AdminDashboardPage() {
             <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Active Providers</div>
             <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700 }}>{activeProviders}</div>
           </Card>
-          <Card style={{ width: 220 }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Pending Approvals</div>
-            <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700 }}>{pendingApprovals}</div>
-          </Card>
+          <Link href="/admin/approvals" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Card style={{ width: 220, cursor: 'pointer' }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Pending Account Approvals</div>
+              <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700 }}>{pendingAccountApprovals}</div>
+            </Card>
+          </Link>
         </div>
 
         <Card>

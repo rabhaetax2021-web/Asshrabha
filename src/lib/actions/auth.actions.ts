@@ -451,26 +451,27 @@ export async function verifyOTPAction(
         }
       }
 
-      // Notify admins about new registration
-      const admins = await tx.user.findMany({
-        where: {
-          role: { in: ['ROOT_ADMIN', 'SUB_ADMIN'] },
-          status: 'APPROVED',
-        },
-        select: { id: true },
-      });
+      if (user?.role === 'PROVIDER' && requiresApproval) {
+        const admins = await tx.user.findMany({
+          where: {
+            role: { in: ['ROOT_ADMIN', 'SUB_ADMIN'] },
+            status: 'APPROVED',
+          },
+          select: { id: true },
+        });
 
-      await tx.notification.createMany({
-        data: admins.map((admin) => ({
-          userId: admin.id,
-          type: 'SYSTEM' as const,
-          titleAR: 'تسجيل جديد',
-          titleEN: 'New Registration',
-          bodyAR: `تسجيل حساب جديد بانتظار الموافقة`,
-          bodyEN: `New account registration pending approval`,
-          data: { userId, type: 'new_registration' },
-        })),
-      });
+        await tx.notification.createMany({
+          data: admins.map((admin) => ({
+            userId: admin.id,
+            type: 'SYSTEM' as const,
+            titleAR: 'حساب مزود جديد',
+            titleEN: 'New provider account',
+            bodyAR: 'يوجد حساب مزود جديد بانتظار الموافقة',
+            bodyEN: 'A new provider account is waiting for admin approval',
+            data: { userId, type: 'pending_account_approval', providerId: userId },
+          })),
+        });
+      }
     });
 
     return { success: true, message: 'OTP verified successfully' };

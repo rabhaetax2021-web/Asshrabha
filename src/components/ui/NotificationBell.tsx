@@ -365,6 +365,9 @@ export default function NotificationBell() {
                     case 'provider_profile_edit_approved':
                     case 'provider_profile_edit_rejected':
                       return `/admin/provider-profile-edits${editId ? `?editId=${encodeURIComponent(editId)}` : ''}`
+                    case 'pending_account_approval':
+                    case 'new_registration':
+                      return '/admin/approvals'
                     default:
                       return undefined
                   }

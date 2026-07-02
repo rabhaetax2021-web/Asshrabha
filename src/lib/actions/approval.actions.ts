@@ -52,6 +52,16 @@ export async function submitApprovalRequest(params: {
   try {
     if (orderId) {
       const order = await prisma.order.findUnique({ where: { id: orderId }, select: { customerId: true, orderNumber: true } })
+      const note = typeof reason === 'string' && reason.trim() ? reason.trim() : undefined
+      const noteText = note ? ` Note: ${note}` : ''
+      const payloadBase = {
+        orderId,
+        orderNumber: order?.orderNumber,
+        providerId,
+        bodyEN: `A provider requested an update for order ${order?.orderNumber ?? orderId}.${noteText}`,
+        bodyAR: `طلب مزود تعديلًا على الطلب ${order?.orderNumber ?? orderId}.${noteText}`,
+      }
+
       if (order?.customerId) {
         await createNotification(
           order.customerId,
@@ -59,10 +69,9 @@ export async function submitApprovalRequest(params: {
           'Order modification requested',
           'تم طلب تعديل على الطلب',
           {
-            orderId,
-            orderNumber: order.orderNumber,
-            bodyEN: `A provider requested an update for order ${order.orderNumber}`,
-            bodyAR: `طلب مزود تعديلًا على الطلب ${order.orderNumber}`,
+            ...payloadBase,
+            bodyEN: `A provider requested an update for order ${order.orderNumber ?? orderId}.${noteText}`,
+            bodyAR: `طلب مزود تعديلًا على الطلب ${order.orderNumber ?? orderId}.${noteText}`,
           }
         )
       }
@@ -76,11 +85,9 @@ export async function submitApprovalRequest(params: {
             'Order modification requested',
             'تم طلب تعديل على الطلب',
             {
-              orderId,
-              orderNumber: order?.orderNumber,
-              providerId,
-              bodyEN: `Provider requested an update for order ${order?.orderNumber ?? orderId}`,
-              bodyAR: `طلب مزود تعديلًا على الطلب ${order?.orderNumber ?? orderId}`,
+              ...payloadBase,
+              bodyEN: `Provider requested an update for order ${order?.orderNumber ?? orderId}.${noteText}`,
+              bodyAR: `طلب مزود تعديلًا على الطلب ${order?.orderNumber ?? orderId}.${noteText}`,
             }
           )
         )
@@ -119,6 +126,21 @@ export async function applyApproval(requestId: string, adminId: string, approve:
         }
       )
     }
+    if (order?.customerId) {
+      await createNotification(
+        order.customerId,
+        'ORDER_MODIFICATION_REJECTED',
+        'Order modification rejected',
+        'تم رفض تعديل الطلب',
+        {
+          requestId,
+          orderId: req.orderId,
+          orderNumber: order.orderNumber,
+          bodyEN: `The requested update for order ${order.orderNumber} was rejected by admin. ${comment ?? ''}`,
+          bodyAR: `تم رفض التعديل المطلوب للطلب ${order.orderNumber} من قبل الإدارة. ${comment ?? ''}`,
+        }
+      )
+    }
 
     return { ok: true }
   }
@@ -134,8 +156,8 @@ export async function applyApproval(requestId: string, adminId: string, approve:
           requestId,
           orderId: req.orderId,
           orderNumber: order?.orderNumber,
-          bodyEN: `Your order modification request for ${order?.orderNumber ?? req.orderId ?? 'the order'} was approved. ${comment ?? ''}`,
-          bodyAR: `تمت الموافقة على طلب تعديل الطلب ${order?.orderNumber ?? req.orderId ?? ''}. ${comment ?? ''}`,
+          bodyEN: `Your order modification request for ${order?.orderNumber ?? req.orderId ?? 'the order'} was approved by admin. ${comment ?? ''}`,
+          bodyAR: `تمت الموافقة على طلب تعديل الطلب ${order?.orderNumber ?? req.orderId ?? ''} من قبل الإدارة. ${comment ?? ''}`,
         }
       )
     }

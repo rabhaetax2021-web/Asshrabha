@@ -16,14 +16,6 @@ export default async function OrderDetailPage({ params }: { params: { id: string
       <div>Customer: {order.customer?.nameEN || order.customer?.nameAR || order.customer?.mobile}</div>
       <div>Total: {order.totalAmount}</div>
       <OrderDetailClient order={order} />
-      <div className="delivery-info">
-        <h3>Delivery</h3>
-        {order.address?.locationUrl ? (
-          <div>
-            <a href={order.address.locationUrl} target="_blank" rel="noreferrer">Open Location</a>
-          </div>
-        ) : <div>No shared location</div>}
-      </div>
     </section>
   )
 }

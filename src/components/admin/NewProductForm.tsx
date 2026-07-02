@@ -19,6 +19,7 @@ export default function NewProductForm({ categories, initial }: { categories: Ca
   const [retailMinPrice, setRetailMinPrice] = useState('')
   const [retailMaxPrice, setRetailMaxPrice] = useState('')
   const [unitType, setUnitType] = useState('PIECE')
+  const [status, setStatus] = useState('ACTIVE')
   const [images, setImages] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -47,6 +48,7 @@ export default function NewProductForm({ categories, initial }: { categories: Ca
         retailMaxPrice: retailMax,
         images,
         unitType,
+        status,
       }
       const method = initial?.id ? 'PATCH' : 'POST'
       const url = initial?.id ? `/api/admin/catalog-products/${initial.id}` : '/api/admin/catalog-products'
@@ -77,6 +79,7 @@ export default function NewProductForm({ categories, initial }: { categories: Ca
     setRetailMinPrice(String(initial.retailMinPrice || ''))
     setRetailMaxPrice(String(initial.retailMaxPrice || ''))
     setUnitType(initial.unitType || 'PIECE')
+    setStatus(initial.status || 'ACTIVE')
     setImages(initial.images || [])
   }, [initial, categories])
 
@@ -118,6 +121,15 @@ export default function NewProductForm({ categories, initial }: { categories: Ca
           <option value="BOX">Box - كرتونة</option>
           <option value="PACK">Pack - باكيت</option>
           <option value="PIECE">Piece - قطعة</option>
+        </select>
+      </div>
+      <div className="form-row">
+        <label>Status</label>
+        <select value={status} onChange={e => setStatus(e.target.value)}>
+          <option value="DRAFT">Draft</option>
+          <option value="ACTIVE">Active</option>
+          <option value="INACTIVE">Inactive</option>
+          <option value="ARCHIVED">Archived</option>
         </select>
       </div>
       <div className="form-row">

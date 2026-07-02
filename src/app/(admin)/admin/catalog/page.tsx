@@ -5,7 +5,7 @@ import IntlText from '@/components/IntlText'
 import CatalogList from '@/components/admin/CatalogList'
 
 export default async function AdminCatalogPage() {
-  const products = await prisma.catalogProduct.findMany({ orderBy: { createdAt: 'desc' }, take: 100 })
+  const products = await prisma.catalogProduct.findMany({ where: { status: { not: 'ARCHIVED' } }, orderBy: { createdAt: 'desc' }, take: 100 })
 
   return (
     <section className="admin-catalog container">

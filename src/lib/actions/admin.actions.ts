@@ -267,6 +267,17 @@ export async function rejectCustomer(userId: string, adminUserId?: string, note?
   return user
 }
 
+export async function getPendingAccountApprovalsCount() {
+  return await prisma.providerProfile.count({
+    where: {
+      user: {
+        role: 'PROVIDER',
+        status: 'PENDING',
+      },
+    },
+  })
+}
+
 export async function getPendingProviders() {
   return await prisma.providerProfile.findMany({
     where: { user: { status: 'PENDING' } },
