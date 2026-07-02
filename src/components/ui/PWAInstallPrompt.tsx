@@ -8,7 +8,6 @@ export default function PWAInstallPrompt() {
 
   useEffect(() => {
     const handler = (e: any) => {
-      e.preventDefault()
       setDeferred(e)
       setVisible(true)
     }
@@ -19,7 +18,7 @@ export default function PWAInstallPrompt() {
   const install = async () => {
     if (!deferred) return
     try {
-      deferred.prompt()
+      await deferred.prompt()
       await deferred.userChoice
       setVisible(false)
     } catch (e) {

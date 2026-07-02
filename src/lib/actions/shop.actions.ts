@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { calculateOrderTotals } from '@/lib/order-pricing'
 
 export async function browseProducts(params: { categorySlug?: string; take?: number; skip?: number } = {}) {
   const { categorySlug, take = 20, skip = 0 } = params
@@ -56,7 +57,7 @@ export async function placeOrder(customerId: string, cartItems: { providerProduc
       const buyer = await tx.user.findUnique({ where: { id: customerId } })
       const buyerIsShop = !!buyer && (buyer.role === 'PROVIDER' || buyer.customerType === 'SHOP')
 
-      const totalAmount = items.reduce((s: number, i: any) => {
+      const subtotal = items.reduce((s: number, i: any) => {
         const pp = i.providerProduct
         if (!pp) return s
         let unitPrice = pp.sellingPrice || 0
@@ -70,7 +71,7 @@ export async function placeOrder(customerId: string, cartItems: { providerProduc
         customerId,
         providerId,
         addressId: addressId || undefined,
-        totalAmount,
+        totalAmount: subtotal,
         platformFee: 0,
       }})
 
@@ -102,8 +103,10 @@ export async function placeOrder(customerId: string, cartItems: { providerProduc
         }
       }
 
+      const totals = await calculateOrderTotals(tx as any, order.id, providerId)
+      await tx.order.update({ where: { id: order.id }, data: { totalAmount: totals.totalAmount } })
       await tx.orderStatusHistory.create({ data: { orderId: order.id, status: 'PENDING' } })
-      orders.push(order)
+      orders.push({ ...order, totalAmount: totals.totalAmount })
     }
 
     return orders

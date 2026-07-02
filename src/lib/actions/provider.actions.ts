@@ -99,8 +99,42 @@ export async function getOrdersByProvider(providerId: string) {
   })
 }
 
+export async function getProviderDashboardData(providerId: string) {
+  const orders = await prisma.order.findMany({
+    where: { providerId },
+    orderBy: { createdAt: 'desc' },
+    take: 10,
+    select: {
+      id: true,
+      orderNumber: true,
+      totalAmount: true,
+      status: true,
+      createdAt: true,
+      customer: { select: { id: true, nameEN: true, nameAR: true, mobile: true } },
+    },
+  })
+
+  const pendingOrders = orders.filter((order) => String(order.status).toUpperCase() === 'PENDING').length
+  const recentOrders = orders.slice(0, 5)
+  const revenue = orders.reduce((sum, order) => {
+    const status = String(order.status).toUpperCase()
+    if (status === 'CANCELLED' || status === 'REFUNDED') return sum
+    return sum + Number(order.totalAmount || 0)
+  }, 0)
+
+  return { pendingOrders, recentOrders, revenue, totalOrders: orders.length }
+}
+
 export async function getOrderByIdForProvider(providerId: string, orderId: string) {
-  return await prisma.order.findFirst({ where: { id: orderId, providerId }, include: { items: { include: { providerProduct: { include: { catalogProduct: true } } } }, customer: true, address: true } })
+  return await prisma.order.findFirst({
+    where: { id: orderId, providerId },
+    include: {
+      items: { include: { providerProduct: { include: { catalogProduct: true } } } },
+      customer: true,
+      address: true,
+      statusHistory: { orderBy: { createdAt: 'asc' } },
+    },
+  })
 }
 
 export async function listCatalogProducts(filter?: Record<string, unknown>) {

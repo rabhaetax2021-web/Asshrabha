@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { calculateOrderTotals } from '@/lib/order-pricing'
 
 export type ProviderOrderModificationAction = 'REDUCE_QUANTITY' | 'REMOVE_PRODUCT' | 'MARK_UNAVAILABLE'
 
@@ -59,9 +60,8 @@ export async function applyProviderOrderModification(params: {
       data: { quantity: newQuantity, totalPrice: nextTotalPrice },
     })
 
-    const items = await prisma.orderItem.findMany({ where: { orderId } })
-    const total = items.reduce((sum, current) => sum + (current.totalPrice || 0), 0)
-    await prisma.order.update({ where: { id: orderId }, data: { totalAmount: total } })
+    const totals = await calculateOrderTotals(prisma, orderId, providerId)
+    await prisma.order.update({ where: { id: orderId }, data: { totalAmount: totals.totalAmount } })
     await prisma.auditLog.create({
       data: {
         userId,
@@ -95,9 +95,8 @@ export async function applyProviderOrderModification(params: {
       data: { quantity: 0, totalPrice: 0 },
     })
 
-    const items = await prisma.orderItem.findMany({ where: { orderId } })
-    const total = items.reduce((sum, current) => sum + (current.totalPrice || 0), 0)
-    await prisma.order.update({ where: { id: orderId }, data: { totalAmount: total } })
+    const totals = await calculateOrderTotals(prisma, orderId, providerId)
+    await prisma.order.update({ where: { id: orderId }, data: { totalAmount: totals.totalAmount } })
     await prisma.auditLog.create({
       data: {
         userId,

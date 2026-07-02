@@ -55,7 +55,6 @@ export default function PwaInstallPage() {
     mediaQuery.addEventListener('change', handleChange);
 
     const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
