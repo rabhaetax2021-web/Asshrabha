@@ -1,4 +1,5 @@
 import React from 'react'
+import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Card from '@/components/ui/Card'
 import EditProductForm from '@/components/provider/EditProductForm'
@@ -7,6 +8,10 @@ type Props = { params: { id: string } }
 
 export default async function EditProductPage({ params }: Props) {
   const id = params.id
+  if (!id) {
+    // Missing id — send user back to products list instead of calling Prisma with undefined
+    redirect('/provider/products')
+  }
   const prod = await prisma.providerProduct.findUnique({ where: { id }, include: { catalogProduct: true } })
   if (!prod) return <div className="container"><Card><p>Product not found.</p></Card></div>
 
