@@ -10,11 +10,30 @@ export default function EditProductForm({ initial }: { initial: any }) {
   const [stockQuantity, setStockQuantity] = useState(String(initial.stockQuantity || '0'))
   const [loading, setLoading] = useState(false)
 
+  const wholesaleMin = Number(initial.wholesaleMinPrice || 0)
+  const wholesaleMax = Number(initial.wholesaleMaxPrice || 0)
+  const retailMin = Number(initial.retailMinPrice || 0)
+  const retailMax = Number(initial.retailMaxPrice || 0)
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     try {
-      const payload = { sellingPrice: Number(sellingPrice), wholesalePrice: Number(wholesalePrice), retailPrice: Number(retailPrice), stockQuantity: Number(stockQuantity) }
+      // Client-side validation: enforce catalog price ranges when provided
+      const w = Number(wholesalePrice)
+      const r = Number(retailPrice)
+      if (wholesaleMax > 0 && (w < wholesaleMin || w > wholesaleMax)) {
+        alert(`Wholesale price must be between ${wholesaleMin} and ${wholesaleMax}`)
+        setLoading(false)
+        return
+      }
+      if (retailMax > 0 && (r < retailMin || r > retailMax)) {
+        alert(`Retail price must be between ${retailMin} and ${retailMax}`)
+        setLoading(false)
+        return
+      }
+
+      const payload = { sellingPrice: Number(sellingPrice), wholesalePrice: w, retailPrice: r, stockQuantity: Number(stockQuantity) }
       const res = await fetch(`/api/provider/provider-products/${initial.id}`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
       const j = await res.json()
       if (!res.ok) throw new Error(j?.error || 'Failed')
@@ -35,6 +54,11 @@ export default function EditProductForm({ initial }: { initial: any }) {
       <div className="form-row">
         <label className="label">Wholesale Price</label>
         <input className="input" type="number" step="0.01" value={wholesalePrice} onChange={e => setWholesalePrice(e.target.value)} />
+        {wholesaleMax > 0 && (
+          <div style={{ marginTop: 6, color: 'var(--text-muted)' }}>
+            Allowed wholesale: {wholesaleMin} - {wholesaleMax}
+          </div>
+        )}
       </div>
       <div className="form-row">
         <label className="label">Selling Price</label>
@@ -43,6 +67,11 @@ export default function EditProductForm({ initial }: { initial: any }) {
       <div className="form-row">
         <label className="label">Retail Price</label>
         <input className="input" type="number" step="0.01" value={retailPrice} onChange={e => setRetailPrice(e.target.value)} />
+        {retailMax > 0 && (
+          <div style={{ marginTop: 6, color: 'var(--text-muted)' }}>
+            Allowed retail: {retailMin} - {retailMax}
+          </div>
+        )}
       </div>
       <div className="form-row">
         <label className="label">Stock Quantity</label>

@@ -10,7 +10,17 @@ export default async function EditProductPage({ params }: Props) {
   const prod = await prisma.providerProduct.findUnique({ where: { id }, include: { catalogProduct: true } })
   if (!prod) return <div className="container"><Card><p>Product not found.</p></Card></div>
 
-  const initial = { id: prod.id, sellingPrice: prod.sellingPrice, wholesalePrice: prod.wholesalePrice, retailPrice: prod.retailPrice, stockQuantity: prod.stockQuantity }
+  const initial = {
+    id: prod.id,
+    sellingPrice: prod.sellingPrice,
+    wholesalePrice: prod.wholesalePrice,
+    retailPrice: prod.retailPrice,
+    stockQuantity: prod.stockQuantity,
+    wholesaleMinPrice: prod.catalogProduct?.wholesaleMinPrice ?? 0,
+    wholesaleMaxPrice: prod.catalogProduct?.wholesaleMaxPrice ?? 0,
+    retailMinPrice: prod.catalogProduct?.retailMinPrice ?? 0,
+    retailMaxPrice: prod.catalogProduct?.retailMaxPrice ?? 0,
+  }
 
   return (
     <section className="provider-product-edit container">
