@@ -4158,6 +4158,75 @@ html {
   border-bottom: 1px solid var(--border-light);
 }
 
+.order-item-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.order-actions-grid {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.order-print-sheet {
+  display: none;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--primary-100);
+  color: var(--primary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+}
+
+.card-interactive {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.card-interactive:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-200);
+}
+
+@media (max-width: 768px) {
+  .order-card {
+    padding: var(--space-4);
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media print {
+  .order-print-sheet {
+    display: block !important;
+  }
+
+  .order-print-sheet .card {
+    box-shadow: none !important;
+    border: 1px solid #ddd;
+  }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .order-card {
+    gap: var(--space-2);
+  }
+}
+
 .table-wrap th {
   background: var(--bg-secondary);
   font-weight: var(--font-semibold);
