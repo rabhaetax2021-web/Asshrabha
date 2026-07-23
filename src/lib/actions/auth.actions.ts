@@ -368,7 +368,7 @@ export async function registerAction(data: {
             },
           };
         } else {
-          payload = { messaging_product: 'whatsapp', to: cleaned, type: 'text', text: { body: bodyText } };
+          payload = { messaging_product: 'whatsapp', to: recipientPhone, type: 'text', text: { body: bodyText } };
         }
 
         const res = await fetch(`https://graph.facebook.com/v17.0/${phoneId}/messages`, {
