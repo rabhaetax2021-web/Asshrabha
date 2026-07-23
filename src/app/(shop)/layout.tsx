@@ -4,6 +4,7 @@ import Link from 'next/link'
 import FooterTabs from '@/components/shop/FooterTabs'
 import MobileHeader from '@/components/ui/MobileHeader'
 import CartPopup from '@/components/shop/CartPopup'
+import ShopPullToRefresh from '@/components/shop/ShopPullToRefresh'
 import { getCurrentUser } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
@@ -31,12 +32,14 @@ export async function generateViewport(): Promise<Viewport | undefined> {
 
 export default function ShopRootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="shop-root">
-      <MobileHeader />
-      <main className="shop-main">{children}</main>
-      <FooterTabs />
-      <CartPopup />
-    </div>
+    <ShopPullToRefresh>
+      <div className="shop-root">
+        <MobileHeader />
+        <main className="shop-main">{children}</main>
+        <FooterTabs />
+        <CartPopup />
+      </div>
+    </ShopPullToRefresh>
   )
 }
 

@@ -9,6 +9,7 @@ type Slide = {
   image?: string
   titleEN?: string
   titleAR?: string
+  caption?: string
   productId?: string
   action?: string
 }
@@ -76,15 +77,22 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
           }
 
           const label = (current as any).titleEN || (current as any).titleAR || (current as any).caption || ''
+          const caption = (current as any).caption || ''
 
           if (href) {
             return (
-              <Link href={href} className="hero-slide" style={slideStyle} aria-label={label}></Link>
+              <>
+                <Link href={href} className="hero-slide" style={slideStyle} aria-label={label}></Link>
+                {caption ? <div className="hero-caption">{caption}</div> : null}
+              </>
             )
           }
 
           return (
-            <div className="hero-slide" style={slideStyle} role="img" aria-label={label} />
+            <>
+              <div className="hero-slide" style={slideStyle} role="img" aria-label={label} />
+              {caption ? <div className="hero-caption">{caption}</div> : null}
+            </>
           )
         })()
       }

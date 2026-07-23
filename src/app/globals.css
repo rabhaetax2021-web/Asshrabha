@@ -4428,6 +4428,21 @@ html {
   }
 }
 
+.shop-main .hero-caption {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 14px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+}
+
+.shop-pull-to-refresh {
+  min-height: 100vh;
+}
+
 .shop-footer {
   background: var(--bg-secondary);
   border-top: 1px solid var(--border-light);
