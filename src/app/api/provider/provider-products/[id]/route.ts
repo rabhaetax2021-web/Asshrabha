@@ -74,8 +74,8 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
 
     const data: any = {}
 
-    // If prices changed on an already approved product, mark it pending approval
-    if (priceChanged && prod.status === 'APPROVED') {
+    // If prices changed on an already approved/active product, mark it pending approval
+    if (priceChanged && (prod.status === 'APPROVED' || prod.status === 'PENDING_APPROVAL' || prod.status === 'ACTIVE')) {
       data.status = 'PENDING_APPROVAL'
       data.priceApproved = false
       if (body.sellingPrice !== undefined) data.sellingPrice = newSelling

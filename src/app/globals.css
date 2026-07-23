@@ -1115,6 +1115,16 @@ table {
   background: transparent;
 }
 .admin-form textarea { min-height: 120px; resize: vertical }
+.admin-form .price-range-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+@media (max-width: 720px) {
+  .admin-form .price-range-row {
+    grid-template-columns: 1fr;
+  }
+}
 .admin-form .form-actions { display: flex; gap: var(--space-3); align-items: center }
 .btn { padding: var(--space-2) var(--space-4); border-radius: var(--radius-sm); background: transparent; border: 1px solid var(--border-color); cursor: pointer }
 .btn.primary { background: var(--primary); color: var(--text-inverse); border-color: transparent; box-shadow: var(--shadow-primary) }
@@ -3608,9 +3618,10 @@ html {
 
 @media (max-width: 640px) {
   .notification-menu {
-    inset-inline: var(--space-2);
-    right: var(--space-2);
-    left: var(--space-2);
+    position: fixed;
+    inset-inline-start: var(--space-2);
+    inset-inline-end: var(--space-2);
+    top: calc(var(--topbar-height) + var(--space-2));
     width: auto;
     max-width: none;
     max-height: min(480px, calc(100dvh - var(--space-4)));

@@ -309,10 +309,10 @@ export default function RegisterPage() {
             >
               <div style={{ fontSize: 'var(--text-3xl)', marginBottom: 'var(--space-3)' }}>🏬</div>
               <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-2)' }}>
-                Shop
+                {t('shopCustomerRoleLabel')}
               </h3>
               <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-                Wholesale pricing and shop account access.
+                {t('shopCustomerRoleDescription')}
               </p>
             </button>
 
@@ -323,10 +323,10 @@ export default function RegisterPage() {
             >
               <div style={{ fontSize: 'var(--text-3xl)', marginBottom: 'var(--space-3)' }}>🛒</div>
               <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-2)' }}>
-                Customer
+                {t('userClientRoleLabel')}
               </h3>
               <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-                Retail pricing for standard customer orders.
+                {t('userClientRoleDescription')}
               </p>
             </button>
 

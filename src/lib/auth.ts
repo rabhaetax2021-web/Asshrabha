@@ -2,6 +2,7 @@ import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { getDashboardPath } from '@/lib/utils/permissions';
+import { normalizeEgyptMobile } from '@/lib/utils/helpers';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -16,7 +17,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        const mobile = credentials.mobile as string;
+        const mobile = normalizeEgyptMobile(credentials.mobile as string);
         const password = credentials.password as string;
         console.log('[auth][authorize] mobile=', mobile);
 

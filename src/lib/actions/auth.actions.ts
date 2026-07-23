@@ -4,7 +4,7 @@ import { signIn, signOut } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { BCRYPT_SALT_ROUNDS, OTP_EXPIRY_MINUTES, OTP_LENGTH } from '@/lib/utils/constants';
-import { generateOTP } from '@/lib/utils/helpers';
+import { generateOTP, normalizeEgyptMobile, normalizeEgyptMobileToE164 } from '@/lib/utils/helpers';
 import type { ApiResponse } from '@/types';
 import { getErrorMessage } from '@/lib/errors'
 import { isAdmin } from '@/lib/utils/permissions'
@@ -16,12 +16,17 @@ export async function loginAction(
   password: string
 ): Promise<ApiResponse<{ redirectTo: string }>> {
   try {
+    const normalizedMobile = normalizeEgyptMobile(mobile);
+    if (!normalizedMobile) {
+      return { success: false, error: 'INVALID_CREDENTIALS' };
+    }
+
     // Pre-validate credentials by reading the stored password hash
     // Use Prisma when available, otherwise fall back to direct PG query
     let storedHash: string | null = null
     try {
       const { prisma } = await import('@/lib/prisma')
-      const u = await prisma.user.findUnique({ where: { mobile }, select: { passwordHash: true } })
+      const u = await prisma.user.findUnique({ where: { mobile: normalizedMobile }, select: { passwordHash: true } })
       if (u) storedHash = u.passwordHash as string | null
     } catch (e) {
       try {
@@ -40,7 +45,7 @@ export async function loginAction(
         if (databaseUrl) {
           const client = new Client({ connectionString: databaseUrl })
           await client.connect()
-          const res = await client.query('SELECT "passwordHash" FROM "User" WHERE mobile = $1', [mobile])
+          const res = await client.query('SELECT "passwordHash" FROM "User" WHERE mobile = $1', [normalizedMobile])
           if (res.rowCount) storedHash = res.rows[0].passwordHash
           await client.end()
         }
@@ -58,7 +63,7 @@ export async function loginAction(
 
     // At this point credentials are valid — proceed to sign in via NextAuth
     const result = await signIn('credentials', {
-      mobile,
+      mobile: normalizedMobile,
       password,
       redirect: false,
     });
@@ -69,7 +74,7 @@ export async function loginAction(
     try {
       const { prisma } = await import('@/lib/prisma')
       user = await prisma.user.findUnique({
-          where: { mobile },
+          where: { mobile: normalizedMobile },
           select: { id: true, role: true, status: true, forcePasswordReset: true },
         })
     } catch (e) {
@@ -89,7 +94,7 @@ export async function loginAction(
         if (databaseUrl) {
           const client = new Client({ connectionString: databaseUrl })
           await client.connect()
-          const res = await client.query('SELECT id, role, status, "forcePasswordReset" FROM "User" WHERE mobile = $1', [mobile])
+          const res = await client.query('SELECT id, role, status, "forcePasswordReset" FROM "User" WHERE mobile = $1', [normalizedMobile])
           if (res.rowCount) user = res.rows[0]
           await client.end()
         }
@@ -149,9 +154,11 @@ export async function registerAction(data: {
   banner?: string;
 }): Promise<ApiResponse<{ userId: string }>> {
   try {
+    const mobile = normalizeEgyptMobile(data.mobile);
+
     // Check if mobile already exists
     const existing = await prisma.user.findUnique({
-      where: { mobile: data.mobile },
+      where: { mobile },
     });
 
     if (existing) {
@@ -194,7 +201,7 @@ export async function registerAction(data: {
     const userWithOtp = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
-          mobile: data.mobile,
+          mobile,
           passwordHash,
           nameAR: data.nameAR,
           nameEN: data.nameEN,
@@ -242,7 +249,7 @@ export async function registerAction(data: {
               userId: newUser.id,
               label: 'Home',
               fullName: data.nameEN || data.nameAR || '',
-              mobile: data.mobile,
+              mobile,
               addressLine: data.locationAddress || '',
               city: cityName,
               locationId: data.locationId || null,
@@ -316,13 +323,7 @@ export async function registerAction(data: {
       const templateLanguage = process.env.WHATSAPP_TEMPLATE_LANGUAGE?.trim() || 'en_US';
 
       if (process.env.WHATSAPP_PROVIDER === 'meta' && token && phoneId) {
-        // normalize phone
-        let cleaned = String(data.mobile).replace(/\D/g, '');
-        if (cleaned.startsWith('0')) cleaned = '20' + cleaned.substring(1);
-        else if (!cleaned.startsWith('20') && !cleaned.startsWith('+')) {
-          if (cleaned.length === 10) cleaned = '20' + cleaned;
-        }
-        if (!cleaned.startsWith('+')) cleaned = '+' + cleaned;
+        const recipientPhone = normalizeEgyptMobileToE164(data.mobile);
 
         const bodyText = (await (async () => {
           try {
@@ -337,7 +338,7 @@ export async function registerAction(data: {
         if (templateName) {
           payload = {
             messaging_product: 'whatsapp',
-            to: cleaned,
+            to: recipientPhone,
             type: 'template',
             template: {
               name: templateName,

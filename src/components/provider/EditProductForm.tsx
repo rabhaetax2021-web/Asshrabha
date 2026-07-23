@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation'
 
 export default function EditProductForm({ initial }: { initial: any }) {
   const router = useRouter()
-  const [sellingPrice, setSellingPrice] = useState(String(initial.sellingPrice || ''))
   const [wholesalePrice, setWholesalePrice] = useState(String(initial.wholesalePrice || ''))
   const [retailPrice, setRetailPrice] = useState(String(initial.retailPrice || ''))
   const [stockQuantity, setStockQuantity] = useState(String(initial.stockQuantity || '0'))
@@ -33,7 +32,7 @@ export default function EditProductForm({ initial }: { initial: any }) {
         return
       }
 
-      const payload = { sellingPrice: Number(sellingPrice), wholesalePrice: w, retailPrice: r, stockQuantity: Number(stockQuantity) }
+      const payload = { wholesalePrice: w, retailPrice: r, stockQuantity: Number(stockQuantity) }
       const res = await fetch(`/api/provider/provider-products/${initial.id}`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
       const j = await res.json()
       if (!res.ok) throw new Error(j?.error || 'Failed')
@@ -61,10 +60,6 @@ export default function EditProductForm({ initial }: { initial: any }) {
         )}
       </div>
       <div className="form-row">
-        <label className="label">Selling Price</label>
-        <input className="input" type="number" step="0.01" value={sellingPrice} onChange={e => setSellingPrice(e.target.value)} />
-      </div>
-      <div className="form-row">
         <label className="label">Retail Price</label>
         <input className="input" type="number" step="0.01" value={retailPrice} onChange={e => setRetailPrice(e.target.value)} />
         {retailMax > 0 && (
@@ -78,7 +73,6 @@ export default function EditProductForm({ initial }: { initial: any }) {
         <input className="input" type="number" value={stockQuantity} onChange={e => setStockQuantity(e.target.value)} />
       </div>
       {(
-        Number(sellingPrice) !== Number(initial.sellingPrice || 0) ||
         Number(wholesalePrice) !== Number(initial.wholesalePrice || 0) ||
         Number(retailPrice) !== Number(initial.retailPrice || 0)
       ) && (

@@ -102,17 +102,17 @@ export default function NewProductForm({ categories, initial }: { categories: Ca
         <input value={nameAR} onChange={e => setNameAR(e.target.value)} />
       </div>
       <div className="form-row" style={{ display: 'grid', gap: 8 }}>
-        <label>Wholesale Price Range</label>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input placeholder="Min" value={wholesaleMinPrice} onChange={e => setWholesaleMinPrice(e.target.value)} type="number" step="0.01" required />
-          <input placeholder="Max" value={wholesaleMaxPrice} onChange={e => setWholesaleMaxPrice(e.target.value)} type="number" step="0.01" required />
+        <label>{t('wholesalePriceRange')}</label>
+        <div className="price-range-row">
+          <input placeholder={t('min')} value={wholesaleMinPrice} onChange={e => setWholesaleMinPrice(e.target.value)} type="number" step="0.01" required />
+          <input placeholder={t('max')} value={wholesaleMaxPrice} onChange={e => setWholesaleMaxPrice(e.target.value)} type="number" step="0.01" required />
         </div>
       </div>
       <div className="form-row" style={{ display: 'grid', gap: 8 }}>
-        <label>Retail Price Range</label>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input placeholder="Min" value={retailMinPrice} onChange={e => setRetailMinPrice(e.target.value)} type="number" step="0.01" required />
-          <input placeholder="Max" value={retailMaxPrice} onChange={e => setRetailMaxPrice(e.target.value)} type="number" step="0.01" required />
+        <label>{t('retailPriceRange')}</label>
+        <div className="price-range-row">
+          <input placeholder={t('min')} value={retailMinPrice} onChange={e => setRetailMinPrice(e.target.value)} type="number" step="0.01" required />
+          <input placeholder={t('max')} value={retailMaxPrice} onChange={e => setRetailMaxPrice(e.target.value)} type="number" step="0.01" required />
         </div>
       </div>
       <div className="form-row">

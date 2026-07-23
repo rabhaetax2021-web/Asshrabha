@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils/helpers'
 
@@ -20,8 +21,14 @@ export default function AdminSidebar({ collapsed = false, initialLocale = 'ar' }
   const [open, setOpen] = useState(false)
   const [walletSection, setWalletSection] = useState<'customers' | 'providers' | null>(null)
   const [reportsOpen, setReportsOpen] = useState(false)
+  const pathname = usePathname()
   const t = useTranslations('admin')
   const tc = useTranslations('common')
+
+  useEffect(() => {
+    if (!open) return
+    setSidebarOpen(false)
+  }, [pathname])
 
   const handleLogout = async () => {
     try {
@@ -85,10 +92,18 @@ export default function AdminSidebar({ collapsed = false, initialLocale = 'ar' }
         </button>
       </div>
 
-      <nav className="sidebar-nav admin-nav">
+      <nav className="sidebar-nav admin-nav" onClick={(event) => {
+        const target = event.target as HTMLElement
+        if (target.closest('a.sidebar-item')) {
+          setSidebarOpen(false)
+        }
+      }}>
         <ul>
           <li>
             <Link href="/admin" className="sidebar-item">{t('dashboard')}</Link>
+          </li>
+          <li>
+            <Link href="/admin/notifications" className="sidebar-item">{tc('notifications')}</Link>
           </li>
           <li>
             <button
@@ -185,9 +200,7 @@ export default function AdminSidebar({ collapsed = false, initialLocale = 'ar' }
             )}
           </li>
           <li>
-            <div className="sidebar-item sidebar-collapsible" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>{t('settings')}</span>
-            </div>
+            <Link href="/admin/settings" className="sidebar-item">{t('settings')}</Link>
           </li>
           <li>
             <Link href="/admin/templates" className="sidebar-item">{t('templates')}</Link>

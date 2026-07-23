@@ -4,20 +4,27 @@ import { prisma } from '@/lib/prisma'
 import Card from '@/components/ui/Card'
 import EditProductForm from '@/components/provider/EditProductForm'
 
-type Props = { params: { id: string } }
+type Props = { params: Promise<{ id: string }> | { id: string } }
 
 export default async function EditProductPage({ params }: Props) {
-  const id = params.id
-  if (!id) {
-    // Missing id — send user back to products list instead of calling Prisma with undefined
-    redirect('/provider/products')
-  }
-  const prod = await prisma.providerProduct.findUnique({ where: { id }, include: { catalogProduct: true } })
-  if (!prod) return <div className="container"><Card><p>Product not found.</p></Card></div>
+  try {
+    const resolvedParams = await params
+    const id = resolvedParams.id
+    if (!id) {
+      // Missing id — render a friendly message instead of redirecting (avoid NEXT_REDIRECT being thrown)
+      return (
+        <div className="container">
+          <Card>
+            <p>Missing product id.</p>
+          </Card>
+        </div>
+      )
+    }
+    const prod = await prisma.providerProduct.findUnique({ where: { id }, include: { catalogProduct: true } })
+    if (!prod) return <div className="container"><Card><p>Product not found.</p></Card></div>
 
   const initial = {
     id: prod.id,
-    sellingPrice: prod.sellingPrice,
     wholesalePrice: prod.wholesalePrice,
     retailPrice: prod.retailPrice,
     stockQuantity: prod.stockQuantity,
@@ -43,4 +50,21 @@ export default async function EditProductPage({ params }: Props) {
       </Card>
     </section>
   )
+  } catch (err) {
+    // If Next triggered a redirect, re-throw so the App Router handles it.
+    const msg = String((err as any)?.message || err || '')
+    if (msg.includes('NEXT_REDIRECT') || msg.includes('Redirect')) throw err
+
+    // Log other server errors and show a friendly message in dev
+    console.error('[EditProductPage] error', err)
+    return (
+      <div className="container">
+        <Card>
+          <h2>Server error</h2>
+          <pre style={{ whiteSpace: 'pre-wrap' }}>{String((err as any)?.message || err)}</pre>
+          <p>Please check the server logs for details.</p>
+        </Card>
+      </div>
+    )
+  }
 }

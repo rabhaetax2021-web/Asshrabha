@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils/helpers'
 
@@ -10,6 +11,7 @@ interface Props { collapsed?: boolean; initialLocale?: 'ar'|'en' }
 export default function ProviderSidebar({ collapsed = false, initialLocale = 'ar' }: Props) {
   const t = useTranslations('provider')
   const tc = useTranslations('common')
+  const pathname = usePathname()
   const [locale, setLocaleState] = useState<'ar'|'en'>(() => {
     if (typeof document === 'undefined') return initialLocale
     const m = document.cookie.match(/(?:^|; )NEXT_LOCALE=([^;]+)/)
@@ -17,6 +19,11 @@ export default function ProviderSidebar({ collapsed = false, initialLocale = 'ar
     return cookieLocale || initialLocale
   })
   const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    setSidebarOpen(false)
+  }, [pathname])
 
   // Locale is initialized from cookie above to avoid calling setState in effect
 
@@ -73,9 +80,15 @@ export default function ProviderSidebar({ collapsed = false, initialLocale = 'ar
         </button>
       </div>
 
-      <nav className="sidebar-nav provider-nav">
+      <nav className="sidebar-nav provider-nav" onClick={(event) => {
+        const target = event.target as HTMLElement
+        if (target.closest('a.sidebar-item')) {
+          setSidebarOpen(false)
+        }
+      }}>
         <ul>
           <li><Link href="/provider" className="sidebar-item">{t('dashboard')}</Link></li>
+          <li><Link href="/provider/notifications" className="sidebar-item">{tc('notifications')}</Link></li>
           <li><Link href="/provider/store" className="sidebar-item">{t('store')}</Link></li>
           <li><Link href="/provider/delivery-areas" className="sidebar-item">{t('deliveryAreas')}</Link></li>
           <li><Link href="/provider/products" className="sidebar-item">{t('products')}</Link></li>

@@ -6,13 +6,13 @@ import ApproveSuggestionForm from '@/components/admin/ApproveSuggestionForm'
 
 type CategoryOption = { id: string; nameEN: string | null; nameAR: string | null }
 
-export default async function SuggestionApprovalPage({ params }: { params: { id: string } }) {
+export default async function SuggestionApprovalPage({ params }: { params: Promise<{ id: string }> }) {
   const current = await getCurrentUser()
   if (!current || !['ROOT_ADMIN', 'SUB_ADMIN'].includes(current.role) || current.status !== 'APPROVED') {
     return <div>Unauthorized</div>
   }
 
-  const suggestionId = params?.id
+  const { id: suggestionId } = await params
   if (!suggestionId) {
     return <div>Suggestion not found</div>
   }

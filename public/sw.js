@@ -27,7 +27,9 @@ self.addEventListener('fetch', (event) => {
     fetch(req)
       .then((response) => {
         const cloned = response.clone()
-        if (req.destination === '' || req.destination === 'document' || req.destination === 'script' || req.destination === 'style' || req.destination === 'image') {
+        // Avoid caching navigation documents at runtime, especially admin pages,
+        // so stale login/html responses don't persist after approval reloads.
+        if (req.destination === 'script' || req.destination === 'style' || req.destination === 'image') {
           caches.open('asshrabha-shell').then((cache) => cache.put(req, cloned)).catch(() => undefined)
         }
         return response

@@ -1,7 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 import Button from './Button'
 import Icon from './Icon'
 import { formatRelativeTime } from '@/lib/utils/helpers'
@@ -20,6 +21,7 @@ function urlBase64ToUint8Array(base64String: string) {
 
 export default function NotificationBell() {
   const router = useRouter()
+  const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<NotificationItem[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -286,6 +288,8 @@ export default function NotificationBell() {
     return unreadCount === 1 ? 'إشعار جديد واحد' : `${unreadCount} إشعارات جديدة`
   }, [unreadCount])
 
+  const unreadItems = useMemo(() => items.filter((item) => !item.isRead), [items])
+
   const labels = {
     open: 'فتح الإشعارات',
     title: 'الإشعارات',
@@ -299,6 +303,7 @@ export default function NotificationBell() {
     loadError: 'تعذر تحميل الإشعارات. يرجى المحاولة مرة أخرى.',
     registerError: 'تعذر تسجيل اشتراك الإشعارات.',
     subscriptionError: 'تعذر تهيئة اشتراك الإشعارات. يرجى توفير NEXT_PUBLIC_VAPID_PUBLIC_KEY.',
+    history: 'عرض السجل',
   }
 
   return (
@@ -319,9 +324,14 @@ export default function NotificationBell() {
               <strong>{labels.title}</strong>
               <div className="notification-menu-subtitle">{panelLabel}</div>
             </div>
-            <button type="button" className="btn btn-sm btn-ghost" onClick={markAllRead}>
-              {labels.markAllRead}
-            </button>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button type="button" className="btn btn-sm btn-ghost" onClick={markAllRead}>
+                {labels.markAllRead}
+              </button>
+              <Link href={pathname?.startsWith('/provider') ? '/provider/notifications' : '/admin/notifications'} className="btn btn-sm btn-primary">
+                {labels.history}
+              </Link>
+            </div>
           </div>
 
           {canPush && permission !== 'granted' && (
@@ -336,10 +346,10 @@ export default function NotificationBell() {
           {error && <div className="notification-error">{error}</div>}
 
           <div className="notification-list">
-            {items.length === 0 ? (
+            {unreadItems.length === 0 ? (
               <div className="notification-empty">{labels.empty}</div>
             ) : (
-              items.map((item) => {
+              unreadItems.map((item) => {
                 const data = item.data as Record<string, unknown> | null
                 const url = data && typeof data.url === 'string' ? data.url : undefined
                 const type = data && typeof data.type === 'string' ? data.type : undefined

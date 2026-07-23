@@ -96,8 +96,15 @@ export default function AddToCart({ providerProductId, catalogProductId }: { pro
       const res = await fetch('/api/cart/add', { method: 'POST', body: form })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Failed to add to cart')
-      // If server suggests a redirect (to product page), follow it so user can pick listing
+      // If server suggests a redirect (to product page), add the chosen listing to the local cart before navigation.
       if (data?.redirect) {
+        if (data?.providerProductId) {
+          const title = data.title || undefined
+          const price = data.unitPrice ?? undefined
+          const image = productImage || undefined
+          addItem({ providerProductId: data.providerProductId, optionId: undefined, unitType: selectedCatalogOption || undefined, quantity: Number(quantity || 1), title, price, image })
+          try { setOpen(true) } catch (e) {}
+        }
         window.location.href = data.redirect
         return
       }

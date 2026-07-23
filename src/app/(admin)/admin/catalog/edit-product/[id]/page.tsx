@@ -5,8 +5,8 @@ import NewProductForm from '@/components/admin/NewProductForm'
 
 type CategoryOption = { id: string; nameEN: string | null; nameAR: string | null }
 
-export default async function EditCatalogProductPage({ params }: { params: { id: string } }) {
-  const id = params.id
+export default async function EditCatalogProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   if (!id) return (
     <section className="admin-catalog container">
       <h1>Invalid product id</h1>

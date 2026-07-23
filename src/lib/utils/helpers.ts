@@ -139,6 +139,32 @@ export function generateOTP(length: number = 6): string {
   return otp;
 }
 
+export function normalizeEgyptMobile(mobile: string): string {
+  const digits = String(mobile || '').replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('20')) {
+    return '0' + digits.slice(2);
+  }
+  if (digits.length === 11 && digits.startsWith('2')) {
+    return '0' + digits.slice(1);
+  }
+  if (digits.length === 10 && digits.startsWith('1')) {
+    return '0' + digits;
+  }
+  if (digits.length === 11 && digits.startsWith('01')) {
+    return digits;
+  }
+  return digits;
+}
+
+export function normalizeEgyptMobileToE164(mobile: string): string {
+  const normalized = normalizeEgyptMobile(mobile);
+  if (!normalized) return '';
+  if (normalized.startsWith('0')) {
+    return '+20' + normalized.slice(1);
+  }
+  return '+' + normalized;
+}
+
 // ─── File Helpers ─────────────────────────────────────────────────────────────
 
 export function getFileExtension(filename: string): string {

@@ -1,45 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { generateOTP } from '@/lib/utils/helpers'
+import { generateOTP, normalizeEgyptMobile, normalizeEgyptMobileToE164 } from '@/lib/utils/helpers'
 import { OTP_EXPIRY_MINUTES, OTP_LENGTH } from '@/lib/utils/constants'
-
-/**
- * Normalize phone number to E.164 format
- * Assumes Egyptian mobile (20) if no country code
- */
-function normalizePhoneToE164(mobile: string): string {
-  let cleaned = mobile.replace(/\D/g, '')
-  
-  // If starts with 0 (Egyptian format), replace with 20
-  if (cleaned.startsWith('0')) {
-    cleaned = '20' + cleaned.substring(1)
-  }
-  // If doesn't have country code, assume Egypt (20)
-  else if (!cleaned.startsWith('20') && !cleaned.startsWith('1')) {
-    if (cleaned.length === 10) cleaned = '20' + cleaned // 10-digit without country code
-  }
-  
-  return '+' + cleaned
-}
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const userId = body.userId || null
     let mobile = (body.mobile || '').toString().trim()
+    const normalizedMobile = normalizeEgyptMobile(mobile)
 
     console.log('[WhatsApp OTP] Received request:', { userId, mobile: mobile.substring(0, 5) + '***' })
 
     // Resolve userId from mobile when necessary
     let uid = userId
     if (!uid) {
-      if (!mobile) {
+      if (!normalizedMobile) {
         console.warn('[WhatsApp OTP] Missing userId and mobile')
         return NextResponse.json({ success: false, error: 'MISSING_USER_OR_MOBILE' }, { status: 400 })
       }
-      const user = await prisma.user.findUnique({ where: { mobile } })
+      const user = await prisma.user.findUnique({ where: { mobile: normalizedMobile } })
       if (!user) {
-        console.warn('[WhatsApp OTP] User not found:', mobile)
+        console.warn('[WhatsApp OTP] User not found:', normalizedMobile)
         return NextResponse.json({ success: false, error: 'USER_NOT_FOUND' }, { status: 404 })
       }
       uid = user.id
@@ -72,6 +54,8 @@ export async function POST(req: NextRequest) {
     if (!mobile) {
       const user = await prisma.user.findUnique({ where: { id: uid }, select: { mobile: true } })
       if (user) mobile = user.mobile
+    } else {
+      mobile = normalizedMobile
     }
 
     // Send via provider if configured (Meta / WhatsApp Cloud)
@@ -83,7 +67,7 @@ export async function POST(req: NextRequest) {
         const endpoint = `https://graph.facebook.com/v17.0/${phoneId}/messages`
 
         // Normalize phone to E.164 format
-        const recipientPhone = normalizePhoneToE164(mobile)
+        const recipientPhone = normalizeEgyptMobileToE164(mobile)
         console.log('[WhatsApp OTP] Normalized phone:', recipientPhone)
 
         // Fetch template from SystemSetting if present
