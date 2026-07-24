@@ -66,10 +66,41 @@ async function getUploadFile(request: Request): Promise<UploadFilePayload | null
 async function parseMultipartFile(request: Request): Promise<UploadFilePayload | null> {
   const contentType = request.headers.get('content-type') || ''
   const boundary = extractBoundary(contentType)
-  if (!boundary) return null
+  if (!boundary) {
+    console.error('[upload] parseMultipartFile: no boundary in content-type', { contentType })
+    return null
+  }
 
   const raw = Buffer.from(await request.arrayBuffer())
-  return parseFilePart(raw, boundary, 'file')
+
+  // Log a short preview to help debug Vercel/edge differences (do not log full binary)
+  try {
+    const preview = raw.slice(0, 1024).toString('utf-8').replace(/\r/g, '\\r').replace(/\n/g, '\\n')
+    console.error('[upload] parseMultipartFile: raw preview', { length: raw.length, preview: preview.slice(0, 800) })
+  } catch (e) {
+    console.error('[upload] parseMultipartFile: failed to create preview', getErrorMessage(e))
+  }
+
+  // First attempt: strict Buffer-based search
+  let result = parseFilePart(raw, boundary, 'file')
+  if (result) return result
+
+  // Fallback: try searching as UTF-8 string for boundary markers (some platforms include unexpected preamble)
+  try {
+    const text = raw.toString('utf-8')
+    const b1 = `--${boundary}`
+    const idx = text.indexOf(b1)
+    if (idx !== -1) {
+      const sliced = Buffer.from(text.slice(idx))
+      result = parseFilePart(sliced, boundary, 'file')
+      if (result) return result
+    }
+  } catch (e) {
+    console.error('[upload] parseMultipartFile: utf8 fallback failed', getErrorMessage(e))
+  }
+
+  console.error('[upload] parseMultipartFile: failed to locate file part for boundary', { boundary, length: raw.length })
+  return null
 }
 
 function extractBoundary(contentType: string): string | null {
@@ -81,11 +112,19 @@ function extractBoundary(contentType: string): string | null {
 function parseFilePart(raw: Buffer, boundary: string, fieldName: string): UploadFilePayload | null {
   const marker = Buffer.from(`--${boundary}`)
   let cursor = raw.indexOf(marker)
+  if (cursor === -1) {
+    // Try to skip common preamble (e.g., leading CRLF) and search again
+    const alt = Buffer.from(`\r\n--${boundary}`)
+    cursor = raw.indexOf(alt)
+    if (cursor !== -1) cursor += 2 // position at `--boundary`
+  }
   if (cursor === -1) return null
 
   while (cursor !== -1) {
     cursor += marker.length
+    // skip optional CRLF after boundary
     if (raw[cursor] === 13 && raw[cursor + 1] === 10) cursor += 2
+    // check for final boundary `--`
     if (raw[cursor] === 45 && raw[cursor + 1] === 45) break
 
     const nextBoundary = raw.indexOf(marker, cursor)
