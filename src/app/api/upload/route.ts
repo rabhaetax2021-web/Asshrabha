@@ -39,11 +39,11 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
     
-    // Determine content type
-    const contentType = file.type || 'application/octet-stream'
+    // Determine content type for upload
+    const uploadContentType = file.type || 'application/octet-stream'
 
     // Upload to MinIO (using 'uploads' as category prefix)
-    const publicPath = await uploadToMinIO(filename, buffer, contentType, 'uploads')
+    const publicPath = await uploadToMinIO(filename, buffer, uploadContentType, 'uploads')
 
     return NextResponse.json({ ok: true, path: publicPath, filePath: publicPath })
   } catch (err: unknown) {
