@@ -23,7 +23,14 @@ export async function getProductById(id: string) {
 
   // Fallback to catalogProduct
   const catalogProduct = await prisma.catalogProduct.findUnique({ where: { id }, include: { category: true, unitRanges: true } })
-  if (catalogProduct) return { kind: 'catalog', data: catalogProduct }
+  if (catalogProduct) {
+    const firstProviderProduct = await prisma.providerProduct.findFirst({
+      where: { catalogProductId: catalogProduct.id },
+      include: { provider: true },
+    })
+
+    return { kind: 'catalog', data: catalogProduct, provider: firstProviderProduct?.provider ?? null }
+  }
 
   return null
 }

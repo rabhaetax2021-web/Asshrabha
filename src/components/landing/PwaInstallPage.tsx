@@ -27,7 +27,7 @@ export default function PwaInstallPage() {
         (window.navigator as unknown as { standalone?: boolean }).standalone === true;
       setIsStandalone(standalone);
       if (standalone) {
-        router.push('/login');
+        router.replace('/login');
       }
     };
 
@@ -39,7 +39,7 @@ export default function PwaInstallPage() {
     const mediaQuery = window.matchMedia('(display-mode: standalone)');
     const handleChange = (e: MediaQueryListEvent) => {
       if (e.matches) {
-        router.push('/login');
+        router.replace('/login');
       }
     };
     mediaQuery.addEventListener('change', handleChange);
@@ -51,7 +51,7 @@ export default function PwaInstallPage() {
 
     const handleAppInstalled = () => {
       setDeferredPrompt(null);
-      router.push('/login');
+      router.replace('/login');
     };
     window.addEventListener('appinstalled', handleAppInstalled);
 
@@ -67,7 +67,7 @@ export default function PwaInstallPage() {
     await deferredPrompt.prompt();
     const choice = await deferredPrompt.userChoice;
     if (choice.outcome === 'accepted') {
-      router.push('/login');
+      router.replace('/login');
     }
   }, [deferredPrompt, router]);
 
@@ -109,7 +109,31 @@ export default function PwaInstallPage() {
   const steps = selectedPlatform === 'android' ? androidSteps : iphoneSteps;
 
   if (isStandalone) {
-    return null;
+    return (
+      <main className="pwa-page" dir={isIos || isAndroid ? 'rtl' : undefined}>
+        <div className="pwa-card" style={{ textAlign: 'center' }}>
+          <div
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: '24px',
+              background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+              display: 'grid',
+              placeItems: 'center',
+              color: 'white',
+              fontSize: '1.75rem',
+              fontWeight: 700,
+              boxShadow: 'var(--shadow-primary-lg)',
+              margin: '0 auto var(--space-4)',
+            }}
+          >
+            ✓
+          </div>
+          <h1 style={{ marginBottom: 'var(--space-2)' }}>{t('pwaTitle') || 'Install App'}</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>{t('redirectingToApp') || 'Opening app...'}</p>
+        </div>
+      </main>
+    )
   }
 
   return (

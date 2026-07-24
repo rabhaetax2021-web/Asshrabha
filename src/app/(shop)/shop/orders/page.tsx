@@ -37,15 +37,17 @@ export default async function ShopOrdersPage() {
 
       <div className="orders-list" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
         {orders.map(o => (
-          <div key={o.id} className="order-card card" style={{ padding: 'var(--space-4)' }}>
-            <div className="order-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)', paddingBottom: 'var(--space-3)', borderBottom: '1px solid var(--border-light)' }}>
-              <div>
-                <div style={{ fontWeight: 'var(--font-bold)', color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>{t('orderNumber', { number: o.orderNumber })}</div>
-                <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-2xs)', marginTop: '2px' }}>
+          <Link key={o.id} href={`/shop/orders/${o.id}`} className="order-card card" style={{ padding: 'var(--space-4)', textDecoration: 'none', display: 'block' }}>
+            <div className="order-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--space-3)', marginBottom: 'var(--space-3)', paddingBottom: 'var(--space-3)', borderBottom: '1px solid var(--border-light)' }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 'var(--font-bold)', color: 'var(--text-primary)', fontSize: 'var(--text-sm)', marginBottom: '2px' }}>
+                  {t('orderNumber', { number: o.orderNumber })}
+                </div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-2xs)' }}>
                   {new Date(o.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
-              <span className={`badge ${getStatusBadge(o.status)}`} style={{ fontSize: 'var(--text-xs)', textTransform: 'capitalize' }}>
+              <span className={`badge ${getStatusBadge(o.status)}`} style={{ fontSize: 'var(--text-xs)', textTransform: 'capitalize', flexShrink: 0 }}>
                 {getStatusLabel(o.status, t)}
               </span>
             </div>
@@ -59,9 +61,9 @@ export default async function ShopOrdersPage() {
               }}>
                 {(o.provider?.shopNameEN || o.provider?.shopNameAR || 'S').charAt(0).toUpperCase()}
               </div>
-              <Link href={`/shop/store/${o.provider?.id}`} style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontWeight: 'var(--font-medium)', textDecoration: 'none' }}>
+              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontWeight: 'var(--font-medium)' }}>
                 {o.provider?.shopNameEN || o.provider?.shopNameAR || t('store')}
-              </Link>
+              </span>
             </div>
 
             {/* Items preview */}
@@ -103,7 +105,7 @@ export default async function ShopOrdersPage() {
               <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{tc('total')}</span>
               <span style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-bold)', color: 'var(--primary)' }}>{o.totalAmount.toFixed(2)} EGP</span>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </section>

@@ -5,14 +5,17 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { loginAction } from '@/lib/actions/auth.actions';
 import Link from 'next/link';
+import { useTheme } from '@/components/ui/ThemeProvider';
 
 export default function LoginPage() {
   const t = useTranslations('auth');
   const tc = useTranslations('common');
   const router = useRouter();
+  const { theme, toggle } = useTheme();
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -32,6 +35,15 @@ export default function LoginPage() {
         setPassword(p);
         changed = true;
       }
+
+      const saved = window.localStorage.getItem('asshrabha-remembered-login');
+      if (saved) {
+        const parsed = JSON.parse(saved) as { mobile?: string; password?: string; rememberMe?: boolean };
+        if (parsed.mobile) setMobile(parsed.mobile);
+        if (parsed.password) setPassword(parsed.password);
+        setRememberMe(Boolean(parsed.rememberMe));
+      }
+
       if (changed) {
         // Remove query string without creating a new history entry
         const newUrl = window.location.pathname;
@@ -51,6 +63,11 @@ export default function LoginPage() {
       const result = await loginAction(mobile, password);
 
       if (result.success && result.data) {
+        if (rememberMe) {
+          window.localStorage.setItem('asshrabha-remembered-login', JSON.stringify({ mobile, password, rememberMe: true }));
+        } else {
+          window.localStorage.removeItem('asshrabha-remembered-login');
+        }
         router.push(result.data.redirectTo);
       } else {
         switch (result.error) {
@@ -81,27 +98,53 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
-      <button
-        type="button"
-        onClick={switchLocale}
-        className="btn-ghost"
+      <div
         style={{
           position: 'fixed',
           top: 'var(--space-4)',
           insetInlineEnd: 'var(--space-4)',
           zIndex: 100,
-          color: 'white',
-          fontSize: 'var(--text-sm)',
-          padding: 'var(--space-2) var(--space-4)',
-          borderRadius: 'var(--radius-full)',
-          background: 'rgba(255,255,255,0.15)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255,255,255,0.2)',
-          cursor: 'pointer',
+          display: 'flex',
+          gap: 'var(--space-2)',
+          alignItems: 'center',
         }}
       >
-        {tc('language') === 'Language' ? 'العربية' : 'English'}
-      </button>
+        <button
+          type="button"
+          onClick={() => toggle()}
+          className="btn-ghost"
+          aria-label="Toggle theme"
+          style={{
+            color: 'white',
+            fontSize: 'var(--text-sm)',
+            padding: 'var(--space-2) var(--space-3)',
+            borderRadius: 'var(--radius-full)',
+            background: 'rgba(255,255,255,0.15)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            cursor: 'pointer',
+          }}
+        >
+          {theme === 'dark' ? '🌙' : '☀️'}
+        </button>
+        <button
+          type="button"
+          onClick={switchLocale}
+          className="btn-ghost"
+          style={{
+            color: 'white',
+            fontSize: 'var(--text-sm)',
+            padding: 'var(--space-2) var(--space-4)',
+            borderRadius: 'var(--radius-full)',
+            background: 'rgba(255,255,255,0.15)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            cursor: 'pointer',
+          }}
+        >
+          {tc('language') === 'Language' ? 'العربية' : 'English'}
+        </button>
+      </div>
 
       <div className="login-card glass" style={{ animation: 'scaleIn var(--transition-slow) ease-out' }}>
         {/* Logo / App Name */}
@@ -180,7 +223,7 @@ export default function LoginPage() {
             />
           </div>
 
-          <div style={{ marginBottom: 'var(--space-6)' }}>
+          <div style={{ marginBottom: 'var(--space-4)' }}>
             <label className="label" htmlFor="password">
               {t('password')}
             </label>
@@ -216,6 +259,17 @@ export default function LoginPage() {
                 {showPassword ? '🙈' : '👁️'}
               </button>
             </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              <span>{t('rememberMe')}</span>
+            </label>
           </div>
 
           <button

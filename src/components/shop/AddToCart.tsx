@@ -1,5 +1,7 @@
 "use client"
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation'
 import { showToast } from '@/components/ui/toast'
 import { getErrorMessage } from '@/lib/errors'
 import { useCartStore } from '@/stores/cartStore'
@@ -9,10 +11,12 @@ type Option = { id: string; title?: string; price?: number; unitType?: string }
 type CatalogOption = { unitType: string; minPrice?: number; maxPrice?: number }
 
 export default function AddToCart({ providerProductId, catalogProductId, className }: { providerProductId?: string, catalogProductId?: string, className?: string }) {
+  const t = useTranslations('shop')
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const addItem = useCartStore(s => s.addItem)
   const setOpen = useCartStore(s => s.setOpen)
-  const [quantity, setQuantity] = useState(1)
+  const quantity = 1
   const [options, setOptions] = useState<Option[]>([])
   const [selectedOption, setSelectedOption] = useState<string | null>(null)
   const [productName, setProductName] = useState<string | undefined>(undefined)
@@ -86,8 +90,9 @@ export default function AddToCart({ providerProductId, catalogProductId, classNa
         }, isShop, optionPrice)
         const image = productImage || undefined
         addItem({ providerProductId, optionId: selectedOption || undefined, unitType: opt?.unitType, quantity: Number(quantity || 1), title, price, image })
-        try { setOpen(true) } catch (e) {}
-        showToast('Added to cart', 'success')
+        try { setOpen(false) } catch (e) {}
+        showToast(t('addedToCart'), 'success')
+        router.push('/shop/cart')
         setLoading(false)
         return
       }
@@ -107,9 +112,9 @@ export default function AddToCart({ providerProductId, catalogProductId, classNa
           const price = data.unitPrice ?? undefined
           const image = productImage || undefined
           addItem({ providerProductId: data.providerProductId, optionId: undefined, unitType: selectedCatalogOption || undefined, quantity: Number(quantity || 1), title, price, image })
-          try { setOpen(true) } catch (e) {}
+          try { setOpen(false) } catch (e) {}
         }
-        window.location.href = data.redirect
+        router.push('/shop/cart')
         return
       }
 
@@ -120,12 +125,13 @@ export default function AddToCart({ providerProductId, catalogProductId, classNa
         const price = pp.unitPrice ?? undefined
         const image = pp.catalogProduct?.images?.[0] || pp.images?.[0] || undefined
         addItem({ providerProductId: pp.id, optionId: undefined, unitType: pp.unitType, quantity: Number(quantity || 1), title, price, image })
-        try { setOpen(true) } catch (e) {}
-        showToast('Added to cart', 'success')
+        try { setOpen(false) } catch (e) {}
+        showToast(t('addedToCart'), 'success')
+        router.push('/shop/cart')
         return
       }
 
-      showToast('Added to cart', 'success')
+      showToast(t('addedToCart'), 'success')
     } catch (err: unknown) {
       showToast(getErrorMessage(err), 'error')
     } finally {
@@ -136,7 +142,6 @@ export default function AddToCart({ providerProductId, catalogProductId, classNa
   return (
     <form onSubmit={doAdd} className={`add-to-cart-form ${className || ''}`.trim()} onClick={e => e.stopPropagation()}>
       <div className="add-to-cart-controls">
-        <input type="number" min={1} value={quantity} onChange={e => setQuantity(Number(e.target.value))} />
         {options.length > 0 && (
           <select value={selectedOption || ''} onChange={e => setSelectedOption(e.target.value)}>
             {options.map(o => <option key={o.id} value={o.id}>{o.unitType} - {o.price} EGP</option>)}
@@ -147,7 +152,7 @@ export default function AddToCart({ providerProductId, catalogProductId, classNa
             {catalogOptions.map((o) => <option key={o.unitType} value={o.unitType}>{o.unitType} - {o.minPrice} - {o.maxPrice} EGP</option>)}
           </select>
         )}
-        <button type="submit" disabled={loading} className="btn btn-primary">{loading ? 'Adding...' : 'Add to Cart'}</button>
+        <button type="submit" disabled={loading} className="btn btn-primary">{loading ? t('addingToCart') : t('addToCart')}</button>
       </div>
     </form>
   )

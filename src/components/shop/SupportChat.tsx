@@ -4,11 +4,11 @@ import { useTranslations } from 'next-intl'
 import { showToast } from '@/components/ui/toast'
 import './support.css'
 
-export default function SupportChat() {
+export default function SupportChat({ initialOrderNumber }: { initialOrderNumber?: string | number }) {
   const t = useTranslations('shop')
   const [roomId, setRoomId] = useState<string | null>(null)
   const [messages, setMessages] = useState<any[]>([])
-  const [text, setText] = useState('')
+  const [text, setText] = useState(initialOrderNumber ? `Order ${initialOrderNumber}: ` : '')
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -97,6 +97,10 @@ export default function SupportChat() {
     es.onerror = () => { /* keep open, browser will retry */ }
     return () => { mounted = false; es.close() }
   }, [roomId, addMessages])
+
+  useEffect(() => {
+    setText(initialOrderNumber ? `Order ${initialOrderNumber}: ` : '')
+  }, [initialOrderNumber])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })

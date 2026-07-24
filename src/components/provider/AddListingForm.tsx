@@ -4,9 +4,7 @@ import { FormEvent, useState } from 'react'
 import { getErrorMessage } from '@/lib/errors'
 
 export default function AddListingForm({ catalog }: { catalog: any }) {
-  const [sellingPrice, setSellingPrice] = useState(String(catalog.wholesaleMinPrice || catalog.wholesalePrice || ''))
-  const [wholesalePrice, setWholesalePrice] = useState(String(catalog.wholesaleMinPrice || catalog.wholesalePrice || catalog.retailMinPrice || ''))
-  const [retailPrice, setRetailPrice] = useState(String(catalog.retailMinPrice || 0))
+  const [price, setPrice] = useState(String(catalog.wholesaleMinPrice || catalog.wholesalePrice || catalog.retailMinPrice || ''))
   const [wholesaleUnit, setWholesaleUnit] = useState('BOX')
   const [stockQuantity, setStockQuantity] = useState('0')
   const [loading, setLoading] = useState(false)
@@ -18,20 +16,12 @@ export default function AddListingForm({ catalog }: { catalog: any }) {
     setLoading(true)
     setError(null)
     try {
-      const wPrice = Number(wholesalePrice || sellingPrice)
-      const rPrice = Number(retailPrice || 0)
-      const wMin = Number(catalog.wholesaleMinPrice || 0)
-      const wMax = Number(catalog.wholesaleMaxPrice || 0)
-      const rMin = Number(catalog.retailMinPrice || 0)
-      const rMax = Number(catalog.retailMaxPrice || 0)
-      if (wMax > 0 && (wPrice < wMin || wPrice > wMax)) {
-        throw new Error(`Wholesale price must be between ${wMin.toFixed(2)} and ${wMax.toFixed(2)}`)
-      }
-      if (rMax > 0 && (rPrice < rMin || rPrice > rMax)) {
-        throw new Error(`Retail price must be between ${rMin.toFixed(2)} and ${rMax.toFixed(2)}`)
+      const priceValue = Number(price)
+      if (!priceValue || priceValue <= 0) {
+        throw new Error('Price must be greater than 0')
       }
 
-      const payload: any = { catalogProductId: catalog.id, sellingPrice: Number(sellingPrice), wholesalePrice: wPrice, wholesaleUnit: String(wholesaleUnit), retailPrice: rPrice, stockQuantity: Number(stockQuantity) }
+      const payload: any = { catalogProductId: catalog.id, sellingPrice: priceValue, wholesalePrice: priceValue, wholesaleUnit: String(wholesaleUnit), retailPrice: priceValue, stockQuantity: Number(stockQuantity) }
 
       const res = await fetch('/api/provider/provider-products', {
         method: 'POST',
@@ -55,9 +45,9 @@ export default function AddListingForm({ catalog }: { catalog: any }) {
     <div>
       <form onSubmit={handleSubmit} className="admin-form">
         <div className="form-row">
-          <label className="label">Wholesale price (allowed {catalog.wholesaleMinPrice || 0} - {catalog.wholesaleMaxPrice || 0})</label>
+          <label className="label">Price</label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input className="input" type="number" step="0.01" value={wholesalePrice} onChange={e => setWholesalePrice(e.target.value)} required />
+            <input className="input" type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} required />
             <select value={wholesaleUnit} onChange={e => setWholesaleUnit(e.target.value)}>
               <option value="BOX">Box</option>
               <option value="PACK">Pack</option>
@@ -65,11 +55,7 @@ export default function AddListingForm({ catalog }: { catalog: any }) {
           </div>
         </div>
         <div className="form-row">
-          <label className="label">Retail price (allowed {catalog.retailMinPrice || 0} - {catalog.retailMaxPrice || 0})</label>
-          <input className="input" type="number" step="0.01" value={retailPrice} onChange={e => setRetailPrice(e.target.value)} required />
-        </div>
-        <div className="form-row">
-          <label className="label">Stock quantity</label>
+          <label className="label">Stock status</label>
           <input className="input" type="number" value={stockQuantity} onChange={e => setStockQuantity(e.target.value)} />
         </div>
         {error && <div className="form-error">{error}</div>}

@@ -72,15 +72,78 @@ export default function ManageAddressesClient({ initialAddresses }: { initialAdd
       throw new Error(ta('geolocationUnavailable') || 'Geolocation is not available in this browser')
     }
 
+    // If Permissions API is available, check state first so we can give the user
+    // a friendly prompt instead of a raw error toast when permission is denied.
+    try {
+      if ((navigator as any).permissions && (navigator as any).permissions.query) {
+        try {
+          // PermissionName typing varies, cast to any
+          const p = await (navigator as any).permissions.query({ name: 'geolocation' })
+          if (p && p.state === 'denied') {
+            // On mobile browsers (iOS/Android PWAs) attempt to re-request the
+            // permission by calling getCurrentPosition once — some browsers will
+            // still prompt the user. If that fails, show instructions.
+            const ua = navigator.userAgent || ''
+            const isAndroid = /Android/i.test(ua)
+            const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform && /iP(hone|od|ad)/i.test(navigator.platform))
+            const isMobile = isAndroid || isIOS
+
+            if (isMobile) {
+              try {
+                await new Promise<GeolocationPosition>((resolve, reject) => {
+                  navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
+                })
+                // If we successfully got a position, continue normally
+                return
+              } catch (err: unknown) {
+                const anyErr = err as any
+                if (anyErr && typeof anyErr.code === 'number' && anyErr.code === 1) {
+                  // Still denied — show instructions
+                  showToast(ta('geolocationEnableInstructions') || 'Please enable location permissions for this app in your browser or device settings, then try again.', 'info')
+                }
+                throw new Error(ta('permissionDenied') || 'Permission denied')
+              }
+            }
+
+            // Non-mobile: ask the user if they'd like instructions to re-enable permissions
+            const wantHelp = window.confirm(ta('geolocationPermissionDeniedHelp') || 'Location permission is denied. Open browser settings to allow location access?')
+            if (wantHelp) {
+              showToast(ta('geolocationEnableInstructions') || 'Please enable location permissions for this app in your browser or device settings, then try again.', 'info')
+            }
+            throw new Error(ta('permissionDenied') || 'Permission denied')
+          }
+        } catch (e) {
+          // If permission query fails for some reason, continue to attempt geolocation
+        }
+      }
+    } catch (e) {
+      // swallow permission-check errors and fall back to normal geolocation call
+    }
+
     setGeoLoading(true)
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
+      let position: GeolocationPosition
+      try {
+        position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          })
         })
-      })
+      } catch (err: unknown) {
+        // If permission was denied, give the user instructions. This covers PWAs
+        // and browsers where the Permissions API is not available.
+        try {
+          const anyErr = err as any
+          if (anyErr && typeof anyErr.code === 'number' && anyErr.code === 1) {
+            showToast(ta('geolocationEnableInstructions') || 'Please enable location permissions for this app in your browser or device settings, then try again.', 'info')
+          }
+        } catch {
+          // ignore
+        }
+        throw err
+      }
 
       const lat = position.coords.latitude
       const lng = position.coords.longitude
@@ -250,7 +313,17 @@ export default function ManageAddressesClient({ initialAddresses }: { initialAdd
               <button
                 type="button"
                 className="btn btn-secondary"
-                onClick={() => captureLocation().catch((err) => showToast(getErrorMessage(err), 'error'))}
+                onClick={async () => {
+                  try {
+                    await captureLocation()
+                  } catch (err: unknown) {
+                    const msg = getErrorMessage(err)
+                    // If the error mentions permission, captureLocation already prompted the user
+                    // and showed instructions; avoid duplicating the error toast.
+                    if (String(msg).toLowerCase().includes('permission')) return
+                    showToast(msg, 'error')
+                  }
+                }}
                 disabled={loading || geoLoading}
               >
                 {geoLoading ? ta('gettingLocation') : ta('useMyLocation')}

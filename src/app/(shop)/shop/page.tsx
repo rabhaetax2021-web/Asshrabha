@@ -123,7 +123,7 @@ export default async function ShopHomePage() {
                           <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{p.catalogProduct?.nameEN || p.catalogProduct?.nameAR}</div>
                         </Link>
                         <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                          <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>{isShop ? `Wholesale: ${p.wholesalePrice ?? p.sellingPrice} EGP` : (p.retailPrice ? `${p.retailPrice} EGP` : `${p.sellingPrice} EGP`)}</div>
+                          <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Price: {isShop ? (p.wholesalePrice ?? p.sellingPrice) : (p.retailPrice ?? p.sellingPrice)} EGP</div>
                           <div>
                             <AddToCartButton product={p} />
                           </div>

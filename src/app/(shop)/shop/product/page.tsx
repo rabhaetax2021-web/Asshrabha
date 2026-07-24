@@ -67,15 +67,7 @@ export default async function ProductListingPage() {
             const descriptionAR = product.catalogProduct?.descriptionAR || 'لا توجد تفاصيل.'
             const category = product.catalogProduct?.category?.nameEN || product.catalogProduct?.category?.nameAR || ''
             const price = isShop ? (product.wholesalePrice ?? product.sellingPrice) : (product.retailPrice ?? product.sellingPrice)
-            const priceLabel = isShop ? 'Wholesale' : 'Retail'
             const unit = product.wholesaleUnit || product.catalogProduct?.unitType || 'UNIT'
-            const providerOptionUnits = (product.providerProductOptions || []).map((o: any) => o.unitType).filter(Boolean)
-            const catalogUnitRanges = (product.catalogProduct?.unitRanges || []).map((r: any) => r.unitType).filter(Boolean)
-            const providerDefault = product.provider?.defaultWholesaleUnit ? [product.provider.defaultWholesaleUnit] : []
-            const conditionUnits = providerOptionUnits.length > 0 ? providerOptionUnits : (catalogUnitRanges.length > 0 ? catalogUnitRanges : providerDefault)
-            const conditionsText = conditionUnits && conditionUnits.length > 0
-              ? `Options: ${conditionUnits.join(', ')}`
-              : 'Conditions will appear on provider page.'
 
             return (
               <Link key={product.id} href={`/shop/product/${product.id}`} className="product-card">
@@ -98,8 +90,8 @@ export default async function ProductListingPage() {
                   <div className="product-card-description" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{descriptionAR}</div>
                   <div className="product-card-footer">
                     <div>
-                      <div className="price">{priceLabel}: {price} EGP / {unit}</div>
-                      <div className="product-card-condition">{conditionsText}</div>
+                      <div className="price">Price: {price} EGP / {unit}</div>
+                      <div className="product-card-condition">{product.stockQuantity > 0 ? 'In stock' : 'Out of stock'}</div>
                     </div>
                     <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>
                       {product.provider?.shopNameEN || product.provider?.shopNameAR}

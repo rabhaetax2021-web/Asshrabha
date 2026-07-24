@@ -72,44 +72,58 @@ export default function CartPage() {
 
   return (
     <section className="cart-page container">
-      <h1>Your Cart</h1>
+      <div className="cart-page-header">
+        <div>
+          <p className="cart-page-eyebrow">{t('myCart')}</p>
+          <h1>{t('myCart')}</h1>
+        </div>
+        <Link href="/shop" className="btn btn-ghost">{t('continueShopping')}</Link>
+      </div>
 
       {items.length === 0 && (
         <div className="cart-empty card">
-          <div style={{ fontSize: 'var(--text-4xl)', marginBottom: 'var(--space-4)' }}>🛒</div>
-          <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-bold)', marginBottom: 'var(--space-2)' }}>{t('cartEmpty')}</h3>
-          <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--space-6)' }}>{t('cartEmptyMessage')}</p>
+          <div className="cart-empty-icon">🛒</div>
+          <h3>{t('cartEmpty')}</h3>
+          <p>{t('cartEmptyMessage')}</p>
           <Link href="/shop" className="btn btn-primary">{t('continueShopping')}</Link>
         </div>
       )}
 
       {items.length > 0 && (
-        <div className="cart-list">
-          {items.map((i: any) => {
+        <div className="cart-layout">
+          <div className="cart-list">
+            {items.map((i: any) => {
               const key = `${i.providerProductId}-${i.optionId ?? 'base'}`
               const p = priceOverrides[key] ?? i.price ?? 0
+              const lineLabel = i.unitType || i.optionId || 'Item'
               return (
                 <div key={key} className="cart-item card">
-
-                  <div className="cart-item-info" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    {i.image && <img src={i.image} alt={i.title || 'product'} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8 }} />}
-                    <div>
-                      <div className="cart-item-title">{i.title || i.providerProductId}</div>
-                      <div className="cart-item-meta">{p ? `${p} EGP` : '—'}</div>
+                  <div className="cart-item-copy">
+                    <div className="cart-item-title">{i.title || i.providerProductId}</div>
+                    <div className="cart-item-meta">
+                      <span>{lineLabel}</span>
+                      <span className="cart-item-price-pill">{p ? `${p.toFixed(2)} EGP` : '—'}</span>
                     </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => updateQuantity(i.providerProductId, i.optionId, Math.max(0, i.quantity - 1))}>−</button>
-                    <div>{i.quantity}</div>
-                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => updateQuantity(i.providerProductId, i.optionId, i.quantity + 1)}>+</button>
-                    <div className="cart-item-price">{((p || 0) * i.quantity).toFixed(2)} EGP</div>
-                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => remove(i.providerProductId, i.optionId)}>Remove</button>
+
+                    <div className="cart-item-actions">
+                      <div className="cart-qty-controls">
+                        <button type="button" className="btn btn-ghost btn-sm" onClick={() => updateQuantity(i.providerProductId, i.optionId, Math.max(0, i.quantity - 1))}>−</button>
+                        <span className="cart-qty-value">{i.quantity}</span>
+                        <button type="button" className="btn btn-ghost btn-sm" onClick={() => updateQuantity(i.providerProductId, i.optionId, i.quantity + 1)}>+</button>
+                      </div>
+
+                      <div className="cart-item-bottom">
+                        <div className="cart-item-subtotal">{((p || 0) * i.quantity).toFixed(2)} EGP</div>
+                        <button type="button" className="btn btn-ghost btn-sm" onClick={() => remove(i.providerProductId, i.optionId)}>{tc('remove')}</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )
-          })}
+            })}
+          </div>
 
-          <div className="cart-summary card">
+          <aside className="cart-summary card">
             <div className="cart-summary-row">
               <span>{tc('subtotal')}</span>
               <span className="price">{totals.itemsSubtotal.toFixed(2)} EGP</span>
@@ -122,10 +136,10 @@ export default function CartPage() {
               <span>{tc('total')}</span>
               <span className="price">{totals.totalAmount.toFixed(2)} EGP</span>
             </div>
-            <form action="/shop/checkout" method="get" style={{ marginTop: 'var(--space-4)' }}>
-              <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>{t('proceedToCheckout')}</button>
+            <form action="/shop/checkout" method="get" className="cart-checkout-form">
+              <button type="submit" className="btn btn-primary">{t('proceedToCheckout')}</button>
             </form>
-          </div>
+          </aside>
         </div>
       )}
     </section>

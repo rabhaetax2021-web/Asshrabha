@@ -102,13 +102,6 @@ export default async function StorePage({ params, searchParams }: { params: any;
               const descriptionEN = p.catalogProduct?.descriptionEN || ''
               const descriptionAR = p.catalogProduct?.descriptionAR || ''
               const unit = p.wholesaleUnit || p.catalogProduct?.unitType || 'UNIT'
-              const providerOptionUnits = (p.providerProductOptions || []).map((o: any) => o.unitType).filter(Boolean)
-              const catalogUnitRanges = (p.catalogProduct?.unitRanges || []).map((r: any) => r.unitType).filter(Boolean)
-              const providerDefault = p.provider?.defaultWholesaleUnit ? [p.provider.defaultWholesaleUnit] : []
-              const conditionUnits = providerOptionUnits.length > 0 ? providerOptionUnits : (catalogUnitRanges.length > 0 ? catalogUnitRanges : providerDefault)
-              const conditionsText = conditionUnits && conditionUnits.length > 0
-                ? `Options: ${conditionUnits.join(', ')}`
-                : 'Provider conditions will be shown on the detail page.'
 
               return (
                 <Link href={`/shop/product/${p.catalogProduct?.id || p.id}`} key={p.id} className="product-card">
@@ -131,12 +124,9 @@ export default async function StorePage({ params, searchParams }: { params: any;
                     {descriptionAR && <div className="product-card-description" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{descriptionAR}</div>}
                     <div className="product-card-provider">{p.catalogProduct?.category?.nameEN || p.catalogProduct?.category?.nameAR || ''}</div>
                     <div className="product-card-footer">
-                      <div className="price" style={{ fontSize: 'var(--text-sm)' }}>{isShop ? `Wholesale: ${ (p.wholesalePrice ?? p.sellingPrice) } EGP / ${unit}` : `Retail: ${ (p.retailPrice ?? p.sellingPrice) } EGP / ${unit}`}</div>
-                      {Number(p.retailPrice) > 0 && (
-                        <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>Retail: {p.retailPrice} EGP</div>
-                      )}
+                      <div className="price" style={{ fontSize: 'var(--text-sm)' }}>Price: {isShop ? (p.wholesalePrice ?? p.sellingPrice) : (p.retailPrice ?? p.sellingPrice)} EGP / {unit}</div>
+                      <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>{p.stockQuantity > 0 ? 'In stock' : 'Out of stock'}</div>
                     </div>
-                    <div className="product-card-condition">{conditionsText}</div>
                   </div>
                 </Link>
               )
@@ -177,9 +167,9 @@ export default async function StorePage({ params, searchParams }: { params: any;
                             {descriptionEN && <div className="product-card-description">{descriptionEN}</div>}
                             {descriptionAR && <div className="product-card-description" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{descriptionAR}</div>}
                             <div className="product-card-footer">
-                              <div className="price" style={{ fontSize: 'var(--text-sm)' }}>{isShop ? `Wholesale: ${ (p.wholesalePrice ?? p.sellingPrice) } EGP / ${unit}` : `Retail: ${ (p.retailPrice ?? p.sellingPrice) } EGP / ${unit}` }</div>
+                              <div className="price" style={{ fontSize: 'var(--text-sm)' }}>Price: {isShop ? (p.wholesalePrice ?? p.sellingPrice) : (p.retailPrice ?? p.sellingPrice)} EGP / {unit}</div>
                             </div>
-                            <div className="product-card-condition">{conditionsText}</div>
+                            <div className="product-card-condition">{p.stockQuantity > 0 ? 'In stock' : 'Out of stock'}</div>
                           </div>
                         </Link>
                       )

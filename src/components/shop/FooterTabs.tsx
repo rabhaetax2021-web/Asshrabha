@@ -1,7 +1,5 @@
 "use client"
-import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl'
-import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import './footer-tabs.css'
@@ -22,16 +20,10 @@ export default function FooterTabs() {
   const t = useTranslations('shop')
   const path = usePathname()
   const router = useRouter()
-  const [mounted, setMounted] = useState<boolean>(false)
-
-  useEffect(() => {
-    setMounted(true)
-    return () => setMounted(false)
-  }, [])
 
   const isCheckoutPath = path === '/shop/cart' || path === '/shop/checkout'
 
-  const content = (
+  return (
     <nav className="footer-tabs">
       <Link href="/shop" className={path === '/shop' ? 'tab active' : 'tab'} title={t('home')}><Icon name="home"/><span>{t('home')}</span></Link>
       <a
@@ -58,7 +50,4 @@ export default function FooterTabs() {
       <Link href="/shop/profile" className={path === '/shop/profile' ? 'tab active' : 'tab'} title={t('profile')}><Icon name="profile"/><span>{t('profile')}</span></Link>
     </nav>
   )
-
-  if (!mounted) return null
-  return createPortal(content, document.body)
 }

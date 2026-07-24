@@ -57,9 +57,8 @@ export default async function MyProductsPage() {
                       <div style={{ width: '100%', height: 120, borderRadius: 'var(--radius-md)', background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-3)' }}>📦</div>
                     )}
                     <h3 style={{ marginBottom: 4 }}>{p.catalogProduct?.nameEN || p.catalogProduct?.nameAR}</h3>
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Wholesale: {p.wholesalePrice || p.sellingPrice} EGP</p>
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Retail: {p.retailPrice || 0} EGP</p>
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Stock: {p.stockQuantity}</p>
+                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Price: {p.wholesalePrice || p.sellingPrice} EGP</p>
+                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{p.stockQuantity > 0 ? 'In stock' : 'Out of stock'}</p>
                     <p style={{ fontSize: 'var(--text-sm)' }}>
                       <span className="badge badge-warning">Pending Approval</span>
                     </p>
@@ -115,9 +114,8 @@ export default async function MyProductsPage() {
                       <div style={{ width: '100%', height: 120, borderRadius: 'var(--radius-md)', background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-3)' }}>📦</div>
                     )}
                     <h3 style={{ marginBottom: 4 }}>{p.catalogProduct?.nameEN || p.catalogProduct?.nameAR}</h3>
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Wholesale: {p.wholesalePrice || p.sellingPrice} EGP</p>
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Retail: {p.retailPrice || 0} EGP</p>
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Stock: {p.stockQuantity}</p>
+                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Price: {p.wholesalePrice || p.sellingPrice} EGP</p>
+                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{p.stockQuantity > 0 ? 'In stock' : 'Out of stock'}</p>
                     <p style={{ fontSize: 'var(--text-sm)' }}>
                       {renderStatusBadge(p.status)}
                     </p>

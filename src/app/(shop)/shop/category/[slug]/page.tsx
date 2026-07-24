@@ -73,13 +73,6 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             const descriptionEN = p.catalogProduct?.descriptionEN || ''
             const descriptionAR = p.catalogProduct?.descriptionAR || ''
             const unit = p.wholesaleUnit || p.catalogProduct?.unitType || 'UNIT'
-            const providerOptionUnits = (p.providerProductOptions || []).map((o: any) => o.unitType).filter(Boolean)
-            const catalogUnitRanges = (p.catalogProduct?.unitRanges || []).map((r: any) => r.unitType).filter(Boolean)
-            const providerDefault = p.provider?.defaultWholesaleUnit ? [p.provider.defaultWholesaleUnit] : []
-            const conditionUnits = providerOptionUnits.length > 0 ? providerOptionUnits : (catalogUnitRanges.length > 0 ? catalogUnitRanges : providerDefault)
-            const conditionsText = conditionUnits && conditionUnits.length > 0
-              ? t('optionsLabel', { options: conditionUnits.join(', ') })
-              : t('providerConditions')
 
             return (
               <Link key={p.id} href={`/shop/product/${p.id}`} className="product-card">
@@ -116,15 +109,12 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                   </div>
                   <div className="product-card-footer">
                     <div className="price" style={{ fontSize: 'var(--text-sm)' }}>
-                      {isShop ? `${t('wholesale')}: ${(p.wholesalePrice ?? p.sellingPrice)} EGP / ${unit}` : `${t('retail')}: ${(p.retailPrice ?? p.sellingPrice)} EGP / ${unit}`}
+                      Price: {isShop ? (p.wholesalePrice ?? p.sellingPrice) : (p.retailPrice ?? p.sellingPrice)} EGP / {unit}
                     </div>
-                    {Number(p.retailPrice) > 0 && (
-                      <span style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>
-                        {t('retail')}: {p.retailPrice} EGP
-                      </span>
-                    )}
+                    <span style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>
+                      {p.stockQuantity > 0 ? 'In stock' : 'Out of stock'}
+                    </span>
                   </div>
-                  <div className="product-card-condition">{conditionsText}</div>
                 </div>
               </Link>
             )

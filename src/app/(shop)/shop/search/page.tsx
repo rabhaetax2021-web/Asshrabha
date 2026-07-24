@@ -93,7 +93,7 @@ export default async function ShopSearchPage({ searchParams }: { searchParams?: 
             <div style={{ display: 'grid', gap: 8 }}>
               {providers.map(p => (
                 <Link key={p.id} href={`/shop/store/${p.id}`} className="card" style={{ padding: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
-                  <div style={{ width: 56, height: 56, borderRadius: 6, background: '#f3f3f3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{(p.shopNameEN || p.shopNameAR || '')?.charAt(0)}</div>
+                  <div style={{ width: 56, height: 56, borderRadius: 6, background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>{(p.shopNameEN || p.shopNameAR || '')?.charAt(0)}</div>
                   <div>
                     <div style={{ fontWeight: 600 }}>{p.shopNameEN || p.shopNameAR}</div>
                     <div style={{ color: 'var(--text-muted)' }}>{p.user?.nameEN || p.user?.nameAR}</div>
@@ -109,36 +109,26 @@ export default async function ShopSearchPage({ searchParams }: { searchParams?: 
               {products.map((p) => {
                 const nameEN = p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'
                 const nameAR = p.catalogProduct?.nameAR || ''
-                const descriptionEN = p.catalogProduct?.descriptionEN || ''
-                const descriptionAR = p.catalogProduct?.descriptionAR || ''
-                const unit = p.wholesaleUnit || p.catalogProduct?.unitType || 'UNIT'
-                const providerOptionUnits = (p.providerProductOptions || []).map((o: any) => o.unitType).filter(Boolean)
-                const catalogUnitRanges = (p.catalogProduct?.unitRanges || []).map((r: any) => r.unitType).filter(Boolean)
-                const providerDefault = p.provider?.defaultWholesaleUnit ? [p.provider.defaultWholesaleUnit] : []
-                const conditionUnits = providerOptionUnits.length > 0 ? providerOptionUnits : (catalogUnitRanges.length > 0 ? catalogUnitRanges : providerDefault)
-                const conditionsText = conditionUnits && conditionUnits.length > 0
-                  ? `Options: ${conditionUnits.join(', ')}`
-                  : 'Provider conditions will be shown on the detail page.'
+                const image = p.catalogProduct?.images?.[0]
+                const price = isShop ? (p.wholesalePrice ?? p.sellingPrice) : (p.retailPrice ?? p.sellingPrice)
 
                 return (
                   <Link key={p.id} href={`/shop/product/${p.catalogProduct?.id || p.id}`} className="product-card">
                     <div className="product-image-wrap">
-                      {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
-                        <img src={p.catalogProduct.images[0]} alt={nameEN} className="product-image" />
+                      {image ? (
+                        <img src={image} alt={nameEN} className="product-image" />
                       ) : (
                         <div className="product-image-placeholder">📦</div>
                       )}
                     </div>
                     <div className="product-card-body">
                       <div className="product-card-title">{nameEN}</div>
-                      <div className="product-card-subtitle">{nameAR}</div>
-                      {descriptionEN && <div className="product-card-description">{descriptionEN}</div>}
-                      {descriptionAR && <div className="product-card-description" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{descriptionAR}</div>}
-                      <div className="product-card-provider" style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>{p.provider?.shopNameEN || p.provider?.shopNameAR}</div>
+                      {nameAR && <div className="product-card-subtitle">{nameAR}</div>}
+                      <div className="product-card-provider">{p.provider?.shopNameEN || p.provider?.shopNameAR}</div>
                       <div className="product-card-footer">
-                        <div className="price">{isShop ? `Wholesale: ${p.wholesalePrice ?? p.sellingPrice} EGP / ${unit}` : (p.retailPrice ? `${p.retailPrice} EGP / ${unit}` : `${p.sellingPrice} EGP / ${unit}`)}</div>
+                        <div className="price">{price} EGP</div>
                       </div>
-                      <div className="product-card-condition">{conditionsText}</div>
+                      <div className="product-card-condition">{p.stockQuantity > 0 ? 'In stock' : 'Out of stock'}</div>
                     </div>
                   </Link>
                 )

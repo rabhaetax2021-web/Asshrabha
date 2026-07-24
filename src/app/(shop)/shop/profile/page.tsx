@@ -6,6 +6,7 @@ import { getCurrentUser } from '@/lib/auth'
 import Link from 'next/link'
 import ProfileActions from '@/components/shop/ProfileActions'
 import LocaleToggle from '@/components/shop/LocaleToggle'
+import ThemeToggle from '@/components/shop/ThemeToggle'
 
 export default async function ProfilePage() {
   const t = await getTranslations('shop')
@@ -253,7 +254,10 @@ export default async function ProfilePage() {
             {fullUser.customerType === 'SHOP' ? '🏬 Shop Customer' : '🛒 Customer'}
           </span>
           <StatusBadge status={fullUser.status} label={getStatusLabel(fullUser.status, t)} />
-          <LocaleToggle initialLocale={initialLocale} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <LocaleToggle initialLocale={initialLocale} />
+            <ThemeToggle />
+          </div>
         </div>
       </div>
 
