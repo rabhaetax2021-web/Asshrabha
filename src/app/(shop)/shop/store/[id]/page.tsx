@@ -22,6 +22,7 @@ export default async function StorePage({ params, searchParams }: { params: any;
     where: { providerId: store.id, status: 'APPROVED' },
     include: {
       catalogProduct: { include: { category: true, unitRanges: true } },
+      provider: true,
       providerProductOptions: true,
     },
     orderBy: { createdAt: 'desc' },
