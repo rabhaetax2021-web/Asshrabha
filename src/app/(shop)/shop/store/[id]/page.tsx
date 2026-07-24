@@ -2,8 +2,10 @@ import React from 'react'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth'
+import { getTranslations } from 'next-intl/server'
 
 export default async function StorePage({ params, searchParams }: { params: any; searchParams?: any }) {
+  const t = await getTranslations('shop')
   const resolvedParams = await params
   const resolvedSearch = searchParams && typeof (searchParams as any).then === 'function' ? await searchParams : searchParams
   const categoryFilter = (resolvedSearch?.category || '').toString()
@@ -77,20 +79,20 @@ export default async function StorePage({ params, searchParams }: { params: any;
               <span>📍 {store.locationAddress}</span>
             )}
           </div>
+                {(store.minOrderItems || store.minOrderAmount) && (
+                  <div className="card" style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', border: '1px solid var(--primary-100)', background: 'var(--primary-50)' }}>
+                    <div style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-semibold)', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 'var(--space-2)' }}>
+                      {t('providerConditions')}
+                    </div>
+                    <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                      {store.minOrderItems ? `${t('minOrderItems')}: ${store.minOrderItems}` : null}
+                      {store.minOrderItems && store.minOrderAmount ? ' · ' : null}
+                      {store.minOrderAmount ? `${t('minOrderAmount')}: ${Number(store.minOrderAmount).toFixed(2)} EGP` : null}
+                    </div>
+                  </div>
+                )}
+          </div>
         </div>
-      </div>
-
-      {/* Category Filter Pills */}
-      {categories.length > 0 && (
-        <div className="category-pills">
-          <Link href={`/shop/store/${store.id}`} className={!categoryFilter ? 'category-pill active' : 'category-pill'}>All</Link>
-          {categories.map((cat) => (
-            <Link key={cat.id} href={`/shop/store/${store.id}?category=${encodeURIComponent(cat.slug)}`} className={categoryFilter === cat.slug ? 'category-pill active' : 'category-pill'}>
-              {cat.nameEN || cat.nameAR}
-            </Link>
-          ))}
-        </div>
-      )}
 
       {/* Products grouped by category when no category filter, or show filtered list */}
       {products.length > 0 ? (

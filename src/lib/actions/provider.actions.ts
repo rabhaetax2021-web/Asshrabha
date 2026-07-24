@@ -133,7 +133,7 @@ export async function getOrderByIdForProvider(providerId: string, orderId: strin
     include: {
       items: { include: { providerProduct: { include: { catalogProduct: true } } } },
       customer: true,
-      address: true,
+      address: { include: { location: true } },
       statusHistory: { orderBy: { createdAt: 'asc' } },
     },
   })

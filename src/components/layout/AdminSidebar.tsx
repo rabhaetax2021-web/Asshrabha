@@ -25,20 +25,6 @@ export default function AdminSidebar({ collapsed = false, initialLocale = 'ar' }
   const t = useTranslations('admin')
   const tc = useTranslations('common')
 
-  useEffect(() => {
-    if (!open) return
-    setSidebarOpen(false)
-  }, [pathname])
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/signout', { method: 'POST' })
-    } catch (e) {
-      // ignore
-    }
-    window.location.href = '/login'
-  }
-
   const setSidebarOpen = (nextOpen: boolean) => {
     setOpen(nextOpen)
     if (typeof document === 'undefined') return
@@ -52,6 +38,20 @@ export default function AdminSidebar({ collapsed = false, initialLocale = 'ar' }
     if (overlay) {
       overlay.classList.toggle('sidebar-overlay-visible', nextOpen)
     }
+  }
+
+  useEffect(() => {
+    if (!open) return
+    setSidebarOpen(false)
+  }, [pathname, open])
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/signout', { method: 'POST' })
+    } catch (e) {
+      // ignore
+    }
+    window.location.href = '/login'
   }
 
   // Locale is initialized from cookie above to avoid calling setState in effect
@@ -208,32 +208,14 @@ export default function AdminSidebar({ collapsed = false, initialLocale = 'ar' }
         </ul>
       </nav>
       <div className="sidebar-footer admin-sidebar-footer">
-        <div className="user">
+        <div className="sidebar-user-row">
           <div className="avatar" />
           <div className="sidebar-user-info user-info">
-            <div className="name-row">
-              <div className="name">{tc('profile')}</div>
-              <div className="footer-actions">
-                <div className="lang-toggle" role="tablist" aria-label="Language">
-                  <button
-                    type="button"
-                    className={cn('btn btn-sm', locale === 'ar' ? 'btn-primary' : 'btn-ghost')}
-                    onClick={() => setLocale('ar')}
-                    aria-pressed={locale === 'ar'}
-                  >{tc('arabic')}</button>
-                  <button
-                    type="button"
-                    className={cn('btn btn-sm', locale === 'en' ? 'btn-primary' : 'btn-ghost')}
-                    onClick={() => setLocale('en')}
-                    aria-pressed={locale === 'en'}
-                  >{tc('english')}</button>
-                </div>
-                <button type="button" className="btn btn-ghost btn-sm logout-btn" onClick={handleLogout} aria-label="Logout">{tc('logout')}</button>
-              </div>
-            </div>
+            <div className="name">{tc('profile')}</div>
             <div className="role">{t('rootAdmin')}</div>
           </div>
         </div>
+        <button type="button" className="btn btn-ghost btn-sm logout-btn" onClick={handleLogout} aria-label="Logout">{tc('logout')}</button>
       </div>
       </aside>
 

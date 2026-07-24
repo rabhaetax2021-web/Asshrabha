@@ -3,17 +3,19 @@ import Link from 'next/link'
 import { getFirstProvider, getOrderByIdForProvider } from '@/lib/actions/provider.actions'
 import OrderManagementPanel from '@/components/orders/OrderManagementPanel'
 import PrintReportButton from '@/components/admin/PrintReportButton'
+import { getDeliveryLocationDetails } from '@/lib/provider/order-location'
 
-export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+export default async function OrderDetailPage({ params }: { params: Promise<{ orderId: string }> | { orderId: string } }) {
   const resolvedParams = await params
   const t = await getTranslations('provider')
   const tc = await getTranslations('common')
   const provider = await getFirstProvider()
   if (!provider) return <section className="provider-orders container"><div className="card glass"><p>{t('providerNotFound') || 'Provider not found.'}</p></div></section>
 
-  const order = await getOrderByIdForProvider(provider.id, resolvedParams.id)
+  const order = await getOrderByIdForProvider(provider.id, resolvedParams.orderId)
   if (!order) return <section className="provider-orders container"><div className="card glass"><p>{t('orderNotFound') || 'Order not found or not yours.'}</p></div></section>
 
+  const locationDetails = getDeliveryLocationDetails(order.address)
   const subtotal = (order.items || []).reduce((sum: number, item: any) => sum + Number(item.totalPrice || 0), 0)
   const tax = Number(order.platformFee || 0)
   const totalAfterTax = subtotal + tax
@@ -44,9 +46,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <div><strong>{t('clientDetails') || 'Client details'}</strong></div>
             <div><strong>{t('customerName') || 'Name'}:</strong> {order.customer?.nameEN || order.customer?.nameAR || order.customer?.mobile || '—'}</div>
             <div><strong>{t('customerMobile') || 'Mobile'}:</strong> {order.customer?.mobile || '—'}</div>
+            <div><strong>{t('recipientName') || 'Recipient'}:</strong> {order.address?.fullName || order.customer?.nameEN || order.customer?.nameAR || order.customer?.mobile || '—'}</div>
+            <div><strong>{t('recipientMobile') || 'Recipient mobile'}:</strong> {order.address?.mobile || order.customer?.mobile || '—'}</div>
+            <div><strong>{t('city') || 'City'}:</strong> {order.address?.city || '—'}</div>
             <div><strong>{t('area') || 'Area'}:</strong> {order.address?.area || '—'}</div>
             <div><strong>{t('address') || 'Address'}:</strong> {order.address?.addressLine || '—'}</div>
-            <div><strong>{t('locationUrl') || 'Location URL'}:</strong> {order.address?.locationUrl || '—'}</div>
+            <div><strong>{t('landmark') || 'Landmark'}:</strong> {order.address?.landmark || '—'}</div>
+            <div><strong>{t('locationUrl') || 'Location URL'}:</strong> {locationDetails.mapsUrl ? <a href={locationDetails.mapsUrl} target="_blank" rel="noreferrer">{t('open') || 'Open'}</a> : '—'}</div>
           </div>
           <div className="ui-table-wrap" style={{ marginTop: 16 }}>
             <table className="ui-table">
@@ -87,9 +93,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
             <div><strong>{t('customerName') || 'Name'}:</strong> {order.customer?.nameEN || order.customer?.nameAR || order.customer?.mobile || '—'}</div>
             <div><strong>{t('customerMobile') || 'Mobile'}:</strong> {order.customer?.mobile || '—'}</div>
+            <div><strong>{t('recipientName') || 'Recipient'}:</strong> {order.address?.fullName || order.customer?.nameEN || order.customer?.nameAR || order.customer?.mobile || '—'}</div>
+            <div><strong>{t('recipientMobile') || 'Recipient mobile'}:</strong> {order.address?.mobile || order.customer?.mobile || '—'}</div>
+            <div><strong>{t('city') || 'City'}:</strong> {order.address?.city || '—'}</div>
             <div><strong>{t('area') || 'Area'}:</strong> {order.address?.area || '—'}</div>
             <div><strong>{t('address') || 'Address'}:</strong> {order.address?.addressLine || '—'}</div>
-            <div><strong>{t('locationUrl') || 'Location URL'}:</strong> {order.address?.locationUrl ? <a href={order.address.locationUrl} target="_blank" rel="noreferrer">Open</a> : '—'}</div>
+            <div><strong>{t('landmark') || 'Landmark'}:</strong> {order.address?.landmark || '—'}</div>
+            <div><strong>{t('locationUrl') || 'Location URL'}:</strong> {locationDetails.mapsUrl ? <a href={locationDetails.mapsUrl} target="_blank" rel="noreferrer">{t('open') || 'Open'}</a> : '—'}</div>
           </div>
         </section>
 

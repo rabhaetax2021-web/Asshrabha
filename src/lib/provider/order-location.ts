@@ -4,11 +4,19 @@ export function getDeliveryLocationDetails(address: Record<string, unknown> | nu
   const area = normalize(address?.area)
   const landmark = normalize(address?.landmark)
   const directUrl = normalize(address?.locationUrl)
-  const lat = typeof address?.lat === 'number' ? address.lat : undefined
-  const lng = typeof address?.lng === 'number' ? address.lng : undefined
+  const lat = parseCoordinate(address?.lat)
+  const lng = parseCoordinate(address?.lng)
+  const locationName = normalize(address?.location?.nameEN) || normalize(address?.location?.nameAR) || normalize(address?.locationId)
 
   const displayAddress = [addressLine, city, area, landmark].filter(Boolean).join(', ')
-  const mapsUrl = directUrl || (typeof lat === 'number' && typeof lng === 'number' ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}` : displayAddress ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayAddress)}` : '')
+  const mapsUrl = directUrl
+    || (typeof lat === 'number' && typeof lng === 'number'
+      ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+      : locationName
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationName)}`
+        : displayAddress
+          ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayAddress)}`
+          : '')
 
   return {
     displayAddress,
@@ -16,6 +24,15 @@ export function getDeliveryLocationDetails(address: Record<string, unknown> | nu
     directUrl,
     hasLocation: Boolean(displayAddress || mapsUrl),
   }
+}
+
+function parseCoordinate(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : undefined
+  }
+  return undefined
 }
 
 function normalize(value: unknown) {

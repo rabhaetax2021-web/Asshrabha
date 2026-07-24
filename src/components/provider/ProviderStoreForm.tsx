@@ -14,7 +14,6 @@ export default function ProviderStoreForm({ provider }: any) {
     minOrderAmount: provider?.minOrderAmount ?? '',
     logo: provider?.logo || '',
     banner: provider?.banner || '',
-    defaultWholesaleUnit: (provider as any)?.defaultWholesaleUnit || '',
   })
   const [loading, setLoading] = useState(false)
 
@@ -24,9 +23,14 @@ export default function ProviderStoreForm({ provider }: any) {
     try {
       const payload = {
         providerId: provider.id,
-        ...form,
+        shopNameEN: form.shopNameEN,
+        shopNameAR: form.shopNameAR,
+        descriptionEN: form.descriptionEN,
+        descriptionAR: form.descriptionAR,
         minOrderItems: form.minOrderItems === '' ? undefined : Number(form.minOrderItems),
         minOrderAmount: form.minOrderAmount === '' ? undefined : Number(form.minOrderAmount),
+        logo: form.logo,
+        banner: form.banner,
       }
       const res = await fetch('/api/provider/store', {
         method: 'POST',
@@ -122,13 +126,6 @@ export default function ProviderStoreForm({ provider }: any) {
           <label className="label">Banner
             <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'banner')} />
             {form.banner && <div style={{marginTop:8}}><img src={form.banner} alt="banner" style={{maxWidth:240,maxHeight:120}}/></div>}
-          </label>
-          <label className="label">Default Wholesale Unit
-            <select value={form.defaultWholesaleUnit} onChange={e => setForm({...form, defaultWholesaleUnit: e.target.value})}>
-              <option value="">(none)</option>
-              <option value="BOX">Box</option>
-              <option value="PACK">Pack</option>
-            </select>
           </label>
         </div>
       </div>

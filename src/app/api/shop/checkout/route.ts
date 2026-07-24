@@ -35,7 +35,8 @@ export async function POST(request: NextRequest) {
   } catch (err: unknown) {
     const msg = getErrorMessage(err)
     console.error('[checkout]', msg)
-    const status = msg.includes('required purchase conditions') || msg.includes('did not meet') ? 400 : 500
+    const failureKeywords = ['required purchase conditions', 'did not meet', 'لم يحقق', 'الشروط المطلوبة']
+    const status = failureKeywords.some((phrase) => msg.includes(phrase)) ? 400 : 500
     return NextResponse.json({ error: msg }, { status })
   }
 }

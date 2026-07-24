@@ -1,4 +1,5 @@
 "use client"
+import { useEffect, useState } from 'react'
 import Button from './Button'
 import { useTheme } from './ThemeProvider'
 import Link from 'next/link'
@@ -6,6 +7,22 @@ import NotificationBell from './NotificationBell'
 
 export default function Topbar({ title }: { title?: string }) {
   const { theme, toggle } = useTheme()
+  const [locale, setLocale] = useState<'ar'|'en'>('ar')
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const match = document.cookie.match(/(?:^|; )NEXT_LOCALE=([^;]+)/)
+    if (match) {
+      const value = match[1] as 'ar' | 'en'
+      setLocale(value)
+    }
+  }, [])
+
+  const switchLocale = (next: 'ar' | 'en') => {
+    if (typeof document === 'undefined') return
+    document.cookie = `NEXT_LOCALE=${next}; path=/; max-age=${60 * 60 * 24 * 365}`
+    window.location.reload()
+  }
 
   const handleToggleSidebar = () => {
     if (typeof window === 'undefined') return
@@ -43,6 +60,10 @@ export default function Topbar({ title }: { title?: string }) {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <NotificationBell />
+        <div className="lang-toggle topbar-lang-toggle" role="tablist" aria-label="Language">
+          <button type="button" className={`btn btn-sm lang-toggle-btn ${locale === 'ar' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => switchLocale('ar')} aria-pressed={locale === 'ar'} title="Arabic">AR</button>
+          <button type="button" className={`btn btn-sm lang-toggle-btn ${locale === 'en' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => switchLocale('en')} aria-pressed={locale === 'en'} title="English">EN</button>
+        </div>
         <Button variant="ghost" onClick={() => toggle()} aria-label="Toggle theme">{theme === 'dark' ? '🌙' : '☀️'}</Button>
       </div>
     </header>

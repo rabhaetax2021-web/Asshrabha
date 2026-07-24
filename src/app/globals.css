@@ -217,21 +217,31 @@
   --glass-dark-border: hsla(0, 0%, 100%, 0.08);
 }
 
-/* Sidebar footer actions: language toggle and logout */
-.sidebar-footer .sidebar-user-info .name-row {
+/* Sidebar footer: stacked user row and logout */
+.sidebar-footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   gap: var(--space-3);
 }
-.sidebar-footer .footer-actions {
-  display: inline-flex;
+.sidebar-footer .sidebar-user-row {
+  display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
-.sidebar-footer .lang-toggle button {
-  min-width: 40px;
-  padding: var(--space-1) var(--space-2);
+.sidebar-footer .sidebar-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.sidebar-footer .logout-btn {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  width: fit-content;
+}
+.sidebar-footer .logout-btn:hover {
+  color: var(--text-primary);
 }
 
 /* Locale toggle specific styles */
@@ -248,14 +258,14 @@
   box-shadow: 0 0 0 3px rgba(59,130,246,0.18);
   transform: translateY(-1px);
 }
-.sidebar-footer .logout-btn {
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-secondary);
+
+.topbar-lang-toggle {
+  display: inline-flex;
+  align-items: center;
 }
-.sidebar-footer .logout-btn:hover {
-  color: var(--text-primary);
+.topbar-lang-toggle .btn {
+  min-width: 40px;
+  padding: var(--space-1) var(--space-2);
 }
 
 

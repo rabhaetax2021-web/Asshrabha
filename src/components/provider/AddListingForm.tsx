@@ -4,8 +4,8 @@ import { FormEvent, useState } from 'react'
 import { getErrorMessage } from '@/lib/errors'
 
 export default function AddListingForm({ catalog }: { catalog: any }) {
-  const [price, setPrice] = useState(String(catalog.wholesaleMinPrice || catalog.wholesalePrice || catalog.retailMinPrice || ''))
-  const [wholesaleUnit, setWholesaleUnit] = useState('BOX')
+  const [wholesalePrice, setWholesalePrice] = useState(String(catalog.wholesaleMinPrice || catalog.wholesalePrice || ''))
+  const [retailPrice, setRetailPrice] = useState(String(catalog.retailMinPrice || catalog.retailPrice || ''))
   const [stockQuantity, setStockQuantity] = useState('0')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -16,18 +16,28 @@ export default function AddListingForm({ catalog }: { catalog: any }) {
     setLoading(true)
     setError(null)
     try {
-      const priceValue = Number(price)
-      if (!priceValue || priceValue <= 0) {
-        throw new Error('Price must be greater than 0')
+      const wholesaleValue = Number(wholesalePrice)
+      const retailValue = Number(retailPrice)
+      if (!wholesaleValue || wholesaleValue <= 0) {
+        throw new Error('Wholesale price must be greater than 0')
+      }
+      if (!retailValue || retailValue <= 0) {
+        throw new Error('Retail price must be greater than 0')
       }
 
-      const payload: any = { catalogProductId: catalog.id, sellingPrice: priceValue, wholesalePrice: priceValue, wholesaleUnit: String(wholesaleUnit), retailPrice: priceValue, stockQuantity: Number(stockQuantity) }
+      const payload: any = {
+        catalogProductId: catalog.id,
+        sellingPrice: retailValue,
+        wholesalePrice: wholesaleValue,
+        retailPrice: retailValue,
+        stockQuantity: Number(stockQuantity),
+      }
 
       const res = await fetch('/api/provider/provider-products', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Failed')
@@ -45,19 +55,44 @@ export default function AddListingForm({ catalog }: { catalog: any }) {
     <div>
       <form onSubmit={handleSubmit} className="admin-form">
         <div className="form-row">
-          <label className="label">Price</label>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input className="input" type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} required />
-            <select value={wholesaleUnit} onChange={e => setWholesaleUnit(e.target.value)}>
-              <option value="BOX">Box</option>
-              <option value="PACK">Pack</option>
-            </select>
-          </div>
+          <label className="label">Wholesale Price</label>
+          <input
+            className="input"
+            type="number"
+            step="0.01"
+            value={wholesalePrice}
+            onChange={e => setWholesalePrice(e.target.value)}
+            required
+          />
+          {catalog.wholesaleMaxPrice > 0 && (
+            <div style={{ marginTop: 6, color: 'var(--text-muted)' }}>
+              Allowed wholesale: {catalog.wholesaleMinPrice} - {catalog.wholesaleMaxPrice}
+            </div>
+          )}
         </div>
+
         <div className="form-row">
-          <label className="label">Stock status</label>
+          <label className="label">Retail Price</label>
+          <input
+            className="input"
+            type="number"
+            step="0.01"
+            value={retailPrice}
+            onChange={e => setRetailPrice(e.target.value)}
+            required
+          />
+          {catalog.retailMaxPrice > 0 && (
+            <div style={{ marginTop: 6, color: 'var(--text-muted)' }}>
+              Allowed retail: {catalog.retailMinPrice} - {catalog.retailMaxPrice}
+            </div>
+          )}
+        </div>
+
+        <div className="form-row">
+          <label className="label">Stock quantity</label>
           <input className="input" type="number" value={stockQuantity} onChange={e => setStockQuantity(e.target.value)} />
         </div>
+
         {error && <div className="form-error">{error}</div>}
         <div className="form-actions">
           <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? 'Adding...' : 'Add Product'}</button>

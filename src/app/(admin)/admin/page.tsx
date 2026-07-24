@@ -105,6 +105,7 @@ export default async function AdminDashboardPage() {
             </div>
             <div className="dashboard-list">
               <Link href="/admin/providers" className="dashboard-list-item"><strong>Manage providers</strong><span className="dashboard-pill">Go</span></Link>
+              <Link href="/admin/catalog" className="dashboard-list-item"><strong>Manage catalog</strong><span className="dashboard-pill">Delete</span></Link>
               <Link href="/admin/approvals" className="dashboard-list-item"><strong>Review approvals</strong><span className="dashboard-pill">New</span></Link>
               <Link href="/admin/wallet" className="dashboard-list-item"><strong>Wallet overview</strong><span className="dashboard-pill">Finance</span></Link>
               <Link href="/admin/settings" className="dashboard-list-item"><strong>Platform settings</strong><span className="dashboard-pill">Config</span></Link>

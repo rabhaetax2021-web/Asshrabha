@@ -20,25 +20,6 @@ export default function ProviderSidebar({ collapsed = false, initialLocale = 'ar
   })
   const [open, setOpen] = useState(false)
 
-  useEffect(() => {
-    if (!open) return
-    setSidebarOpen(false)
-  }, [pathname])
-
-  // Locale is initialized from cookie above to avoid calling setState in effect
-
-  const setLocale = (newLocale: 'ar'|'en') => {
-    if (typeof document === 'undefined') return
-    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=${60 * 60 * 24 * 365}`
-    setLocaleState(newLocale)
-    window.location.reload()
-  }
-
-  const handleLogout = async () => {
-    try { await fetch('/api/auth/signout', { method: 'POST' }) } catch (e) {}
-    window.location.href = '/login'
-  }
-
   const setSidebarOpen = (nextOpen: boolean) => {
     setOpen(nextOpen)
     if (typeof document === 'undefined') return
@@ -52,6 +33,25 @@ export default function ProviderSidebar({ collapsed = false, initialLocale = 'ar
     if (overlay) {
       overlay.classList.toggle('sidebar-overlay-visible', nextOpen)
     }
+  }
+
+  useEffect(() => {
+    if (!open) return
+    setSidebarOpen(false)
+  }, [pathname, open])
+
+  // Locale is initialized from cookie above to avoid calling setState in effect
+
+  const setLocale = (newLocale: 'ar'|'en') => {
+    if (typeof document === 'undefined') return
+    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=${60 * 60 * 24 * 365}`
+    setLocaleState(newLocale)
+    window.location.reload()
+  }
+
+  const handleLogout = async () => {
+    try { await fetch('/api/auth/signout', { method: 'POST' }) } catch (e) {}
+    window.location.href = '/login'
   }
 
   return (
@@ -100,22 +100,14 @@ export default function ProviderSidebar({ collapsed = false, initialLocale = 'ar
       </nav>
 
       <div className="sidebar-footer provider-sidebar-footer">
-        <div className="user">
+        <div className="sidebar-user-row">
           <div className="avatar" />
           <div className="sidebar-user-info user-info">
-            <div className="name-row">
-              <div className="name">Store Owner</div>
-              <div className="footer-actions">
-                <div className="lang-toggle" role="tablist" aria-label="Language">
-                  <button type="button" className={cn('btn btn-sm', locale === 'ar' ? 'btn-primary' : 'btn-ghost')} onClick={() => setLocale('ar')} aria-pressed={locale === 'ar'}>AR</button>
-                  <button type="button" className={cn('btn btn-sm', locale === 'en' ? 'btn-primary' : 'btn-ghost')} onClick={() => setLocale('en')} aria-pressed={locale === 'en'}>EN</button>
-                </div>
-                <button type="button" className="btn btn-ghost btn-sm logout-btn" onClick={handleLogout} aria-label="Logout">{tc('logout')}</button>
-              </div>
-            </div>
+            <div className="name">Store Owner</div>
             <div className="role">PROVIDER</div>
           </div>
         </div>
+        <button type="button" className="btn btn-ghost btn-sm logout-btn" onClick={handleLogout} aria-label="Logout">{tc('logout')}</button>
       </div>
       </aside>
 
