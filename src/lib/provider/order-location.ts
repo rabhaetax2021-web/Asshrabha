@@ -6,7 +6,8 @@ export function getDeliveryLocationDetails(address: Record<string, unknown> | nu
   const directUrl = normalize(address?.locationUrl)
   const lat = parseCoordinate(address?.lat)
   const lng = parseCoordinate(address?.lng)
-  const locationName = normalize(address?.location?.nameEN) || normalize(address?.location?.nameAR) || normalize(address?.locationId)
+  const location = getRecord(address?.location)
+  const locationName = normalize(location?.nameEN) || normalize(location?.nameAR) || normalize(address?.locationId)
 
   const displayAddress = [addressLine, city, area, landmark].filter(Boolean).join(', ')
   const mapsUrl = directUrl
@@ -24,6 +25,12 @@ export function getDeliveryLocationDetails(address: Record<string, unknown> | nu
     directUrl,
     hasLocation: Boolean(displayAddress || mapsUrl),
   }
+}
+
+function getRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined
 }
 
 function parseCoordinate(value: unknown) {
