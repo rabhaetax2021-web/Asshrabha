@@ -85,6 +85,21 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={`${inter.variable} ${notoKufiArabic.variable} ${jetBrainsMono.variable}`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const stored = localStorage.getItem('theme');
+                  const darkMode = stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body>
         <a href="#__a11y_main" className="skip-link">Skip to content</a>
         <NextIntlClientProvider locale={locale} messages={messages}>

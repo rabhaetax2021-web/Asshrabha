@@ -11,27 +11,26 @@ export function useTheme() {
   return ctx
 }
 
+function getPreferredTheme(): Theme {
+  try {
+    const stored = localStorage.getItem('theme')
+    if (stored === 'dark' || stored === 'light') {
+      return stored
+    }
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  } catch {
+    return 'light'
+  }
+}
+
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Start with a deterministic server-safe default. Read storage and
-  // media preferences on the client after mount to avoid hydration
-  // mismatches where the server and client render different values.
   const [theme, setTheme] = useState<Theme>('light')
 
-  // Read stored preference / prefers-color-scheme on mount (client-only)
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('theme')
-      if (stored === 'dark' || stored === 'light') {
-        setTheme(stored)
-        return
-      }
-      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        setTheme('dark')
-      }
-    } catch (e) {}
+    const preferredTheme = getPreferredTheme()
+    setTheme(preferredTheme)
   }, [])
 
-  // Apply theme attribute and persist whenever theme changes
   useEffect(() => {
     try {
       document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light')
