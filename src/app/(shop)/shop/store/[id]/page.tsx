@@ -21,7 +21,7 @@ export default async function StorePage({ params, searchParams }: { params: any;
   const allProducts = await prisma.providerProduct.findMany({
     where: { providerId: store.id, status: 'APPROVED' },
     include: {
-      catalogProduct: { include: { category: true } },
+      catalogProduct: { include: { category: true, unitRanges: true } },
       providerProductOptions: true,
     },
     orderBy: { createdAt: 'desc' },

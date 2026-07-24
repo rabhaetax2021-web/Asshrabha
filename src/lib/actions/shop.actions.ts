@@ -17,7 +17,7 @@ export async function getProductById(id: string) {
   // Try providerProduct first (provider-specific listing)
   const providerProduct = await prisma.providerProduct.findUnique({
     where: { id },
-    include: { catalogProduct: true, provider: true, providerProductOptions: true },
+    include: { catalogProduct: { include: { unitRanges: true } }, provider: true, providerProductOptions: true },
   })
   if (providerProduct) return { kind: 'provider', data: providerProduct }
 

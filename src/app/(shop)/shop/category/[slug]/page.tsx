@@ -38,7 +38,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       },
     },
     include: {
-      catalogProduct: { include: { category: true } },
+      catalogProduct: { include: { category: true, unitRanges: true } },
       provider: true,
       providerProductOptions: true,
     },

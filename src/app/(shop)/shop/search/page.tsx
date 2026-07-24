@@ -41,7 +41,7 @@ export default async function ShopSearchPage({ searchParams }: { searchParams?: 
 
     products = await prisma.providerProduct.findMany({
       where: productWhere,
-      include: { catalogProduct: true, provider: { include: { user: true } }, providerProductOptions: true },
+      include: { catalogProduct: { include: { unitRanges: true } }, provider: { include: { user: true } }, providerProductOptions: true },
       take: 50,
       orderBy: { updatedAt: 'desc' }
     })

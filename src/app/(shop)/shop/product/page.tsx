@@ -30,7 +30,7 @@ export default async function ProductListingPage() {
       },
     },
     include: {
-      catalogProduct: { include: { category: true } },
+      catalogProduct: { include: { category: true, unitRanges: true } },
       provider: true,
       providerProductOptions: true,
     },
