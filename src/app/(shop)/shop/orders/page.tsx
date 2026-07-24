@@ -1,11 +1,14 @@
 import React from 'react'
+import { getTranslations } from 'next-intl/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 
 export default async function ShopOrdersPage() {
+  const t = await getTranslations('shop')
+  const tc = await getTranslations('common')
   const current = await getCurrentUser()
-  if (!current) return <div className="container" style={{ padding: 'var(--space-8)', textAlign: 'center' }}>Please login</div>
+  if (!current) return <div className="container" style={{ padding: 'var(--space-8)', textAlign: 'center' }}>{t('pleaseLogin') || 'Please login'}</div>
 
   const orders = await prisma.order.findMany({
     where: { customerId: current.id },
@@ -20,15 +23,15 @@ export default async function ShopOrdersPage() {
   return (
     <section className="shop-orders container">
       <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--font-bold)', marginBottom: 'var(--space-6)', color: 'var(--text-primary)' }}>
-        My Orders
+        {t('myOrders')}
       </h1>
 
       {orders.length === 0 && (
         <div className="card" style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
           <div style={{ fontSize: 'var(--text-4xl)', marginBottom: 'var(--space-4)' }}>📦</div>
-          <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-bold)', marginBottom: 'var(--space-2)' }}>No orders yet</h3>
-          <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--space-6)' }}>Your order history will appear here.</p>
-          <Link href="/shop" className="btn btn-primary">Start Shopping</Link>
+          <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-bold)', marginBottom: 'var(--space-2)' }}>{t('noOrders')}</h3>
+          <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--space-6)' }}>{t('noOrdersMessage')}</p>
+          <Link href="/shop" className="btn btn-primary">{t('shopNow')}</Link>
         </div>
       )}
 
@@ -37,13 +40,13 @@ export default async function ShopOrdersPage() {
           <div key={o.id} className="order-card card" style={{ padding: 'var(--space-4)' }}>
             <div className="order-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)', paddingBottom: 'var(--space-3)', borderBottom: '1px solid var(--border-light)' }}>
               <div>
-                <div style={{ fontWeight: 'var(--font-bold)', color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>#{o.orderNumber}</div>
+                <div style={{ fontWeight: 'var(--font-bold)', color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>{t('orderNumber', { number: o.orderNumber })}</div>
                 <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-2xs)', marginTop: '2px' }}>
                   {new Date(o.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
               <span className={`badge ${getStatusBadge(o.status)}`} style={{ fontSize: 'var(--text-xs)', textTransform: 'capitalize' }}>
-                {o.status.toLowerCase()}
+                {getStatusLabel(o.status, t)}
               </span>
             </div>
 
@@ -57,7 +60,7 @@ export default async function ShopOrdersPage() {
                 {(o.provider?.shopNameEN || o.provider?.shopNameAR || 'S').charAt(0).toUpperCase()}
               </div>
               <Link href={`/shop/store/${o.provider?.id}`} style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontWeight: 'var(--font-medium)', textDecoration: 'none' }}>
-                {o.provider?.shopNameEN || o.provider?.shopNameAR || 'Store'}
+                {o.provider?.shopNameEN || o.provider?.shopNameAR || t('store')}
               </Link>
             </div>
 
@@ -69,7 +72,7 @@ export default async function ShopOrdersPage() {
                     {item.providerProduct?.catalogProduct?.images?.[0] ? (
                       <img
                         src={item.providerProduct.catalogProduct.images[0]}
-                        alt=""
+                        alt={item.providerProduct?.catalogProduct?.nameEN || item.providerProduct?.catalogProduct?.nameAR || 'product'}
                         style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }}
                       />
                     ) : (
@@ -79,17 +82,17 @@ export default async function ShopOrdersPage() {
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {item.providerProduct?.catalogProduct?.nameEN || item.providerProduct?.catalogProduct?.nameAR || 'Product'}
+                        {item.providerProduct?.catalogProduct?.nameEN || item.providerProduct?.catalogProduct?.nameAR || t('product')}
                       </div>
                       <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>
-                        Qty: {item.quantity} × {item.unitPrice.toFixed(2)} EGP
+                        {tc('quantity')}: {item.quantity} × {item.unitPrice.toFixed(2)} EGP
                       </div>
                     </div>
                   </div>
                 ))}
                 {o.items.length > 3 && (
                   <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)', paddingLeft: '44px' }}>
-                    +{o.items.length - 3} more items
+                    {t('moreItems', { count: o.items.length - 3 })}
                   </div>
                 )}
               </div>
@@ -97,7 +100,7 @@ export default async function ShopOrdersPage() {
 
             {/* Total */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 'var(--space-3)', borderTop: '1px solid var(--border-light)' }}>
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Total</span>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{tc('total')}</span>
               <span style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-bold)', color: 'var(--primary)' }}>{o.totalAmount.toFixed(2)} EGP</span>
             </div>
           </div>
@@ -114,5 +117,15 @@ function getStatusBadge(status: string) {
     case 'PENDING': return 'badge-warning'
     case 'CANCELLED': return 'badge-error'
     default: return 'badge-pending'
+  }
+}
+
+function getStatusLabel(status: string, t: (key: string) => string) {
+  switch (status) {
+    case 'DELIVERED': return t('statusDelivered')
+    case 'SHIPPED': return t('statusShipped')
+    case 'PENDING': return t('statusPending')
+    case 'CANCELLED': return t('statusCancelled')
+    default: return t('statusProcessing')
   }
 }

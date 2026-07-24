@@ -112,8 +112,12 @@ export default async function ShopSearchPage({ searchParams }: { searchParams?: 
                 const descriptionEN = p.catalogProduct?.descriptionEN || ''
                 const descriptionAR = p.catalogProduct?.descriptionAR || ''
                 const unit = p.wholesaleUnit || p.catalogProduct?.unitType || 'UNIT'
-                const conditionsText = p.providerProductOptions && p.providerProductOptions.length > 0
-                  ? `Options: ${p.providerProductOptions.map((o: any) => o.unitType).join(', ')}`
+                const providerOptionUnits = (p.providerProductOptions || []).map((o: any) => o.unitType).filter(Boolean)
+                const catalogUnitRanges = (p.catalogProduct?.unitRanges || []).map((r: any) => r.unitType).filter(Boolean)
+                const providerDefault = p.provider?.defaultWholesaleUnit ? [p.provider.defaultWholesaleUnit] : []
+                const conditionUnits = providerOptionUnits.length > 0 ? providerOptionUnits : (catalogUnitRanges.length > 0 ? catalogUnitRanges : providerDefault)
+                const conditionsText = conditionUnits && conditionUnits.length > 0
+                  ? `Options: ${conditionUnits.join(', ')}`
                   : 'Provider conditions will be shown on the detail page.'
 
                 return (

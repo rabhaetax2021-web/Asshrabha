@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest",
+    "axe": "node scripts/axe-run.js",
     "prisma:generate": "prisma generate --schema=prisma/schema.prisma",
     "prisma:migrate:create": "prisma migrate dev --name init --create-only --schema=prisma/schema.prisma",
     "prisma:migrate": "prisma migrate dev --schema=prisma/schema.prisma",
@@ -53,6 +54,9 @@
     "eslint-config-next": "16.2.9",
     "prisma": "latest",
     "typescript": "^5",
-    "vitest": "^1.2.0"
+    "vitest": "^1.2.0",
+    "axe-core": "^4.6.3",
+    "jsdom": "^22.1.0",
+    "node-fetch": "^3.4.1"
   }
 }

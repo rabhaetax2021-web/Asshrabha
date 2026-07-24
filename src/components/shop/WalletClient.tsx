@@ -1,9 +1,12 @@
 "use client"
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { showToast } from '@/components/ui/toast'
 import { getErrorMessage } from '@/lib/errors'
 
-export default function WalletClient({ wallet, transactions }: { wallet: any; transactions: any[] }) {
+export default function WalletClient({ wallet, transactions }: { wallet?: any; transactions?: any[] }) {
+  const t = useTranslations('shop')
+  const tc = useTranslations('common')
   const [amount, setAmount] = useState('')
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw'>('deposit')
@@ -11,6 +14,8 @@ export default function WalletClient({ wallet, transactions }: { wallet: any; tr
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null)
   const [showConfirm, setShowConfirm] = useState(false)
   const [pendingAmount, setPendingAmount] = useState<number | null>(null)
+  const [walletState, setWalletState] = useState<any | null>(wallet || null)
+  const [transactionsState, setTransactionsState] = useState<any[]>(transactions || [])
 
   useEffect(() => {
     ;(async () => {
@@ -22,20 +27,33 @@ export default function WalletClient({ wallet, transactions }: { wallet: any; tr
         }
       } catch (e) {}
     })()
+    if (!wallet) {
+      ;(async () => {
+        try {
+          const r = await fetch('/api/shop/wallet')
+          if (r.ok) {
+            const j = await r.json()
+            if (j.ok) {
+              setWalletState(j.wallet)
+              setTransactionsState(j.transactions || [])
+            }
+          }
+        } catch (e) {}
+      })()
+    }
   }, [])
 
   async function handleDeposit(e: React.FormEvent) {
     e.preventDefault()
     const val = Number(amount)
     if (!val || val <= 0) {
-      showToast('Enter a valid amount', 'error')
+      showToast(t('enterValidAmount'), 'error')
       return
     }
     if (!selectedMethod) {
-      showToast('Please choose a payment method', 'error')
+      showToast(t('choosePaymentMethod'), 'error')
       return
     }
-    // Open confirmation modal instead of sending immediately
     setPendingAmount(val)
     setShowConfirm(true)
     return
@@ -51,8 +69,8 @@ export default function WalletClient({ wallet, transactions }: { wallet: any; tr
         body: JSON.stringify({ amount: pendingAmount, methodId: selectedMethod })
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Failed')
-      showToast('Deposit request submitted (pending approval)', 'success')
+      if (!res.ok) throw new Error(data?.error || t('depositFailed'))
+      showToast(t('depositSubmitted'), 'success')
       setAmount('')
       setPendingAmount(null)
       setSelectedMethod(null)
@@ -74,11 +92,11 @@ export default function WalletClient({ wallet, transactions }: { wallet: any; tr
     e.preventDefault()
     const val = Number(amount)
     if (!val || val <= 0) {
-      showToast('Enter a valid amount', 'error')
+      showToast(t('enterValidAmount'), 'error')
       return
     }
-    if (val > wallet.availableBalance) {
-      showToast('Insufficient balance', 'error')
+    if (val > (walletState?.availableBalance ?? wallet?.availableBalance ?? 0)) {
+      showToast(t('insufficientBalance'), 'error')
       return
     }
     setLoading(true)
@@ -89,8 +107,8 @@ export default function WalletClient({ wallet, transactions }: { wallet: any; tr
         body: JSON.stringify({ amount: val })
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Failed')
-      showToast('Withdrawal request submitted', 'success')
+      if (!res.ok) throw new Error(data?.error || t('withdrawFailed'))
+      showToast(t('withdrawSubmitted'), 'success')
       setAmount('')
       window.location.reload()
     } catch (err: unknown) {
@@ -103,38 +121,37 @@ export default function WalletClient({ wallet, transactions }: { wallet: any; tr
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 'var(--space-4)' }}>
-        <button className="btn btn-primary" onClick={() => setActiveTab('deposit')}>Add Balance</button>
-      {/* Confirmation Modal */}
-      {showConfirm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
-          <div style={{ width: 520, background: 'white', borderRadius: 8, padding: 'var(--space-6)', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ marginTop: 0, marginBottom: 'var(--space-3)' }}>Confirm Deposit</h3>
-            <div style={{ marginBottom: 'var(--space-3)' }}>
-              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Amount</div>
-              <div style={{ fontWeight: 'var(--font-bold)', fontSize: 'var(--text-lg)' }}>{pendingAmount?.toFixed(2)} EGP</div>
-            </div>
-            <div style={{ marginBottom: 'var(--space-4)' }}>
-              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Payment Method</div>
-              <div style={{ fontWeight: 'var(--font-semibold)' }}>{methods.find(m => m.id === selectedMethod)?.name || 'Selected Method'}</div>
-              <div style={{ marginTop: 'var(--space-2)', color: 'var(--text-muted)' }}>{methods.find(m => m.id === selectedMethod)?.instructions}</div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <button className="btn btn-ghost" onClick={cancelConfirm} disabled={loading}>Keep Editing</button>
-              <button className="btn btn-primary" onClick={confirmDeposit} disabled={loading}>{loading ? 'Processing...' : 'Confirm Payment'}</button>
+        <button className="btn btn-primary" onClick={() => setActiveTab('deposit')}>{t('addBalance')}</button>
+        {showConfirm && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
+            <div style={{ width: 520, background: 'white', borderRadius: 8, padding: 'var(--space-6)', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+              <h3 style={{ marginTop: 0, marginBottom: 'var(--space-3)' }}>{t('confirmDeposit')}</h3>
+              <div style={{ marginBottom: 'var(--space-3)' }}>
+                <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{t('amount')}</div>
+                <div style={{ fontWeight: 'var(--font-bold)', fontSize: 'var(--text-lg)' }}>{pendingAmount?.toFixed(2)} EGP</div>
+              </div>
+              <div style={{ marginBottom: 'var(--space-4)' }}>
+                <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{t('paymentMethod')}</div>
+                <div style={{ fontWeight: 'var(--font-semibold)' }}>{methods.find(m => m.id === selectedMethod)?.name || t('selectedMethod')}</div>
+                <div style={{ marginTop: 'var(--space-2)', color: 'var(--text-muted)' }}>{methods.find(m => m.id === selectedMethod)?.instructions}</div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <button className="btn btn-ghost" onClick={cancelConfirm} disabled={loading}>{t('keepEditing')}</button>
+                <button className="btn btn-primary" onClick={confirmDeposit} disabled={loading}>{loading ? t('processing') : t('confirmPayment')}</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-        <button className="btn btn-ghost" onClick={() => setActiveTab('withdraw')}>Withdraw</button>
+        )}
+        <button className="btn btn-ghost" onClick={() => setActiveTab('withdraw')}>{t('withdraw')}</button>
       </div>
       <div className="wallet-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
         <div className="wallet-card card" style={{ padding: 'var(--space-6)', textAlign: 'center' }}>
-          <div className="wallet-label" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-2)' }}>Available Balance</div>
-          <div className="wallet-balance" style={{ fontSize: 'var(--text-3xl)', fontWeight: 'var(--font-bold)', color: 'var(--primary)' }}>{Number(wallet.availableBalance).toFixed(2)} EGP</div>
+          <div className="wallet-label" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-2)' }}>{t('availableBalance')}</div>
+          <div className="wallet-balance" style={{ fontSize: 'var(--text-3xl)', fontWeight: 'var(--font-bold)', color: 'var(--primary)' }}>{Number(walletState?.availableBalance ?? wallet?.availableBalance ?? 0).toFixed(2)} EGP</div>
         </div>
         <div className="wallet-card card" style={{ padding: 'var(--space-6)', textAlign: 'center' }}>
-          <div className="wallet-label" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-2)' }}>Pending Balance</div>
-          <div className="wallet-balance" style={{ fontSize: 'var(--text-3xl)', fontWeight: 'var(--font-bold)', color: 'var(--warning-dark)' }}>{Number(wallet.pendingBalance).toFixed(2)} EGP</div>
+          <div className="wallet-label" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-2)' }}>{t('pendingBalance')}</div>
+          <div className="wallet-balance" style={{ fontSize: 'var(--text-3xl)', fontWeight: 'var(--font-bold)', color: 'var(--warning-dark)' }}>{Number(walletState?.pendingBalance ?? wallet?.pendingBalance ?? 0).toFixed(2)} EGP</div>
         </div>
       </div>
 
@@ -144,12 +161,12 @@ export default function WalletClient({ wallet, transactions }: { wallet: any; tr
             type="button"
             className={activeTab === 'deposit' ? 'btn btn-primary' : 'btn btn-ghost'}
             onClick={() => setActiveTab('deposit')}
-          >Add Money</button>
+          >{t('addMoney')}</button>
           <button
             type="button"
             className={activeTab === 'withdraw' ? 'btn btn-primary' : 'btn btn-ghost'}
             onClick={() => setActiveTab('withdraw')}
-          >Withdraw</button>
+          >{t('withdraw')}</button>
         </div>
 
         <form onSubmit={activeTab === 'deposit' ? handleDeposit : handleWithdraw}>
@@ -160,31 +177,31 @@ export default function WalletClient({ wallet, transactions }: { wallet: any; tr
               min="1"
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              placeholder="Amount (EGP)"
+              placeholder={t('amountEgp')}
               className="input"
               style={{ flex: 1 }}
               required
             />
             {activeTab === 'deposit' && (
               <select value={selectedMethod || ''} onChange={e => setSelectedMethod(e.target.value)} style={{ width: 240 }}>
-                <option value="">Choose payment method</option>
+                <option value="">{t('choosePaymentMethod')}</option>
                 {methods.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
             )}
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Processing...' : activeTab === 'deposit' ? 'Add' : 'Withdraw'}
+              {loading ? t('processing') : activeTab === 'deposit' ? t('add') : t('withdraw')}
             </button>
           </div>
         </form>
       </div>
 
       <div className="card" style={{ padding: 'var(--space-6)' }}>
-        <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-4)' }}>Transaction History</h3>
-        {transactions.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)' }}>No transactions yet.</p>
+        <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-4)' }}>{t('transactionHistory')}</h3>
+        {transactionsState.length === 0 ? (
+          <p style={{ color: 'var(--text-muted)' }}>{t('noTransactions')}</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            {transactions.map((tx: any) => (
+            {transactionsState.map((tx: any) => (
               <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}>
                 <div>
                   <div style={{ fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{tx.type}</div>

@@ -3,11 +3,12 @@ import { useEffect, useState } from 'react';
 import { showToast } from '@/components/ui/toast'
 import { getErrorMessage } from '@/lib/errors'
 import { useCartStore } from '@/stores/cartStore'
+import { resolveProductPrice } from '@/lib/cart-price'
 
 type Option = { id: string; title?: string; price?: number; unitType?: string }
 type CatalogOption = { unitType: string; minPrice?: number; maxPrice?: number }
 
-export default function AddToCart({ providerProductId, catalogProductId }: { providerProductId?: string, catalogProductId?: string }) {
+export default function AddToCart({ providerProductId, catalogProductId, className }: { providerProductId?: string, catalogProductId?: string, className?: string }) {
   const [loading, setLoading] = useState(false)
   const addItem = useCartStore(s => s.addItem)
   const setOpen = useCartStore(s => s.setOpen)
@@ -37,15 +38,15 @@ export default function AddToCart({ providerProductId, catalogProductId }: { pro
         if (catalog) setProductName(catalog.nameEN || catalog.nameAR || undefined)
         const img = j.product?.catalogProduct?.images?.[0] || j.product?.images?.[0] || undefined
         if (img) setProductImage(img)
-        // determine buyer role (client or shop) and cache appropriate price
+        // determine buyer role (client or shop) and cache the normalized price
         try {
           const s = await fetch('/api/auth/session').then(r => r.json()).catch(() => ({}))
           const shop = !!s?.user && (s.user.role === 'PROVIDER' || s.user.customerType === 'SHOP')
           setIsShop(shop)
-          const computed = opts.length > 0 ? undefined : (shop ? (j.product?.wholesalePrice ?? j.product?.sellingPrice) : (j.product?.retailPrice ?? j.product?.sellingPrice))
-          if (computed) setProductPrice(computed)
+          const computed = resolveProductPrice(j.product, shop)
+          setProductPrice(computed)
         } catch (e) {
-          if (j.product?.sellingPrice) setProductPrice(j.product.sellingPrice)
+          setProductPrice(resolveProductPrice(j.product, false))
         }
       } catch (err) {
         // ignore
@@ -77,9 +78,12 @@ export default function AddToCart({ providerProductId, catalogProductId }: { pro
         // add to client-side cart using selected option
         const opt = options.find(o => o.id === selectedOption)
         const title = opt?.title || productName || undefined
-        // prefer option price if present, otherwise use role-based cached product price
-        const price = opt?.price ?? productPrice ?? undefined
-        // try to pick a thumbnail from the provider product or its catalog product
+        const optionPrice = typeof opt?.price === 'number' ? opt.price : undefined
+        const price = resolveProductPrice({
+          retailPrice: productPrice && !isShop ? productPrice : undefined,
+          wholesalePrice: productPrice && isShop ? productPrice : undefined,
+          sellingPrice: productPrice,
+        }, isShop, optionPrice)
         const image = productImage || undefined
         addItem({ providerProductId, optionId: selectedOption || undefined, unitType: opt?.unitType, quantity: Number(quantity || 1), title, price, image })
         try { setOpen(true) } catch (e) {}
@@ -130,9 +134,9 @@ export default function AddToCart({ providerProductId, catalogProductId }: { pro
   }
 
   return (
-    <form onSubmit={doAdd} className="add-to-cart-form" onClick={e => e.stopPropagation()}>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <input type="number" min={1} value={quantity} onChange={e => setQuantity(Number(e.target.value))} style={{ width: 80 }} />
+    <form onSubmit={doAdd} className={`add-to-cart-form ${className || ''}`.trim()} onClick={e => e.stopPropagation()}>
+      <div className="add-to-cart-controls">
+        <input type="number" min={1} value={quantity} onChange={e => setQuantity(Number(e.target.value))} />
         {options.length > 0 && (
           <select value={selectedOption || ''} onChange={e => setSelectedOption(e.target.value)}>
             {options.map(o => <option key={o.id} value={o.id}>{o.unitType} - {o.price} EGP</option>)}

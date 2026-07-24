@@ -1,12 +1,19 @@
 import React from 'react'
+import { getTranslations } from 'next-intl/server'
+import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import Link from 'next/link'
 import ProfileActions from '@/components/shop/ProfileActions'
+import LocaleToggle from '@/components/shop/LocaleToggle'
 
 export default async function ProfilePage() {
+  const t = await getTranslations('shop')
+  const tc = await getTranslations('common')
+  const cookieStore = await cookies()
+  const initialLocale = (cookieStore.get('NEXT_LOCALE')?.value as 'ar' | 'en') || 'ar'
   const current = await getCurrentUser()
-  if (!current) return <div className="container" style={{ padding: 'var(--space-8)', textAlign: 'center' }}>Please login</div>
+  if (!current) return <div className="container" style={{ padding: 'var(--space-8)', textAlign: 'center' }}>{t('pleaseLogin') || 'Please login'}</div>
 
   // Fetch full user data with stats
   const fullUser = await prisma.user.findUnique({
@@ -24,7 +31,7 @@ export default async function ProfilePage() {
     }
   })
 
-  if (!fullUser) return <div className="container" style={{ padding: 'var(--space-8)', textAlign: 'center' }}>User not found</div>
+  if (!fullUser) return <div className="container" style={{ padding: 'var(--space-8)', textAlign: 'center' }}>{t('userNotFound')}</div>
 
   // ── PROVIDER PROFILE ──
   if (current.role === 'PROVIDER') {
@@ -43,7 +50,7 @@ export default async function ProfilePage() {
         }
       }
     })
-    if (!profile) return <div className="container" style={{ padding: 'var(--space-8)', textAlign: 'center' }}>No store profile</div>
+    if (!profile) return <div className="container" style={{ padding: 'var(--space-8)', textAlign: 'center' }}>{t('noStoreProfile') || 'No store profile'}</div>
 
     const pending = await prisma.providerProfileEdit.findFirst({
       where: { providerId: profile.id, status: 'PENDING' },
@@ -115,13 +122,13 @@ export default async function ProfilePage() {
           <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', justifyContent: 'center' }}>
             <span className="badge" style={{
               background: 'var(--gradient-primary)', color: 'white', padding: 'var(--space-1) var(--space-3)', borderRadius: 'var(--radius-full)', fontSize: 'var(--text-xs)'
-            }}>🏪 Store Owner</span>
+            }}>{t('storeOwner') || '🏪 Store Owner'}</span>
             <span className={`badge ${profile.isVisible ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: 'var(--text-xs)' }}>
-              {profile.isVisible ? '✅ Visible' : '⏳ Hidden'}
+              {profile.isVisible ? (t('visible') || '✅ Visible') : (t('hidden') || '⏳ Hidden')}
             </span>
             {pending && (
               <span className="badge badge-warning" style={{ fontSize: 'var(--text-xs)' }}>
-                ⏳ Edit Pending Approval
+                {t('editPendingApproval') || '⏳ Edit Pending Approval'}
               </span>
             )}
           </div>
@@ -140,24 +147,24 @@ export default async function ProfilePage() {
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-3)', marginBottom: 'var(--space-6)'
         }}>
-          <StatCard label="Products" value={profile._count.products} icon="📦" />
-          <StatCard label="Orders" value={profile._count.orders} icon="📋" />
-          <StatCard label="Reviews" value={profile._count.reviews} icon="⭐" />
-          <StatCard label="Delivery Zones" value={profile.deliveryZones.length} icon="🚚" />
+          <StatCard label={t('products') || 'Products'} value={profile._count.products} icon="📦" />
+          <StatCard label={t('orders') || 'Orders'} value={profile._count.orders} icon="📋" />
+          <StatCard label={t('reviews') || 'Reviews'} value={profile._count.reviews} icon="⭐" />
+          <StatCard label={t('deliveryZones') || 'Delivery Zones'} value={profile.deliveryZones.length} icon="🚚" />
         </div>
 
         {/* Details Cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
           {/* Owner Info */}
-          <DetailCard title="Owner Information" icon="👤">
-            <DetailRow label="Name" value={profile.user?.nameEN || profile.user?.nameAR || '—'} />
-            <DetailRow label="Phone" value={profile.user?.mobile || '—'} />
-            <DetailRow label="Email" value={profile.user?.email || '—'} />
+          <DetailCard title={t('ownerInformation')} icon="👤">
+            <DetailRow label={tc('name')} value={profile.user?.nameEN || profile.user?.nameAR || '—'} />
+            <DetailRow label={tc('mobile')} value={profile.user?.mobile || '—'} />
+            <DetailRow label={tc('email')} value={profile.user?.email || '—'} />
           </DetailCard>
 
           {/* Store Description */}
           {(profile.descriptionEN || profile.descriptionAR) && (
-            <DetailCard title="About Store" icon="📝">
+            <DetailCard title={t('aboutStore')} icon="📝">
               <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', lineHeight: 1.6 }}>
                 {profile.descriptionEN || profile.descriptionAR}
               </p>
@@ -171,10 +178,10 @@ export default async function ProfilePage() {
 
           {/* Location */}
           {(profile.locationAddress || (typeof profile.locationLat === 'number' && typeof profile.locationLng === 'number')) && (
-            <DetailCard title="Location" icon="📍">
-              {profile.locationAddress && <DetailRow label="Address" value={profile.locationAddress} />}
+            <DetailCard title={t('location')} icon="📍">
+              {profile.locationAddress && <DetailRow label={t('address')} value={profile.locationAddress} />}
               {typeof profile.locationLat === 'number' && typeof profile.locationLng === 'number' && (
-                <DetailRow label="Coordinates" value={`${profile.locationLat.toFixed(6)}, ${profile.locationLng.toFixed(6)}`} />
+                <DetailRow label={t('coordinates')} value={`${profile.locationLat.toFixed(6)}, ${profile.locationLng.toFixed(6)}`} />
               )}
               {profile.locationPhoto && (
                 <div style={{ marginTop: 'var(--space-3)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
@@ -185,10 +192,10 @@ export default async function ProfilePage() {
           )}
 
           {/* Member Since */}
-          <DetailCard title="Account Info" icon="📅">
-            <DetailRow label="Member Since" value={new Date(fullUser.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} />
-            <DetailRow label="Last Updated" value={new Date(profile.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} />
-            <DetailRow label="Language" value={fullUser.locale === 'ar' ? 'العربية' : 'English'} />
+          <DetailCard title={t('accountInfo')} icon="📅">
+            <DetailRow label={t('memberSince')} value={new Date(fullUser.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} />
+            <DetailRow label={t('lastUpdated')} value={new Date(profile.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} />
+            <DetailRow label={tc('language')} value={fullUser.locale === 'ar' ? 'العربية' : 'English'} />
           </DetailCard>
         </div>
 
@@ -239,13 +246,14 @@ export default async function ProfilePage() {
         </div>
 
         {/* Badges */}
-        <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
           <span className="badge" style={{
             background: 'var(--gradient-primary)', color: 'white', padding: 'var(--space-1) var(--space-3)', borderRadius: 'var(--radius-full)', fontSize: 'var(--text-xs)'
           }}>
             {fullUser.customerType === 'SHOP' ? '🏬 Shop Customer' : '🛒 Customer'}
           </span>
-          <StatusBadge status={fullUser.status} />
+          <StatusBadge status={fullUser.status} label={getStatusLabel(fullUser.status, t)} />
+          <LocaleToggle initialLocale={initialLocale} />
         </div>
       </div>
 
@@ -261,23 +269,23 @@ export default async function ProfilePage() {
 
       {/* Details Cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
-        <DetailCard title="Contact Information" icon="📞">
-          <DetailRow label="Phone" value={fullUser.mobile} />
-          <DetailRow label="Email" value={fullUser.email || '—'} />
+        <DetailCard title={t('contactInformation')} icon="📞">
+          <DetailRow label={tc('mobile')} value={fullUser.mobile} />
+          <DetailRow label={tc('email')} value={fullUser.email || '—'} />
         </DetailCard>
 
-        <DetailCard title="Account Details" icon="⚙️">
-          <DetailRow label="Account Type" value={fullUser.role.replace('_', ' ')} />
-          <DetailRow label="Language" value={fullUser.locale === 'ar' ? 'العربية' : 'English'} />
-          <DetailRow label="Member Since" value={new Date(fullUser.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} />
-          <DetailRow label="Last Login" value={fullUser.lastLoginAt ? new Date(fullUser.lastLoginAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'} />
+        <DetailCard title={t('accountDetails')} icon="⚙️">
+          <DetailRow label={t('accountType')} value={fullUser.role.replace('_', ' ')} />
+          <DetailRow label={tc('language')} value={fullUser.locale === 'ar' ? 'العربية' : 'English'} />
+          <DetailRow label={t('memberSince')} value={new Date(fullUser.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} />
+          <DetailRow label={t('lastLogin')} value={fullUser.lastLoginAt ? new Date(fullUser.lastLoginAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'} />
         </DetailCard>
 
         {/* Saved Addresses */}
-        <DetailCard title="Saved Addresses" icon="🏠">
+        <DetailCard title={t('savedAddresses')} icon="🏠">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             {fullUser.addresses.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>No saved addresses yet.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>{t('noSavedAddresses')}</p>
             ) : (
               fullUser.addresses.map((addr) => (
                 <div key={addr.id} style={{
@@ -288,7 +296,7 @@ export default async function ProfilePage() {
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-1)' }}>
                     <span style={{ fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{addr.label}</span>
-                    {addr.isDefault && <span className="badge badge-success" style={{ fontSize: 'var(--text-2xs)' }}>Default</span>}
+                    {addr.isDefault && <span className="badge badge-success" style={{ fontSize: 'var(--text-2xs)' }}>{t('default')}</span>}
                   </div>
                   <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
                     {addr.fullName} · {addr.mobile}
@@ -300,7 +308,7 @@ export default async function ProfilePage() {
               ))
             )}
             <Link href="/shop/profile/addresses" className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', marginTop: 'var(--space-2)' }}>
-              Manage Addresses
+              {t('manageAddresses')}
             </Link>
           </div>
         </DetailCard>
@@ -362,7 +370,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, label }: { status: string; label: string }) {
   const colors: Record<string, { bg: string; color: string }> = {
     ACTIVE: { bg: 'hsl(142, 71%, 92%)', color: 'var(--success-dark)' },
     PENDING: { bg: 'hsl(38, 92%, 92%)', color: 'var(--warning-dark)' },
@@ -376,7 +384,17 @@ function StatusBadge({ status }: { status: string }) {
       padding: 'var(--space-1) var(--space-3)', borderRadius: 'var(--radius-full)',
       fontSize: 'var(--text-xs)', fontWeight: 'var(--font-medium)'
     }}>
-      {status}
+      {label}
     </span>
   )
+}
+
+function getStatusLabel(status: string, t: (key: string) => string) {
+  switch (status) {
+    case 'ACTIVE': return t('activeStatus')
+    case 'PENDING': return t('pendingStatus')
+    case 'DISABLED': return t('disabledStatus')
+    case 'SUSPENDED': return t('suspendedStatus')
+    default: return t('pendingStatus')
+  }
 }

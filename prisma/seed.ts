@@ -2,77 +2,102 @@
 // Run with: npx prisma db seed
 // Idempotent — safe to run multiple times.
 
-import { PrismaClient, AdminPermissionType, AccountStatus, UserRole } from '@prisma/client'
+import { PrismaClient, AdminPermissionType, AccountStatus, UserRole, CustomerType } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+
+const { getDemoAccounts } = require('../src/lib/demo-accounts')
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Starting Asshrabha database seed...\n')
 
-  // ─── 1. Root Admin User ────────────────────────────────────────────────────
-  console.log('👤 Creating root admin user...')
-  const passwordHash = await bcrypt.hash('2463', 12)
+  const demoUsers = getDemoAccounts()
 
-  const admin = await prisma.user.upsert({
-    where: { mobile: '01094056919' },
-    update: {
-      passwordHash,
-      nameAR: 'مدير النظام',
-      nameEN: 'System Admin',
-      role: UserRole.ROOT_ADMIN,
-      status: AccountStatus.APPROVED,
-      forcePasswordReset: true,
-      locale: 'ar',
-    },
-    create: {
-      mobile: '01094056919',
-      passwordHash,
-      nameAR: 'مدير النظام',
-      nameEN: 'System Admin',
-      role: UserRole.ROOT_ADMIN,
-      status: AccountStatus.APPROVED,
-      forcePasswordReset: true,
-      locale: 'ar',
-    },
-  })
-  console.log(`   ✅ Admin user created/updated: ${admin.id}`)
-
-  // ─── 2. Admin Wallet ───────────────────────────────────────────────────────
-  console.log('💰 Creating admin wallet...')
-  const wallet = await prisma.wallet.upsert({
-    where: { userId: admin.id },
-    update: {},
-    create: {
-      userId: admin.id,
-      pendingBalance: 0,
-      availableBalance: 0,
-      totalPaid: 0,
-      isFrozen: false,
-    },
-  })
-  console.log(`   ✅ Admin wallet created/updated: ${wallet.id}`)
-
-  // ─── 3. Admin Permissions (all of them) ────────────────────────────────────
-  console.log('🔑 Creating admin permissions...')
+  // ─── 1. Demo users ────────────────────────────────────────────────────────
+  console.log('👤 Creating/updating demo users...')
   const allPermissions = Object.values(AdminPermissionType)
 
-  for (const permission of allPermissions) {
-    await prisma.adminPermission.upsert({
-      where: {
-        userId_permission: {
-          userId: admin.id,
-          permission,
-        },
+  for (const account of demoUsers) {
+    const passwordHash = await bcrypt.hash(account.password, 12)
+    const user = await prisma.user.upsert({
+      where: { mobile: account.mobile },
+      update: {
+        passwordHash,
+        nameAR: account.nameAR,
+        nameEN: account.nameEN,
+        role: account.role === 'ROOT_ADMIN' ? UserRole.ROOT_ADMIN : account.role === 'PROVIDER' ? UserRole.PROVIDER : UserRole.CUSTOMER,
+        status: account.status === 'APPROVED' ? AccountStatus.APPROVED : AccountStatus.PENDING,
+        customerType: account.customerType === 'SHOP' ? CustomerType.SHOP : CustomerType.CUSTOMER,
+        forcePasswordReset: false,
+        locale: 'ar',
       },
-      update: {},
       create: {
-        userId: admin.id,
-        permission,
+        mobile: account.mobile,
+        passwordHash,
+        nameAR: account.nameAR,
+        nameEN: account.nameEN,
+        role: account.role === 'ROOT_ADMIN' ? UserRole.ROOT_ADMIN : account.role === 'PROVIDER' ? UserRole.PROVIDER : UserRole.CUSTOMER,
+        status: account.status === 'APPROVED' ? AccountStatus.APPROVED : AccountStatus.PENDING,
+        customerType: account.customerType === 'SHOP' ? CustomerType.SHOP : CustomerType.CUSTOMER,
+        forcePasswordReset: false,
+        locale: 'ar',
       },
     })
+
+    if (account.key === 'admin') {
+      console.log('💰 Ensuring admin wallet exists...')
+      await prisma.wallet.upsert({
+        where: { userId: user.id },
+        update: {},
+        create: {
+          userId: user.id,
+          pendingBalance: 0,
+          availableBalance: 0,
+          totalPaid: 0,
+          isFrozen: false,
+        },
+      })
+
+      console.log('🔑 Creating admin permissions...')
+      for (const permission of allPermissions) {
+        await prisma.adminPermission.upsert({
+          where: {
+            userId_permission: {
+              userId: user.id,
+              permission,
+            },
+          },
+          update: {},
+          create: {
+            userId: user.id,
+            permission,
+          },
+        })
+      }
+    }
+
+    if (account.key === 'provider') {
+      await prisma.providerProfile.upsert({
+        where: { userId: user.id },
+        update: {
+          shopNameAR: account.nameAR,
+          shopNameEN: account.nameEN,
+          locationAddress: 'Demo provider location',
+          isVisible: true,
+        },
+        create: {
+          userId: user.id,
+          shopNameAR: account.nameAR,
+          shopNameEN: account.nameEN,
+          locationAddress: 'Demo provider location',
+          isVisible: true,
+        },
+      })
+    }
+
+    console.log(`   ✅ ${account.key} ensured: ${account.mobile}`)
   }
-  console.log(`   ✅ ${allPermissions.length} permissions assigned to admin`)
 
   // ─── 4. Categories ─────────────────────────────────────────────────────────
   console.log('📂 Creating categories...')

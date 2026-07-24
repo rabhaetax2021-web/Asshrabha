@@ -8,7 +8,7 @@ export default async function CustomerProfileEditsPage() {
   const current = await getCurrentUser()
   if (!current || !['ROOT_ADMIN','SUB_ADMIN'].includes(current.role) || current.status !== 'APPROVED') return <div>Unauthorized</div>
 
-  const edits = await prisma.customerProfileEdit.findMany({ orderBy: { createdAt: 'desc' }, include: { user: true, requester: true } })
+  const edits = await prisma.customerProfileEdit.findMany({ where: { status: 'PENDING' }, orderBy: { createdAt: 'desc' }, include: { user: true, requester: true } })
 
   return (
     <section className="admin container" style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', paddingInline: 'clamp(12px, 2vw, 24px)' }}>

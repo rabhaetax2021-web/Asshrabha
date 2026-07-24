@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
-import OrdersChart from '@/components/admin/OrdersChart'
+import OrdersChart from '@/components/admin/OrdersChartClient'
 import { getPendingAccountApprovalsCount } from '@/lib/actions/admin.actions'
 
 export default async function AdminDashboardPage() {
@@ -41,45 +41,75 @@ export default async function AdminDashboardPage() {
 
   return (
     <div>
-      <section className="admin-dashboard container" style={{ paddingTop: 16 }}>
-        <div className="dashboard-tiles">
-          <Card style={{ flex: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Total Revenue</div>
-                <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700 }}>{revenue.toFixed(2)} EGP</div>
-              </div>
-              <div>
-                <Button variant="ghost">Export</Button>
+      <section className="admin-dashboard container dashboard-shell" style={{ paddingTop: 16 }}>
+        <div className="dashboard-hero">
+          <div className="dashboard-hero-badge">Marketplace control center</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 'var(--space-6)', alignItems: 'center' }}>
+            <div style={{ maxWidth: 640 }}>
+              <h1 style={{ marginBottom: 'var(--space-3)' }}>Admin dashboard</h1>
+              <p style={{ margin: 0, color: 'rgba(255,255,255,0.86)', fontSize: 'var(--text-md)' }}>Track growth, approvals, and orders in a premium commerce command view.</p>
+            </div>
+            <div className="dashboard-hero-actions">
+              <Link href="/admin/approvals" className="btn btn-primary">Review approvals</Link>
+              <Link href="/admin/orders" className="btn btn-ghost">Open orders</Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="dashboard-grid dashboard-grid--4">
+          <div className="dashboard-card dashboard-card--accent">
+            <div className="dashboard-kpi">
+              <span className="label">Total revenue</span>
+              <span className="value">{revenue.toFixed(2)} EGP</span>
+            </div>
+          </div>
+          <div className="dashboard-card">
+            <div className="dashboard-kpi">
+              <span className="label">Orders today</span>
+              <span className="value">{ordersToday}</span>
+            </div>
+          </div>
+          <div className="dashboard-card">
+            <div className="dashboard-kpi">
+              <span className="label">Active providers</span>
+              <span className="value">{activeProviders}</span>
+            </div>
+          </div>
+          <Link href="/admin/approvals" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <div className="dashboard-card" style={{ cursor: 'pointer' }}>
+              <div className="dashboard-kpi">
+                <span className="label">Pending approvals</span>
+                <span className="value">{pendingAccountApprovals}</span>
               </div>
             </div>
-          </Card>
-          <Card style={{ width: 220 }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Orders Today</div>
-            <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700 }}>{ordersToday}</div>
-          </Card>
-          <Card style={{ width: 220 }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Active Providers</div>
-            <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700 }}>{activeProviders}</div>
-          </Card>
-          <Link href="/admin/approvals" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <Card style={{ width: 220, cursor: 'pointer' }}>
-              <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Pending Account Approvals</div>
-              <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700 }}>{pendingAccountApprovals}</div>
-            </Card>
           </Link>
         </div>
 
-        <Card>
-          <h3 style={{ marginTop: 0 }}>Orders (last 7 days)</h3>
-          <OrdersChart data={chartData} />
-        </Card>
+        <div className="dashboard-grid dashboard-grid--2">
+          <div className="dashboard-card">
+            <div className="dashboard-section-title">
+              <div>
+                <h3 style={{ margin: 0 }}>Orders (last 7 days)</h3>
+                <p>Momentum across the marketplace.</p>
+              </div>
+            </div>
+            <OrdersChart data={chartData} />
+          </div>
 
-        <div style={{ marginTop: 20 }}>
-          <Card>
-            <h3 style={{ marginTop: 0 }}>Recent Activity</h3>
-            <p style={{ color: 'var(--text-muted)' }}>Activity feed and logs will appear here.</p>
-          </Card>
+          <div className="dashboard-card">
+            <div className="dashboard-section-title">
+              <div>
+                <h3 style={{ margin: 0 }}>Quick actions</h3>
+                <p>Jump into the most important workflows.</p>
+              </div>
+            </div>
+            <div className="dashboard-list">
+              <Link href="/admin/providers" className="dashboard-list-item"><strong>Manage providers</strong><span className="dashboard-pill">Go</span></Link>
+              <Link href="/admin/approvals" className="dashboard-list-item"><strong>Review approvals</strong><span className="dashboard-pill">New</span></Link>
+              <Link href="/admin/wallet" className="dashboard-list-item"><strong>Wallet overview</strong><span className="dashboard-pill">Finance</span></Link>
+              <Link href="/admin/settings" className="dashboard-list-item"><strong>Platform settings</strong><span className="dashboard-pill">Config</span></Link>
+            </div>
+          </div>
         </div>
       </section>
     </div>

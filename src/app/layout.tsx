@@ -37,6 +37,24 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'Asshrabha',
   },
+  openGraph: {
+    title: 'Asshrabha - Marketplace',
+    description: 'Your trusted marketplace for buying and selling products across multiple providers.',
+    url: '/',
+    siteName: 'Asshrabha',
+    images: [
+      {
+        url: '/vercel.svg',
+        width: 1200,
+        height: 630,
+      },
+    ],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@asshrabha',
+  },
 };
 
 export const viewport: Viewport = {
@@ -68,7 +86,8 @@ export default async function RootLayout({
       className={`${inter.variable} ${notoKufiArabic.variable} ${jetBrainsMono.variable}`}
     >
       <body>
-        <NextIntlClientProvider messages={messages}>
+        <a href="#__a11y_main" className="skip-link">Skip to content</a>
+        <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
             <ClientBootstrap />
             {children}

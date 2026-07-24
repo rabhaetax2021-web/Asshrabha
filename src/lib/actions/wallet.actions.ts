@@ -1,7 +1,21 @@
 import { prisma } from '@/lib/prisma'
 
+export async function getOrCreateWallet(userId: string) {
+  let wallet = await prisma.wallet.findUnique({ where: { userId } })
+  if (wallet) return wallet
+
+  return prisma.wallet.create({
+    data: {
+      userId,
+      availableBalance: 0,
+      pendingBalance: 0,
+      totalPaid: 0,
+    },
+  })
+}
+
 export async function creditProviderWallet(providerUserId: string, amount: number, reference?: string) {
-  const wallet = await prisma.wallet.findUnique({ where: { userId: providerUserId } })
+  const wallet = await getOrCreateWallet(providerUserId)
   if (!wallet) return null
   const tx = await prisma.walletTransaction.create({ data: { walletId: wallet.id, amount, type: 'ORDER_CREDIT', status: 'COMPLETED', reference } })
   await prisma.wallet.update({ where: { id: wallet.id }, data: { availableBalance: { increment: amount } } })
@@ -9,7 +23,7 @@ export async function creditProviderWallet(providerUserId: string, amount: numbe
 }
 
 export async function depositToWallet(userId: string, amount: number) {
-  const wallet = await prisma.wallet.findUnique({ where: { userId } })
+  const wallet = await getOrCreateWallet(userId)
   if (!wallet) return null
   const transaction = await prisma.$transaction(async (tx) => {
     const record = await tx.walletTransaction.create({ data: { walletId: wallet.id, amount, type: 'DEPOSIT', status: 'COMPLETED' } })
@@ -20,7 +34,7 @@ export async function depositToWallet(userId: string, amount: number) {
 }
 
 export async function createDepositRequest(userId: string, amount: number, methodId?: string) {
-  const wallet = await prisma.wallet.findUnique({ where: { userId } })
+  const wallet = await getOrCreateWallet(userId)
   if (!wallet) return null
   const result = await prisma.$transaction(async (tx) => {
     const dr = await (tx as any).depositRequest.create({ data: { walletId: wallet.id, amount, methodId: methodId || undefined, status: 'PENDING' } })
@@ -63,7 +77,7 @@ export async function rejectDepositRequest(id: string, adminId: string, note?: s
 }
 
 export async function requestWithdrawal(userId: string, amount: number) {
-  const wallet = await prisma.wallet.findUnique({ where: { userId } })
+  const wallet = await getOrCreateWallet(userId)
   if (!wallet) return null
   if (wallet.availableBalance < amount) return { error: 'INSUFFICIENT_BALANCE' }
   const result = await prisma.$transaction(async (tx) => {
@@ -80,7 +94,7 @@ export async function requestWithdrawal(userId: string, amount: number) {
 }
 
 export async function getWalletTransactions(userId: string) {
-  const wallet = await prisma.wallet.findUnique({ where: { userId } })
+  const wallet = await getOrCreateWallet(userId)
   if (!wallet) return []
   return await prisma.walletTransaction.findMany({
     where: { walletId: wallet.id },

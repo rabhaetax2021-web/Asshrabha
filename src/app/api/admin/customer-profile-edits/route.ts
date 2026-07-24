@@ -61,6 +61,9 @@ export async function POST(request: NextRequest) {
                 locationId: (addr?.locationId as string) || null,
                 area: (addr?.area as string) || null,
                 landmark: (addr?.landmark as string) || null,
+                lat: typeof addr?.lat === 'number' ? addr.lat : (typeof addr?.lat === 'string' && addr.lat ? Number(addr.lat) : null),
+                lng: typeof addr?.lng === 'number' ? addr.lng : (typeof addr?.lng === 'string' && addr.lng ? Number(addr.lng) : null),
+                locationUrl: typeof addr?.locationUrl === 'string' ? addr.locationUrl : null,
                 isDefault: Boolean(addr?.isDefault) || false,
               }
             })
@@ -91,6 +94,9 @@ export async function POST(request: NextRequest) {
               locationId: (addr?.locationId as string) || null,
               area: (addr?.area as string) || null,
               landmark: (addr?.landmark as string) || null,
+              lat: typeof addr?.lat === 'number' ? addr.lat : (typeof addr?.lat === 'string' && addr.lat ? Number(addr.lat) : null),
+              lng: typeof addr?.lng === 'number' ? addr.lng : (typeof addr?.lng === 'string' && addr.lng ? Number(addr.lng) : null),
+              locationUrl: typeof addr?.locationUrl === 'string' ? addr.locationUrl : null,
               isDefault: Boolean(addr?.isDefault) || false,
             }
           })

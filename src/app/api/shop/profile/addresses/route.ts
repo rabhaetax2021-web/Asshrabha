@@ -94,6 +94,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Maximum of ${MAX_ADDRESSES} addresses reached` }, { status: 400 })
     }
 
+    const normalizeCoordinate = (value: unknown): number | null => {
+      if (typeof value === 'number' && Number.isFinite(value)) return value
+      if (typeof value === 'string' && value.trim()) {
+        const parsed = Number(value)
+        return Number.isFinite(parsed) ? parsed : null
+      }
+      return null
+    }
+
     const requestRecord = await prisma.customerProfileEdit.create({
       data: {
         userId: current.id,
@@ -110,6 +119,9 @@ export async function POST(request: NextRequest) {
             locationId: typeof address.locationId === 'string' ? address.locationId : null,
             area: typeof address.area === 'string' ? address.area : null,
             landmark: typeof address.landmark === 'string' ? address.landmark : null,
+            lat: normalizeCoordinate(address.lat),
+            lng: normalizeCoordinate(address.lng),
+            locationUrl: typeof address.locationUrl === 'string' ? address.locationUrl : null,
             isDefault: Boolean(address.isDefault),
           },
         },

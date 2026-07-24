@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 type Platform = 'android' | 'iphone' | null;
@@ -11,6 +12,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function PwaInstallPage() {
+  const t = useTranslations('shop')
   const router = useRouter();
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -133,9 +135,9 @@ export default function PwaInstallPage() {
             </div>
           </div>
           <div>
-            <h1>Welcome to Ashrabha</h1>
-            <p>Choose your phone type to install the app</p>
-            <p>اختر نوع هاتفك لتثبيت التطبيق</p>
+            <h1>{t('pwaTitle') || 'Welcome to Ashrabha'}</h1>
+            <p>{t('pwaSubtitle') || 'Choose your phone type to install the app'}</p>
+            <p>{t('pwaSubtitleAr') || 'اختر نوع هاتفك لتثبيت التطبيق'}</p>
           </div>
         </header>
 
@@ -173,13 +175,13 @@ export default function PwaInstallPage() {
                 ←
               </button>
               <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'white' }}>
-                {selectedPlatform === 'android' ? 'Android' : 'iPhone'} Installation
+                {selectedPlatform === 'android' ? 'Android' : 'iPhone'} {t('pwaInstallation') || 'Installation'}
               </h2>
             </div>
 
             {selectedPlatform === 'android' && deferredPrompt && (
               <button type="button" className="btn btn-primary pwa-install-button" onClick={handleInstallAndroid}>
-                تثبيت التطبيق الآن / Install App Now
+                {t('installNow') || 'Install App Now'}
               </button>
             )}
 

@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl'
 import { showToast } from '@/components/ui/toast'
 import { getErrorMessage } from '@/lib/errors'
 import { useCartStore } from '@/stores/cartStore'
 import Link from 'next/link'
+import { buildCheckoutTotals } from '@/lib/order-pricing'
 
 interface Address {
   id: string
@@ -24,27 +26,102 @@ interface CheckoutClientProps {
 }
 
 export default function CheckoutClient({ addresses, userId }: CheckoutClientProps) {
-  const [mounted, setMounted] = useState<boolean>(() => typeof window !== 'undefined')
+  const t = useTranslations('shop')
+  const tc = useTranslations('common')
   const items = useCartStore((s: any) => s.items)
   const clear = useCartStore((s: any) => s.clear)
   const [loading, setLoading] = useState(false)
+  const [showAddressModal, setShowAddressModal] = useState(false)
   const [selectedAddressId, setSelectedAddressId] = useState<string>(() => {
     const defaultAddr = addresses.find(a => a.isDefault)
     return defaultAddr?.id || addresses[0]?.id || ''
   })
 
-  // `mounted` is initialized based on `window` availability to avoid
-  // calling setState synchronously inside an effect.
+  const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({})
+  const [checkoutTotals, setCheckoutTotals] = useState({ itemsSubtotal: 0, shipping: 0, totalAmount: 0 })
 
-  const total = items.reduce((sum: number, i: any) => sum + (i.price || 0) * i.quantity, 0)
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const s = await fetch('/api/auth/session').then(r => r.json()).catch(() => ({}))
+        const buyerIsShop = !!s?.user && (s.user.role === 'PROVIDER' || s.user.customerType === 'SHOP')
+        const map: Record<string, number> = {}
+        await Promise.all(items.map(async (it: any) => {
+          if (it.price && Number(it.price) > 0) return
+          try {
+            const res = await fetch(`/api/provider/provider-product?id=${encodeURIComponent(it.providerProductId)}`)
+            if (!res.ok) return
+            const j = await res.json()
+            const pp = j.product
+            const option = (pp?.providerProductOptions || []).find((o: any) => o.id === it.optionId)
+            const optionPrice = option?.price ?? undefined
+            const mod = await import('@/lib/cart-price')
+            const price = mod.resolveProductPrice(pp, buyerIsShop, optionPrice)
+            map[`${it.providerProductId}-${it.optionId ?? 'base'}`] = price
+          } catch (e) {
+            // ignore
+          }
+        }))
+        if (mounted) setPriceOverrides(map)
+      } catch (e) {}
+    })()
+    return () => { mounted = false }
+  }, [items])
+
+  const total = items.reduce((sum: number, i: any) => {
+    const key = `${i.providerProductId}-${i.optionId ?? 'base'}`
+    const p = priceOverrides[key] ?? i.price ?? 0
+    return sum + (p || 0) * i.quantity
+  }, 0)
+
+  useEffect(() => {
+    if (items.length === 0) {
+      setCheckoutTotals({ itemsSubtotal: 0, shipping: 0, totalAmount: 0 })
+      return
+    }
+
+    const payload = {
+      items: items.map((i: any) => ({
+        providerProductId: i.providerProductId,
+        quantity: i.quantity,
+        optionId: i.optionId,
+      })),
+      addressId: selectedAddressId || undefined,
+    }
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/shop/checkout/totals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (!res.ok) throw new Error('Unable to calculate totals')
+        const data = await res.json()
+        if (!cancelled) {
+          setCheckoutTotals(data?.totals || { itemsSubtotal: 0, shipping: 0, totalAmount: 0 })
+        }
+      } catch {
+        if (!cancelled) {
+          const fallback = buildCheckoutTotals(items.map((i: any) => ({ quantity: i.quantity, price: priceOverrides[`${i.providerProductId}-${i.optionId ?? 'base'}`] ?? i.price ?? 0 })), 0)
+          setCheckoutTotals(fallback)
+        }
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [items, priceOverrides, selectedAddressId])
 
   async function place() {
     if (items.length === 0) {
-      showToast('Your cart is empty', 'error')
+      showToast(t('cartEmpty'), 'error')
       return
     }
     if (!selectedAddressId) {
-      showToast('Please select a delivery address', 'error')
+      setShowAddressModal(true)
+      showToast(t('selectAddress'), 'error')
       return
     }
 
@@ -64,7 +141,7 @@ export default function CheckoutClient({ addresses, userId }: CheckoutClientProp
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Failed to place order')
-      showToast('Order placed successfully!', 'success')
+      showToast(t('orderPlaced'), 'success')
       clear()
       window.location.href = '/shop/orders'
     } catch (err: unknown) {
@@ -72,38 +149,38 @@ export default function CheckoutClient({ addresses, userId }: CheckoutClientProp
     } finally { setLoading(false) }
   }
 
-  if (!mounted) {
-    return (
-      <section className="checkout container">
-        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--font-bold)', marginBottom: 'var(--space-6)', color: 'var(--text-primary)' }}>Checkout</h1>
-        <div className="card" style={{ opacity: 0.6, padding: 'var(--space-8)', textAlign: 'center' }}>
-          <p>Loading checkout...</p>
-        </div>
-      </section>
-    )
-  }
-
   return (
     <section className="checkout container">
       <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--font-bold)', marginBottom: 'var(--space-6)', color: 'var(--text-primary)' }}>
-        Checkout
+        {t('checkout')}
       </h1>
-
       {items.length === 0 && (
         <div className="card" style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
           <div style={{ fontSize: 'var(--text-4xl)', marginBottom: 'var(--space-4)' }}>🛒</div>
-          <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-bold)', marginBottom: 'var(--space-2)' }}>Your cart is empty</h3>
-          <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--space-6)' }}>Add some items before checking out.</p>
-          <Link href="/shop" className="btn btn-primary">Start Shopping</Link>
+          <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-bold)', marginBottom: 'var(--space-2)' }}>{t('cartEmpty')}</h3>
+          <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--space-6)' }}>{t('cartEmptyMessage')}</p>
+          <Link href="/shop" className="btn btn-primary">{t('continueShopping')}</Link>
         </div>
       )}
 
       {items.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          {showAddressModal && !selectedAddressId && (
+            <div className="modal-overlay" onClick={() => setShowAddressModal(false)}>
+              <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <h3>{t('selectAddress')}</h3>
+                <p>{t('cartEmptyMessage')}</p>
+                <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <Link href="/shop/profile/addresses" className="btn btn-primary">{t('addNewAddress')}</Link>
+                  <button type="button" className="btn btn-ghost" onClick={() => setShowAddressModal(false)}>{tc('close')}</button>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Order Summary */}
           <div className="card" style={{ padding: 'var(--space-4)' }}>
             <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-4)', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-primary)' }}>
-              📦 Order Summary
+              📦 {t('orderSummary')}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               {items.map((i: any) => (
@@ -122,21 +199,31 @@ export default function CheckoutClient({ addresses, userId }: CheckoutClientProp
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '2px solid var(--border-color)' }}>
-              <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-bold)', color: 'var(--text-primary)' }}>Total</span>
-              <span style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-bold)', color: 'var(--primary)' }}>{total.toFixed(2)} EGP</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '2px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 'var(--text-base)', color: 'var(--text-muted)' }}>{tc('subtotal')}</span>
+                <span>{checkoutTotals.itemsSubtotal.toFixed(2)} EGP</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 'var(--text-base)', color: 'var(--text-muted)' }}>{t('deliveryFee') || 'Delivery fee'}</span>
+                <span>{checkoutTotals.shipping.toFixed(2)} EGP</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-bold)', color: 'var(--text-primary)' }}>{tc('total')}</span>
+                <span style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-bold)', color: 'var(--primary)' }}>{checkoutTotals.totalAmount.toFixed(2)} EGP</span>
+              </div>
             </div>
           </div>
 
           {/* Delivery Address */}
           <div className="card" style={{ padding: 'var(--space-4)' }}>
             <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-4)', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-primary)' }}>
-              🏠 Delivery Address
+              🏠 {t('selectAddress')}
             </h3>
             {addresses.length === 0 && (
               <div style={{ textAlign: 'center', padding: 'var(--space-4)' }}>
-                <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-3)' }}>No saved addresses.</p>
-                <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>Contact support to add an address.</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-3)' }}>{t('noAddresses') || 'No saved addresses.'}</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>{t('contactSupport')}</p>
               </div>
             )}
             {addresses.length > 0 && (
@@ -165,7 +252,7 @@ export default function CheckoutClient({ addresses, userId }: CheckoutClientProp
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: '2px' }}>
                         <span style={{ fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{addr.label}</span>
-                        {addr.isDefault && <span className="badge badge-success" style={{ fontSize: 'var(--text-2xs)' }}>Default</span>}
+                        {addr.isDefault && <span className="badge badge-success" style={{ fontSize: 'var(--text-2xs)' }}>{t('defaultAddress')}</span>}
                       </div>
                       <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{addr.fullName} · {addr.mobile}</p>
                       <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
@@ -181,29 +268,29 @@ export default function CheckoutClient({ addresses, userId }: CheckoutClientProp
 
           {/* Place Order Button */}
           <button
-            disabled={loading || items.length === 0 || !selectedAddressId}
+            disabled={loading || items.length === 0}
             onClick={place}
             className="btn btn-primary"
             style={{
               width: '100%', padding: 'var(--space-4)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-bold)',
               borderRadius: 'var(--radius-xl)', marginTop: 'var(--space-2)',
-              opacity: loading || !selectedAddressId ? 0.6 : 1,
-              cursor: loading || !selectedAddressId ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.6 : 1,
+              cursor: loading ? 'not-allowed' : 'pointer',
             }}
           >
             {loading ? (
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)' }}>
                 <span className="spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }} />
-                Placing Order...
+                {t('placingOrder') || 'Placing Order...'}
               </span>
             ) : (
-              `Place Order · ${total.toFixed(2)} EGP`
+              `${t('placeOrder')} · ${checkoutTotals.totalAmount.toFixed(2)} EGP`
             )}
           </button>
 
           {!selectedAddressId && addresses.length > 0 && (
             <p style={{ textAlign: 'center', color: 'var(--warning-dark)', fontSize: 'var(--text-sm)' }}>
-              ⚠️ Please select a delivery address
+              ⚠️ {t('selectAddress')}
             </p>
           )}
         </div>

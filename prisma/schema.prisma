@@ -141,6 +141,9 @@ enum NotificationType {
   ORDER_STATUS_CHANGED
   PRODUCT_APPROVED
   PRODUCT_REJECTED
+  PRODUCT_SUBMISSION
+  PRICE_CHANGE_REQUEST
+  SUGGESTION_SUBMISSION
   PRICE_CHANGE_APPROVED
   WITHDRAWAL_APPROVED
   WITHDRAWAL_REJECTED
@@ -148,6 +151,10 @@ enum NotificationType {
   SUGGESTION_STATUS
   OTP_CODE
   SYSTEM
+  STORE_MODIFICATION_REQUEST
+  ORDER_MODIFICATION_REQUEST
+  ORDER_MODIFICATION_APPROVED
+  ORDER_MODIFICATION_REJECTED
 }
 
 enum AdminPermissionType {
@@ -253,6 +260,8 @@ model ProviderProfile {
   isVisible            Boolean   @default(false)
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+  minOrderItems        Int?
+  minOrderAmount       Float?
   defaultWholesaleUnit UnitType?
 
   user          User                  @relation(fields: [userId], references: [id])

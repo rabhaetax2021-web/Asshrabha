@@ -1,5 +1,6 @@
 "use client"
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -18,6 +19,7 @@ function Icon({ name }: { name: string }) {
 }
 
 export default function FooterTabs() {
+  const t = useTranslations('shop')
   const path = usePathname()
   const router = useRouter()
   const [mounted, setMounted] = useState<boolean>(false)
@@ -27,12 +29,14 @@ export default function FooterTabs() {
     return () => setMounted(false)
   }, [])
 
+  const isCheckoutPath = path === '/shop/cart' || path === '/shop/checkout'
+
   const content = (
     <nav className="footer-tabs">
-      <Link href="/shop" className={path === '/shop' ? 'tab active' : 'tab'} title="Home"><Icon name="home"/><span>Home</span></Link>
+      <Link href="/shop" className={path === '/shop' ? 'tab active' : 'tab'} title={t('home')}><Icon name="home"/><span>{t('home')}</span></Link>
       <a
         className={path?.startsWith('/shop/category') ? 'tab active' : 'tab'}
-        title="Categories"
+        title={t('categories')}
         onClick={async (e) => {
           e.preventDefault()
           try {
@@ -48,10 +52,10 @@ export default function FooterTabs() {
             router.push('/shop/category')
           }
         }}
-      ><Icon name="category"/><span>Categories</span></a>
-      <Link href="/shop/cart" className={path === '/shop/cart' ? 'tab active' : 'tab'} title="Cart"><Icon name="cart"/><span>Cart</span></Link>
-      <Link href="/shop/orders" className={path === '/shop/orders' ? 'tab active' : 'tab'} title="Orders"><Icon name="orders"/><span>Orders</span></Link>
-      <Link href="/shop/profile" className={path === '/shop/profile' ? 'tab active' : 'tab'} title="Profile"><Icon name="profile"/><span>Profile</span></Link>
+      ><Icon name="category"/><span>{t('categories')}</span></a>
+      <Link href="/shop/checkout" className={isCheckoutPath ? 'tab active' : 'tab'} title={t('checkout')}><Icon name="cart"/><span>{t('checkout')}</span></Link>
+      <Link href="/shop/orders" className={path === '/shop/orders' ? 'tab active' : 'tab'} title={t('orders')}><Icon name="orders"/><span>{t('orders')}</span></Link>
+      <Link href="/shop/profile" className={path === '/shop/profile' ? 'tab active' : 'tab'} title={t('profile')}><Icon name="profile"/><span>{t('profile')}</span></Link>
     </nav>
   )
 

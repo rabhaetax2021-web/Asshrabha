@@ -1,7 +1,7 @@
 import React from 'react'
 import { prisma } from '@/lib/prisma'
 import Card from '@/components/ui/Card'
-import OrdersChart from '@/components/admin/OrdersChart'
+import OrdersChart from '@/components/admin/OrdersChartClient'
 
 export default async function AdminAnalyticsPage() {
   const days = 14

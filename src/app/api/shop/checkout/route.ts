@@ -28,11 +28,14 @@ export async function POST(request: NextRequest) {
     }
 
     const { items, addressId } = parsed.data
-    const orders = await placeOrder(currentUser.id, items, addressId)
+    const localeHeader = request.headers.get('accept-language') || ''
+    const locale = localeHeader.toLowerCase().includes('ar') ? 'ar' : 'en'
+    const orders = await placeOrder(currentUser.id, items, addressId, locale)
     return NextResponse.json({ ok: true, orders })
   } catch (err: unknown) {
     const msg = getErrorMessage(err)
     console.error('[checkout]', msg)
-    return NextResponse.json({ error: msg }, { status: 500 })
+    const status = msg.includes('required purchase conditions') || msg.includes('did not meet') ? 400 : 500
+    return NextResponse.json({ error: msg }, { status })
   }
 }

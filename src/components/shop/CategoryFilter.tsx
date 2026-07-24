@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 
 export default function CategoryFilter({ allCategories, providers, currentSlug, productCount }: any) {
   const router = useRouter()
+  const t = useTranslations('shop')
   const [category, setCategory] = useState(currentSlug || (allCategories && allCategories[0]?.slug) || '')
   const [store, setStore] = useState('')
 
@@ -18,7 +20,7 @@ export default function CategoryFilter({ allCategories, providers, currentSlug, 
   return (
     <form className="filter-bar" onSubmit={doSearch} style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'center' }}>
       <label>
-        Category:
+        {t('categoryLabel')}:
         <select className="select input" value={category} onChange={(e) => setCategory(e.target.value)}>
           {allCategories?.map((c: any) => (
             <option key={c.id} value={c.slug}>{c.nameEN || c.nameAR}</option>
@@ -27,9 +29,9 @@ export default function CategoryFilter({ allCategories, providers, currentSlug, 
       </label>
 
       <label>
-        Store:
+        {t('storeLabel')}:
         <select className="select input" value={store} onChange={(e) => setStore(e.target.value)}>
-          <option value="">All Stores</option>
+          <option value="">{t('allStores')}</option>
           {providers?.map((p: any) => (
             <option key={p.id} value={p.id}>{p.shopNameEN || p.shopNameAR}</option>
           ))}
@@ -37,11 +39,11 @@ export default function CategoryFilter({ allCategories, providers, currentSlug, 
       </label>
 
       <button type="submit" className="btn btn-outline" style={{ marginLeft: 'auto' }}>
-        Search
+        {t('searchLabel')}
       </button>
 
       <span className="muted" style={{ marginLeft: 'var(--space-4)' }}>
-        {productCount} product{productCount !== 1 ? 's' : ''}
+        {t('productCount', { count: productCount, plural: productCount !== 1 ? 's' : '' })}
       </span>
     </form>
   )

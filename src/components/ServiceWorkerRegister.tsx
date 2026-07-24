@@ -6,11 +6,23 @@ import { useEffect } from 'react'
 export default function ServiceWorkerRegister() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then((registrations) => {
-        registrations.forEach((registration) => {
-          registration.unregister().catch(() => {})
+      // Register the application's service worker to enable PWA features.
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then((registration) => {
+          // Optionally listen for updates
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                // You can add logic here to notify users about updates
+              })
+            }
+          })
         })
-      }).catch(() => {})
+        .catch(() => {
+          // Ignore registration errors in dev or unsupported environments
+        })
     }
   }, [])
 

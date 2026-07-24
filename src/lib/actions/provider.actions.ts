@@ -31,6 +31,8 @@ export async function updateStoreProfile(providerId: string, data: Record<string
     ['shopNameEN', (data as any).shopNameEN],
     ['descriptionAR', (data as any).descriptionAR],
     ['descriptionEN', (data as any).descriptionEN],
+    ['minOrderItems', (data as any).minOrderItems],
+    ['minOrderAmount', (data as any).minOrderAmount],
     ['logo', (data as any).logo || undefined],
     ['banner', (data as any).banner || undefined],
     ['defaultWholesaleUnit', (data as any).defaultWholesaleUnit],

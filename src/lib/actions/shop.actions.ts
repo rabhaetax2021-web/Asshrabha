@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { calculateOrderTotals } from '@/lib/order-pricing'
+import { validateProviderPurchaseConditions } from '@/lib/purchase-conditions'
+import { resolveProductPrice } from '@/lib/cart-price'
 
 export async function browseProducts(params: { categorySlug?: string; take?: number; skip?: number } = {}) {
   const { categorySlug, take = 20, skip = 0 } = params
@@ -26,7 +28,7 @@ export async function getProductById(id: string) {
   return null
 }
 
-export async function placeOrder(customerId: string, cartItems: { providerProductId: string; quantity: number; optionId?: string }[], addressId?: string) {
+export async function placeOrder(customerId: string, cartItems: { providerProductId: string; quantity: number; optionId?: string }[], addressId?: string, locale: string = 'en') {
   // Group items by provider via providerProduct -> providerId
   return await prisma.$transaction(async (tx) => {
     const orders: any[] = []
@@ -57,13 +59,28 @@ export async function placeOrder(customerId: string, cartItems: { providerProduc
       const buyer = await tx.user.findUnique({ where: { id: customerId } })
       const buyerIsShop = !!buyer && (buyer.role === 'PROVIDER' || buyer.customerType === 'SHOP')
 
+      const providerProfile = items[0]?.providerProduct?.provider as any
+      const condition = {
+        minOrderItems: providerProfile?.minOrderItems ?? null,
+        minOrderAmount: providerProfile?.minOrderAmount ?? null,
+        shopNameEN: providerProfile?.shopNameEN ?? null,
+        shopNameAR: providerProfile?.shopNameAR ?? null,
+      }
+      const conditionItems = items.map((i: any) => {
+        const pp = i.providerProduct
+        if (!pp) return { quantity: 0, price: 0 }
+        const unitPrice = resolveProductPrice(pp, buyerIsShop, i.option?.price)
+        return { quantity: Number(i.quantity || 0), price: Number(unitPrice || 0) }
+      })
+      const conditionCheck = validateProviderPurchaseConditions(condition, conditionItems, locale)
+      if (!conditionCheck.ok) {
+        throw new Error(conditionCheck.messageEN || conditionCheck.messageAR || 'Required purchase conditions were not met')
+      }
+
       const subtotal = items.reduce((s: number, i: any) => {
         const pp = i.providerProduct
         if (!pp) return s
-        let unitPrice = pp.sellingPrice || 0
-        // If option present, prefer option price
-        if (i.option) unitPrice = i.option.price
-        else unitPrice = buyerIsShop ? (pp.wholesalePrice ?? pp.sellingPrice) : (pp.retailPrice ?? pp.sellingPrice)
+        const unitPrice = resolveProductPrice(pp, buyerIsShop, i.option?.price)
         return s + (i.quantity * unitPrice)
       }, 0)
       const order = await tx.order.create({ data: {
@@ -78,9 +95,7 @@ export async function placeOrder(customerId: string, cartItems: { providerProduc
       for (const it of items) {
         const pp = it.providerProduct
         if (!pp) continue
-        let unitPrice = pp.sellingPrice || 0
-        if (it.option) unitPrice = it.option.price
-        else unitPrice = buyerIsShop ? (pp.wholesalePrice ?? pp.sellingPrice) : (pp.retailPrice ?? pp.sellingPrice)
+        const unitPrice = resolveProductPrice(pp, buyerIsShop, it.option?.price)
 
         await tx.orderItem.create({ data: {
           orderId: order.id,

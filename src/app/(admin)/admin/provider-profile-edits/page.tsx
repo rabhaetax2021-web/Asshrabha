@@ -8,7 +8,7 @@ export default async function ProviderProfileEditsPage() {
   const current = await getCurrentUser()
   if (!current || !['ROOT_ADMIN','SUB_ADMIN'].includes(current.role) || current.status !== 'APPROVED') return <div>Unauthorized</div>
 
-  const edits = await prisma.providerProfileEdit.findMany({ where: {}, orderBy: { createdAt: 'desc' }, include: { provider: true, requester: true } })
+  const edits = await prisma.providerProfileEdit.findMany({ where: { status: 'PENDING' }, orderBy: { createdAt: 'desc' }, include: { provider: true, requester: true } })
 
   return (
     <section className="admin container">

@@ -2,22 +2,13 @@ import React from 'react'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import WalletClient from '@/components/shop/WalletClient'
+import { getOrCreateWallet } from '@/lib/actions/wallet.actions'
 
 export default async function ProviderWalletPage() {
   const current = await getCurrentUser()
   if (!current) return <div>Please login</div>
 
-  let wallet = await prisma.wallet.findFirst({ where: { userId: current.id } })
-  if (!wallet) {
-    wallet = await prisma.wallet.create({
-      data: {
-        userId: current.id,
-        availableBalance: 0,
-        pendingBalance: 0,
-        totalPaid: 0,
-      },
-    })
-  }
+  const wallet = await getOrCreateWallet(current.id)
 
   const transactions = await prisma.walletTransaction.findMany({
     where: { walletId: wallet.id },

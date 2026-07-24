@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { getErrorMessage } from '@/lib/errors'
 import { createSuggestionSchema } from '@/lib/validations/provider'
 import { createNotification } from '@/lib/actions/notification.actions'
+import { NotificationType } from '@prisma/client'
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
       ...admins.map((admin) =>
         createNotification(
           admin.id,
-          'SUGGESTION_SUBMISSION',
+          NotificationType.SUGGESTION_SUBMISSION,
           'New product suggestion submitted',
           'تم إرسال اقتراح منتج جديد',
           {
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
       ),
       createNotification(
         current.id,
-        'SUGGESTION_SUBMISSION',
+        NotificationType.SUGGESTION_SUBMISSION,
         'Suggestion submitted',
         'تم إرسال الاقتراح للمراجعة',
         {

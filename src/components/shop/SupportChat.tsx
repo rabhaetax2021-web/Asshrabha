@@ -1,9 +1,11 @@
 "use client"
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { useTranslations } from 'next-intl'
 import { showToast } from '@/components/ui/toast'
 import './support.css'
 
 export default function SupportChat() {
+  const t = useTranslations('shop')
   const [roomId, setRoomId] = useState<string | null>(null)
   const [messages, setMessages] = useState<any[]>([])
   const [text, setText] = useState('')
@@ -137,7 +139,7 @@ export default function SupportChat() {
       }}>
         {messages.length === 0 && (
           <div style={{ textAlign: 'center', color: '#666', padding: 'var(--space-8)' }}>
-            No messages yet. Start the conversation with our support team.
+            {t('supportNoMessages')}
           </div>
         )}
         {messages.map(m => {
@@ -145,22 +147,17 @@ export default function SupportChat() {
           return (
             <div key={m.id} className={`msg ${me ? 'me' : 'them'}`} style={{ alignSelf: me ? 'flex-end' : 'flex-start' }}>
               <div className="msg-content" style={{
-                padding: 'var(--space-3) var(--space-4)',
                 borderRadius: me ? 'var(--radius-xl) var(--radius-xl) 4px var(--radius-xl)' : 'var(--radius-xl) var(--radius-xl) var(--radius-xl) 4px',
                 background: me ? 'var(--gradient-primary)' : '#ffffff',
-                color: me ? '#ffffff' : '#000000',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                maxWidth: '80%',
-                wordBreak: 'break-word',
               }}>
                 <div style={{
                   fontSize: 'var(--text-2xs)',
                   fontWeight: 'var(--font-semibold)',
                   marginBottom: '2px',
-                  color: me ? '#ffffff' : '#333333',
                   opacity: me ? 0.9 : 1,
                 }}>{getSenderLabel(m)}</div>
-                <div style={{ fontSize: 'var(--text-sm)', lineHeight: 1.5, color: me ? '#ffffff' : '#000000' }}>{m.content}</div>
+                <div style={{ fontSize: 'var(--text-sm)', lineHeight: 1.5, color: 'inherit' }}>{m.content}</div>
               </div>
               <div style={{
                 fontSize: 'var(--text-2xs)',
@@ -178,7 +175,7 @@ export default function SupportChat() {
         <input
           value={text}
           onChange={e => setText(e.target.value)}
-          placeholder="Type a message..."
+          placeholder={t('typeMessage')}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
           style={{
             flex: 1, padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-lg)',
@@ -187,7 +184,7 @@ export default function SupportChat() {
           }}
         />
         <button type="button" onClick={send} disabled={loading} className="btn btn-primary" style={{ padding: 'var(--space-3) var(--space-6)', borderRadius: 'var(--radius-lg)' }}>
-          {loading ? '...' : 'Send'}
+          {loading ? '...' : t('send')}
         </button>
       </div>
     </div>

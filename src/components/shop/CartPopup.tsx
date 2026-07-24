@@ -1,14 +1,19 @@
 "use client"
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl'
+import { usePathname } from 'next/navigation'
 import { useCartStore } from '@/stores/cartStore'
 import Link from 'next/link'
 
 export default function CartPopup() {
+  const t = useTranslations('shop')
+  const tc = useTranslations('common')
   const items = useCartStore(s => s.items)
   const isOpen = useCartStore(s => s.isOpen)
   const setOpen = useCartStore(s => s.setOpen)
   const remove = useCartStore(s => s.removeItem)
   const updateQuantity = useCartStore(s => s.updateQuantity)
+  const pathname = usePathname()
 
   const totalCount = items.reduce((s, it) => s + (it.quantity || 0), 0)
   const sheetRef = useRef<HTMLDivElement | null>(null)
@@ -31,6 +36,12 @@ export default function CartPopup() {
     }
     prevCountRef.current = totalCount
   }, [totalCount])
+
+  useEffect(() => {
+    if (pathname === '/shop/cart' || pathname === '/shop/checkout') {
+      setOpen(false)
+    }
+  }, [pathname, setOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -73,12 +84,12 @@ export default function CartPopup() {
       </button>
       <div aria-live="polite" className="sr-only" role="status">{live}</div>
 
-      { !isOpen ? null : (
+      { !isOpen || pathname === '/shop/cart' || pathname === '/shop/checkout' ? null : (
         <div className="cart-popup-backdrop" onClick={() => setOpen(false)}>
           <div id="cart-sheet" ref={sheetRef} className="cart-popup" role="dialog" aria-modal="true" aria-label="Cart" onClick={(e) => e.stopPropagation()}>
-        <h3>Your Cart</h3>
+        <h3>{t('myCart')}</h3>
         <div className="cart-items">
-          {items.length === 0 && <div className="empty">Your cart is empty</div>}
+          {items.length === 0 && <div className="empty">{t('cartEmpty')}</div>}
           {items.map((it, idx) => (
             <div key={`${it.providerProductId}-${it.optionId ?? 'base'}`} className="cart-item">
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -92,15 +103,15 @@ export default function CartPopup() {
                 <button className="btn btn-ghost btn-sm" onClick={() => updateQuantity(it.providerProductId, it.optionId, Math.max(0, it.quantity - 1))}>−</button>
                 <div style={{ minWidth: 28, textAlign: 'center' }}>{it.quantity}</div>
                 <button className="btn btn-ghost btn-sm" onClick={() => updateQuantity(it.providerProductId, it.optionId, it.quantity + 1)}>+</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => remove(it.providerProductId, it.optionId)}>Remove</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => remove(it.providerProductId, it.optionId)}>{tc('remove')}</button>
                 <div style={{ minWidth: 80, textAlign: 'right', fontWeight: 600 }}>{it.price ? `${(it.price * it.quantity).toFixed(2)} EGP` : '—'}</div>
               </div>
             </div>
           ))}
         </div>
         <div className="cart-actions">
-          <Link href="/cart"><button className="btn">Finish Shopping</button></Link>
-          <button className="btn btn-secondary" onClick={() => setOpen(false)}>Keep Shopping</button>
+          <Link href="/shop/cart" className="btn" onClick={() => setOpen(false)}>{t('continueShopping')}</Link>
+          <button className="btn btn-secondary" onClick={() => setOpen(false)}>{t('keepShopping') || 'Keep Shopping'}</button>
         </div>
           </div>
           <style jsx>{`

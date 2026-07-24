@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getErrorMessage } from '@/lib/errors'
 import { getCurrentUser } from '@/lib/auth'
+import { resolveProductPrice } from '@/lib/cart-price'
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
         let option: any = null
         if (optionId) option = await prisma.providerProductOption.findUnique({ where: { id: optionId } })
 
-        const unitPrice = option ? option.price : (buyerIsShop ? (pp.wholesalePrice ?? pp.sellingPrice) : (pp.retailPrice ?? pp.sellingPrice))
+        const unitPrice = resolveProductPrice(pp, buyerIsShop, option?.price)
 
         return NextResponse.json({ ok: true, providerProduct: { id: pp.id, catalogProductId: pp.catalogProductId, unitPrice, title: pp.catalogProduct?.nameEN || pp.catalogProduct?.nameAR || null, quantity } })
       }
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
         if (!pp) return NextResponse.json({ error: 'No provider listing available for this product' }, { status: 400 })
 
         // choose unit price based on buyer role
-        const unitPrice = buyerIsShop ? (pp.wholesalePrice ?? pp.sellingPrice) : (pp.retailPrice ?? pp.sellingPrice)
+        const unitPrice = resolveProductPrice(pp, buyerIsShop)
 
         // return redirect target + computed price so client can navigate or add to local cart
         const redirectUrl = `/shop/product/${catalogProductId}?addedProviderProduct=${pp.id}`

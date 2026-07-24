@@ -1,4 +1,5 @@
 import React from 'react'
+import { getTranslations } from 'next-intl/server'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import CategoryFilter from '@/components/shop/CategoryFilter'
@@ -6,6 +7,7 @@ import { getCurrentUser } from '@/lib/auth'
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
+  const t = await getTranslations('shop')
   const currentUser = await getCurrentUser()
   const isShop = !!currentUser && (currentUser.role === 'PROVIDER' || currentUser.customerType === 'SHOP')
   let preferredLocationId: string | null = null
@@ -16,7 +18,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
   // Fetch the category
   const category = await prisma.category.findUnique({ where: { slug } })
-  if (!category) return <div>Category not found</div>
+  if (!category) return <div>{t('categoryNotFound')}</div>
 
   // Fetch all approved provider products in this category
   const products = await prisma.providerProduct.findMany({
@@ -66,14 +68,18 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       {products.length > 0 ? (
         <div className="product-grid">
           {products.map((p) => {
-            const nameEN = p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'
+            const nameEN = p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || t('product')
             const nameAR = p.catalogProduct?.nameAR || ''
             const descriptionEN = p.catalogProduct?.descriptionEN || ''
             const descriptionAR = p.catalogProduct?.descriptionAR || ''
             const unit = p.wholesaleUnit || p.catalogProduct?.unitType || 'UNIT'
-            const conditionsText = p.providerProductOptions && p.providerProductOptions.length > 0
-              ? `Options: ${p.providerProductOptions.map((o: any) => o.unitType).join(', ')}`
-              : 'Provider conditions will be shown on the detail page.'
+            const providerOptionUnits = (p.providerProductOptions || []).map((o: any) => o.unitType).filter(Boolean)
+            const catalogUnitRanges = (p.catalogProduct?.unitRanges || []).map((r: any) => r.unitType).filter(Boolean)
+            const providerDefault = p.provider?.defaultWholesaleUnit ? [p.provider.defaultWholesaleUnit] : []
+            const conditionUnits = providerOptionUnits.length > 0 ? providerOptionUnits : (catalogUnitRanges.length > 0 ? catalogUnitRanges : providerDefault)
+            const conditionsText = conditionUnits && conditionUnits.length > 0
+              ? t('optionsLabel', { options: conditionUnits.join(', ') })
+              : t('providerConditions')
 
             return (
               <Link key={p.id} href={`/shop/product/${p.id}`} className="product-card">
@@ -100,7 +106,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                   {descriptionAR && <div className="product-card-description" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{descriptionAR}</div>}
                   <div className="product-card-provider">
                     {p.provider?.logo ? (
-                      <img src={p.provider.logo} alt="" className="provider-logo-sm" />
+                      <img src={p.provider.logo} alt={p.provider?.shopNameEN || p.provider?.shopNameAR || 'Provider'} className="provider-logo-sm" />
                     ) : (
                       <div className="provider-logo-sm" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--gradient-primary)', color: 'white', fontWeight: 'var(--font-bold)', fontSize: 'var(--text-xs)' }}>
                         {(p.provider?.shopNameEN || p.provider?.shopNameAR || 'S')?.charAt(0).toUpperCase()}
@@ -110,11 +116,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                   </div>
                   <div className="product-card-footer">
                     <div className="price" style={{ fontSize: 'var(--text-sm)' }}>
-                      {isShop ? `Wholesale: ${ (p.wholesalePrice ?? p.sellingPrice) } EGP / ${unit}` : `Retail: ${ (p.retailPrice ?? p.sellingPrice) } EGP / ${unit}` }
+                      {isShop ? `${t('wholesale')}: ${(p.wholesalePrice ?? p.sellingPrice)} EGP / ${unit}` : `${t('retail')}: ${(p.retailPrice ?? p.sellingPrice)} EGP / ${unit}`}
                     </div>
                     {Number(p.retailPrice) > 0 && (
                       <span style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>
-                        Retail: {p.retailPrice} EGP
+                        {t('retail')}: {p.retailPrice} EGP
                       </span>
                     )}
                   </div>
@@ -128,13 +134,13 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         <div className="card" style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
           <div style={{ fontSize: 'var(--text-4xl)', marginBottom: 'var(--space-4)' }}>📦</div>
           <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-bold)', marginBottom: 'var(--space-2)' }}>
-            No products in this category
+            {t('noProductsInCategory')}
           </h3>
           <p style={{ color: 'var(--text-muted)' }}>
-            Check back soon as providers add more products.
+            {t('noProductsInCategoryMessage')}
           </p>
           <Link href="/shop" className="btn btn-primary" style={{ marginTop: 'var(--space-4)' }}>
-            Browse All Stores
+            {t('browseAllStores')}
           </Link>
         </div>
       )}

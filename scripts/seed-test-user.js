@@ -14,6 +14,7 @@ const fs = require('fs');
 const path = require('path');
 const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
+const { getDemoAccounts } = require('../src/lib/demo-accounts');
 
 function loadEnv() {
   const envPath = path.resolve(process.cwd(), '.env');
@@ -42,50 +43,68 @@ async function main() {
   try {
     await client.query('BEGIN');
 
-    // ── 1. Test User ──────────────────────────────────────────────────────
-    console.log('\n👤 Setting up test user...');
-    const mobile = '01094056919';
-    const password = '2463';
-    const passwordHash = await bcrypt.hash(password, 12);
+    // ── 1. Demo users ────────────────────────────────────────────────────
+    console.log('\n👤 Setting up demo users...');
+    const demoUsers = getDemoAccounts();
 
-    const userRes = await client.query(
-      'SELECT id FROM "User" WHERE mobile=$1 LIMIT 1',
-      [mobile]
-    );
+    let adminUserId;
 
-    let userId;
-    if (userRes.rows.length) {
-      userId = userRes.rows[0].id;
-      await client.query(
-        `UPDATE "User" SET 
-          "passwordHash"=$1, "nameAR"=$2, "nameEN"=$3, 
-          role=$4, status=$5, "forcePasswordReset"=$6, locale=$7,
-          "updatedAt"=$8
-        WHERE id=$9`,
-        [passwordHash, 'مدير النظام', 'System Admin', 'ROOT_ADMIN', 'APPROVED', false, 'ar', new Date().toISOString(), userId]
+    for (const account of demoUsers) {
+      const passwordHash = await bcrypt.hash(account.password, 12);
+      const userRes = await client.query(
+        'SELECT id FROM "User" WHERE mobile=$1 LIMIT 1',
+        [account.mobile]
       );
-      console.log('   ✅ Test user updated (id:', userId, ')');
-    } else {
-      userId = makeId();
-      const now = new Date().toISOString();
-      await client.query(
-        `INSERT INTO "User" (id, mobile, "passwordHash", "nameAR", "nameEN", role, status, "forcePasswordReset", locale, "createdAt", "updatedAt") 
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-        [userId, mobile, passwordHash, 'مدير النظام', 'System Admin', 'ROOT_ADMIN', 'APPROVED', false, 'ar', now, now]
-      );
-      console.log('   ✅ Test user created (id:', userId, ')');
+
+      let userId;
+      if (userRes.rows.length) {
+        userId = userRes.rows[0].id;
+        await client.query(
+          `UPDATE "User" SET 
+            "passwordHash"=$1, "nameAR"=$2, "nameEN"=$3,
+            role=$4, status=$5, "forcePasswordReset"=$6, locale=$7,
+            "customerType"=$8, "updatedAt"=$9
+          WHERE id=$10`,
+          [passwordHash, account.nameAR, account.nameEN, account.role, account.status, false, 'ar', account.customerType, new Date().toISOString(), userId]
+        );
+        console.log(`   ✅ ${account.key} updated (id: ${userId})`);
+      } else {
+        userId = makeId();
+        const now = new Date().toISOString();
+        await client.query(
+          `INSERT INTO "User" (id, mobile, "passwordHash", "nameAR", "nameEN", role, status, "forcePasswordReset", locale, "customerType", "createdAt", "updatedAt")
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+          [userId, account.mobile, passwordHash, account.nameAR, account.nameEN, account.role, account.status, false, 'ar', account.customerType, now, now]
+        );
+        console.log(`   ✅ ${account.key} created (id: ${userId})`);
+      }
+
+      if (account.key === 'admin') {
+        adminUserId = userId;
+      }
+
+      console.log(`   📱 ${account.key}: ${account.mobile} / ${account.password}`);
+
+      if (account.role === 'PROVIDER') {
+        const profileRes = await client.query('SELECT id FROM "ProviderProfile" WHERE "userId"=$1 LIMIT 1', [userId]);
+        if (!profileRes.rows.length) {
+          const now = new Date().toISOString();
+          await client.query(
+            `INSERT INTO "ProviderProfile" (id, "userId", "shopNameAR", "shopNameEN", "locationAddress", "isVisible", "createdAt", "updatedAt") VALUES ($1,$2,$3,$4,$5,true,$6,$7)`,
+            [makeId(), userId, account.nameAR, account.nameEN, 'Demo provider location', now, now]
+          );
+        }
+      }
     }
-    console.log(`   📱 Mobile: ${mobile}`);
-    console.log(`   🔑 Password: ${password}`);
 
     // ── 2. Wallet ─────────────────────────────────────────────────────────
     console.log('\n💰 Ensuring wallet...');
-    const walletRes = await client.query('SELECT id FROM "Wallet" WHERE "userId"=$1 LIMIT 1', [userId]);
+    const walletRes = await client.query('SELECT id FROM "Wallet" WHERE "userId"=$1 LIMIT 1', [adminUserId]);
     if (!walletRes.rows.length) {
       const now = new Date().toISOString();
       await client.query(
         'INSERT INTO "Wallet" (id, "userId", "pendingBalance", "availableBalance", "totalPaid", "isFrozen", "createdAt", "updatedAt") VALUES ($1,$2,0,0,0,false,$3,$4)',
-        [makeId(), userId, now, now]
+        [makeId(), adminUserId, now, now]
       );
       console.log('   ✅ Wallet created');
     } else {
@@ -102,12 +121,12 @@ async function main() {
     for (const p of permissions) {
       const r = await client.query(
         'SELECT id FROM "AdminPermission" WHERE "userId"=$1 AND permission=$2 LIMIT 1',
-        [userId, p]
+        [adminUserId, p]
       );
       if (!r.rows.length) {
         await client.query(
           'INSERT INTO "AdminPermission" (id, "userId", permission) VALUES ($1,$2,$3)',
-          [makeId(), userId, p]
+          [makeId(), adminUserId, p]
         );
       }
     }
@@ -162,10 +181,10 @@ async function main() {
     await client.query('COMMIT');
     console.log('\n🎉 Seed completed successfully!');
     console.log('╔══════════════════════════════════════╗');
-    console.log('║  TEST USER CREDENTIALS               ║');
-    console.log('║  📱 Mobile:   01094056919             ║');
-    console.log('║  🔑 Password: 2463                    ║');
-    console.log('║  👤 Role:     ROOT_ADMIN              ║');
+    console.log('║  DEMO ACCOUNT CREDENTIALS            ║');
+    for (const account of demoUsers) {
+      console.log(`║  ${account.key.padEnd(10)} ${account.mobile} / ${account.password}   ║`);
+    }
     console.log('╚══════════════════════════════════════╝');
   } catch (e) {
     await client.query('ROLLBACK');

@@ -1,3 +1,4 @@
+import { NotificationType } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { publishNotification } from '@/lib/notificationStream'
 
@@ -25,13 +26,13 @@ async function sendPushNotifications(
 
 export async function createNotification(
   userId: string,
-  type: string,
+  type: NotificationType,
   titleEN: string,
   titleAR: string,
   data?: Record<string, unknown>
 ) {
   const notification = await prisma.notification.create({
-    data: { userId, type: type as any, titleEN, titleAR, bodyEN: data?.bodyEN as string | null, bodyAR: data?.bodyAR as string | null, data: data as any },
+    data: { userId, type, titleEN, titleAR, bodyEN: data?.bodyEN as string | null, bodyAR: data?.bodyAR as string | null, data: data as any },
   })
 
   publishNotification(userId, {

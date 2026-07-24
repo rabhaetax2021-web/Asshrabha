@@ -4,6 +4,7 @@ import { isProvider } from '@/lib/utils/permissions'
 import { prisma } from '@/lib/prisma'
 import { getErrorMessage } from '@/lib/errors'
 import { createNotification } from '@/lib/actions/notification.actions'
+import { NotificationType } from '@prisma/client'
 
 export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
@@ -100,9 +101,9 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         const providerUser = await prisma.providerProfile.findUnique({ where: { id: prod.providerId }, select: { userId: true } })
         await Promise.all([
           ...admins.map((admin) =>
-            createNotification(
-              admin.id,
-              'PRICE_CHANGE_REQUEST',
+              createNotification(
+                admin.id,
+                NotificationType.PRICE_CHANGE_REQUEST,
               'Price change requested',
               'تم طلب تغيير سعر',
               {
@@ -117,7 +118,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
           ),
           ...(providerUser?.userId ? [createNotification(
             providerUser.userId,
-            'PRICE_CHANGE_REQUEST',
+            NotificationType.PRICE_CHANGE_REQUEST,
             'Price change submitted',
             'تم إرسال طلب تغيير السعر للمراجعة',
             {

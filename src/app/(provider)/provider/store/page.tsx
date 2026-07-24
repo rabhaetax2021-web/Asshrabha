@@ -60,6 +60,16 @@ export default async function StorePage() {
                   <span>📦 {allProducts.length} products</span>
                   {provider.locationAddress && <span>📍 {provider.locationAddress}</span>}
                 </div>
+                {(provider.minOrderItems || provider.minOrderAmount) && (
+                  <div className="card" style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', border: '1px solid var(--primary-100)', background: 'var(--primary-50)' }}>
+                    <div style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-semibold)', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 'var(--space-2)' }}>Store purchase rules</div>
+                    <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                      {provider.minOrderItems ? `Minimum order items: ${provider.minOrderItems}` : null}
+                      {provider.minOrderItems && provider.minOrderAmount ? ' · ' : null}
+                      {provider.minOrderAmount ? `Minimum order amount: ${Number(provider.minOrderAmount).toFixed(2)} EGP` : null}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

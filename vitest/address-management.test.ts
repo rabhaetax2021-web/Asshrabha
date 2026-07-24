@@ -7,6 +7,7 @@ const prismaMock = {
     delete: vi.fn(),
     deleteMany: vi.fn(),
     updateMany: vi.fn(),
+    count: vi.fn(),
     findFirst: vi.fn(),
   },
   customerProfileEdit: {

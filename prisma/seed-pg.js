@@ -2,6 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const { Client } = require('pg')
 const bcrypt = require('bcryptjs')
+const { getDemoAccounts } = require('../src/lib/demo-accounts')
 
 function loadEnv() {
   const envPath = path.resolve(process.cwd(), '.env')
@@ -27,55 +28,71 @@ async function main() {
   try {
     await client.query('BEGIN')
 
-    console.log('👤 Creating/updating root admin user...')
-    const passwordHash = await bcrypt.hash('2463', 12)
-    const mobile = '01094056919'
-    const userRes = await client.query(
-      'SELECT id FROM "User" WHERE mobile=$1 LIMIT 1',
-      [mobile]
-    )
-    let userId
     const makeId = () => `seed_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`
-    if (userRes.rows.length) {
-      userId = userRes.rows[0].id
-      await client.query(
-        'UPDATE "User" SET "passwordHash"=$1, "nameAR"=$2, "nameEN"=$3, role=$4, status=$5, "forcePasswordReset"=$6, locale=$7 WHERE id=$8',
-        [passwordHash, 'مدير النظام', 'System Admin', 'ROOT_ADMIN', 'APPROVED', false, 'ar', userId]
+    const demoUsers = getDemoAccounts()
+
+    for (const account of demoUsers) {
+      const passwordHash = await bcrypt.hash(account.password, 12)
+      const userRes = await client.query(
+        'SELECT id FROM "User" WHERE mobile=$1 LIMIT 1',
+        [account.mobile]
       )
-      console.log('   ✅ Admin user updated')
-    } else {
-      const newid = makeId()
+
+      let userId
+      if (userRes.rows.length) {
+        userId = userRes.rows[0].id
+        await client.query(
+          'UPDATE "User" SET "passwordHash"=$1, "nameAR"=$2, "nameEN"=$3, role=$4, status=$5, "forcePasswordReset"=$6, locale=$7, "customerType"=$8 WHERE id=$9',
+          [passwordHash, account.nameAR, account.nameEN, account.role, account.status, false, 'ar', account.customerType, userId]
+        )
+        console.log(`   ✅ ${account.key} updated`)
+      } else {
+        const newid = makeId()
         const now = new Date().toISOString()
-      const insert = await client.query(
-          'INSERT INTO "User" (id, mobile, "passwordHash", "nameAR", "nameEN", role, status, "forcePasswordReset", locale, "createdAt", "updatedAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id',
-          [newid, mobile, passwordHash, 'مدير النظام', 'System Admin', 'ROOT_ADMIN', 'APPROVED', false, 'ar', now, now]
-      )
-      userId = insert.rows[0].id
-      console.log('   ✅ Admin user created:', userId)
-    }
+        const insert = await client.query(
+          'INSERT INTO "User" (id, mobile, "passwordHash", "nameAR", "nameEN", role, status, "forcePasswordReset", locale, "customerType", "createdAt", "updatedAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id',
+          [newid, account.mobile, passwordHash, account.nameAR, account.nameEN, account.role, account.status, false, 'ar', account.customerType, now, now]
+        )
+        userId = insert.rows[0].id
+        console.log(`   ✅ ${account.key} created: ${userId}`)
+      }
 
-    console.log('💰 Ensuring admin wallet exists...')
-    const walletRes = await client.query('SELECT id FROM "Wallet" WHERE "userId"=$1 LIMIT 1', [userId])
-    if (!walletRes.rows.length) {
-      const wid = makeId()
-      const now = new Date().toISOString()
-      await client.query('INSERT INTO "Wallet" (id, "userId", "pendingBalance", "availableBalance", "totalPaid", "isFrozen", "createdAt", "updatedAt") VALUES ($1,$2,0,0,0,false,$3,$4)', [wid, userId, now, now])
-      console.log('   ✅ Admin wallet created')
-    } else {
-      console.log('   ✅ Admin wallet exists')
-    }
+      if (account.role === 'PROVIDER') {
+        const profileRes = await client.query('SELECT id FROM "ProviderProfile" WHERE "userId"=$1 LIMIT 1', [userId])
+        if (!profileRes.rows.length) {
+          const now = new Date().toISOString()
+          await client.query(
+            'INSERT INTO "ProviderProfile" (id, "userId", "shopNameAR", "shopNameEN", "locationAddress", "isVisible", "createdAt", "updatedAt") VALUES ($1,$2,$3,$4,$5,true,$6,$7)',
+            [makeId(), userId, account.nameAR, account.nameEN, 'Demo provider location', now, now]
+          )
+        }
+      }
 
-    console.log('🔑 Creating admin permissions...')
-    const permissions = [
-      'MANAGE_PROVIDERS','MANAGE_CUSTOMERS','MANAGE_CATALOG','MANAGE_CATEGORIES','MANAGE_ORDERS','MANAGE_WALLETS','MANAGE_SETTINGS','MANAGE_SUPPORT','VIEW_ANALYTICS','MANAGE_APPROVALS','VIEW_LOGS'
-    ]
-    for (const p of permissions) {
-      const r = await client.query('SELECT id FROM "AdminPermission" WHERE "userId"=$1 AND permission=$2 LIMIT 1', [userId, p])
-      if (!r.rows.length) {
-        await client.query('INSERT INTO "AdminPermission" (id, "userId", permission) VALUES ($1,$2,$3)', [makeId(), userId, p])
+      if (account.key === 'admin') {
+        console.log('💰 Ensuring admin wallet exists...')
+        const walletRes = await client.query('SELECT id FROM "Wallet" WHERE "userId"=$1 LIMIT 1', [userId])
+        if (!walletRes.rows.length) {
+          const wid = makeId()
+          const now = new Date().toISOString()
+          await client.query('INSERT INTO "Wallet" (id, "userId", "pendingBalance", "availableBalance", "totalPaid", "isFrozen", "createdAt", "updatedAt") VALUES ($1,$2,0,0,0,false,$3,$4)', [wid, userId, now, now])
+          console.log('   ✅ Admin wallet created')
+        } else {
+          console.log('   ✅ Admin wallet exists')
+        }
+
+        console.log('🔑 Creating admin permissions...')
+        const permissions = [
+          'MANAGE_PROVIDERS','MANAGE_CUSTOMERS','MANAGE_CATALOG','MANAGE_CATEGORIES','MANAGE_ORDERS','MANAGE_WALLETS','MANAGE_SETTINGS','MANAGE_SUPPORT','VIEW_ANALYTICS','MANAGE_APPROVALS','VIEW_LOGS'
+        ]
+        for (const p of permissions) {
+          const r = await client.query('SELECT id FROM "AdminPermission" WHERE "userId"=$1 AND permission=$2 LIMIT 1', [userId, p])
+          if (!r.rows.length) {
+            await client.query('INSERT INTO "AdminPermission" (id, "userId", permission) VALUES ($1,$2,$3)', [makeId(), userId, p])
+          }
+        }
+        console.log(`   ✅ ${permissions.length} permissions ensured`)
       }
     }
-    console.log(`   ✅ ${permissions.length} permissions ensured`)
 
     console.log('📂 Creating categories...')
     const categories = [
@@ -123,6 +140,10 @@ async function main() {
 
     await client.query('COMMIT')
     console.log('\n🎉 Seed (pg) completed successfully!')
+    console.log('Demo accounts:')
+    for (const account of demoUsers) {
+      console.log(` - ${account.key}: ${account.mobile} / ${account.password}`)
+    }
   } catch (e) {
     await client.query('ROLLBACK')
     console.error('❌ Seed failed:', e)

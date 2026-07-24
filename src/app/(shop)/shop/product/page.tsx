@@ -2,6 +2,7 @@ import React from 'react'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth'
+import { getTranslations } from 'next-intl/server'
 
 export default async function ProductListingPage() {
   const current = await getCurrentUser()
@@ -37,10 +38,12 @@ export default async function ProductListingPage() {
     take: 100,
   })
 
+  const t = await getTranslations('shop')
+
   return (
     <section className="category-page container">
       <div style={{ marginBottom: 'var(--space-6)' }}>
-        <h1>All Products</h1>
+        <h1>{t('allProducts') || 'All Products'}</h1>
         <p style={{ color: 'var(--text-muted)', maxWidth: 640, marginTop: 'var(--space-2)' }}>
           Browse every approved product across the Asshrabha marketplace, with clean cards, rich imagery, and fast access to store listings.
         </p>
@@ -66,8 +69,12 @@ export default async function ProductListingPage() {
             const price = isShop ? (product.wholesalePrice ?? product.sellingPrice) : (product.retailPrice ?? product.sellingPrice)
             const priceLabel = isShop ? 'Wholesale' : 'Retail'
             const unit = product.wholesaleUnit || product.catalogProduct?.unitType || 'UNIT'
-            const conditionsText = product.providerProductOptions && product.providerProductOptions.length > 0
-              ? `Options: ${product.providerProductOptions.map((o: any) => o.unitType).join(', ')}`
+            const providerOptionUnits = (product.providerProductOptions || []).map((o: any) => o.unitType).filter(Boolean)
+            const catalogUnitRanges = (product.catalogProduct?.unitRanges || []).map((r: any) => r.unitType).filter(Boolean)
+            const providerDefault = product.provider?.defaultWholesaleUnit ? [product.provider.defaultWholesaleUnit] : []
+            const conditionUnits = providerOptionUnits.length > 0 ? providerOptionUnits : (catalogUnitRanges.length > 0 ? catalogUnitRanges : providerDefault)
+            const conditionsText = conditionUnits && conditionUnits.length > 0
+              ? `Options: ${conditionUnits.join(', ')}`
               : 'Conditions will appear on provider page.'
 
             return (

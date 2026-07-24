@@ -118,13 +118,16 @@ export function buildCustomerEditChangeSummary(
     const userChanges = changeSource.user as Record<string, unknown>
     Object.entries(userChanges).forEach(([field, newValue]) => {
       const label = getFieldLabel(field)
+      const oldNorm = normalizeValue(currentUser?.[field])
+      const newNorm = normalizeValue(newValue)
+      if (oldNorm === newNorm) return
       items.push({
         key: `user-${field}`,
         titleEN: label.en,
         titleAR: label.ar,
-        oldValueEN: normalizeValue(currentUser?.[field]),
+        oldValueEN: oldNorm,
         oldValueAR: normalizeArabicValue(currentUser?.[field]),
-        newValueEN: normalizeValue(newValue),
+        newValueEN: newNorm,
         newValueAR: normalizeArabicValue(newValue),
       })
     })
@@ -163,13 +166,15 @@ export function buildCustomerEditChangeSummary(
     const address = changeSource.address as Record<string, unknown>
     Object.entries(address).forEach(([field, value]) => {
       const label = getObjectFieldLabels(field)
+      const newNorm = normalizeValue(value)
+      // if updating an address inline without previous value, always show
       items.push({
         key: `address-inline-${field}`,
         titleEN: `Address update: ${label.en}`,
         titleAR: `تعديل العنوان: ${label.ar}`,
         oldValueEN: '—',
         oldValueAR: '—',
-        newValueEN: normalizeValue(value),
+        newValueEN: newNorm,
         newValueAR: normalizeArabicValue(value),
       })
     })
@@ -190,13 +195,16 @@ export function buildProviderEditChangeSummary(
     const providerChanges = changeSource.providerProfile as Record<string, unknown>
     Object.entries(providerChanges).forEach(([field, newValue]) => {
       const label = getProviderFieldLabel(field)
+      const oldNorm = normalizeValue(currentProvider?.[field])
+      const newNorm = normalizeValue(newValue)
+      if (oldNorm === newNorm) return
       items.push({
         key: `providerProfile-${field}`,
         titleEN: label.en,
         titleAR: label.ar,
-        oldValueEN: normalizeValue(currentProvider?.[field]),
+        oldValueEN: oldNorm,
         oldValueAR: normalizeArabicValue(currentProvider?.[field]),
-        newValueEN: normalizeValue(newValue),
+        newValueEN: newNorm,
         newValueAR: normalizeArabicValue(newValue),
       })
     })
@@ -206,13 +214,16 @@ export function buildProviderEditChangeSummary(
     const userChanges = changeSource.user as Record<string, unknown>
     Object.entries(userChanges).forEach(([field, newValue]) => {
       const label = getFieldLabel(field)
+      const oldNorm = normalizeValue(currentUser?.[field])
+      const newNorm = normalizeValue(newValue)
+      if (oldNorm === newNorm) return
       items.push({
         key: `user-${field}`,
         titleEN: label.en,
         titleAR: label.ar,
-        oldValueEN: normalizeValue(currentUser?.[field]),
+        oldValueEN: oldNorm,
         oldValueAR: normalizeArabicValue(currentUser?.[field]),
-        newValueEN: normalizeValue(newValue),
+        newValueEN: newNorm,
         newValueAR: normalizeArabicValue(newValue),
       })
     })
