@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function getUploadFile(request: NextRequest): Promise<UploadFilePayload | null> {
+async function getUploadFile(request: Request): Promise<UploadFilePayload | null> {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File | null
@@ -63,7 +63,7 @@ async function getUploadFile(request: NextRequest): Promise<UploadFilePayload | 
   }
 }
 
-async function parseMultipartFile(request: NextRequest): Promise<UploadFilePayload | null> {
+async function parseMultipartFile(request: Request): Promise<UploadFilePayload | null> {
   const contentType = request.headers.get('content-type') || ''
   const boundary = extractBoundary(contentType)
   if (!boundary) return null
