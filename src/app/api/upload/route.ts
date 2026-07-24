@@ -8,7 +8,25 @@ export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData()
+    const contentType = request.headers.get('content-type') || ''
+    const contentLength = request.headers.get('content-length') || 'unknown'
+    if (!contentType.includes('multipart/form-data')) {
+      console.error('[upload] invalid content-type', { contentType, contentLength })
+      return NextResponse.json({ ok: false, error: 'Invalid upload request content type. Expected multipart/form-data.' }, { status: 400 })
+    }
+
+    let formData: FormData
+    try {
+      formData = await request.formData()
+    } catch (err: unknown) {
+      console.error('[upload] formData parse failure', {
+        error: getErrorMessage(err),
+        contentType,
+        contentLength,
+      })
+      return NextResponse.json({ ok: false, error: 'Failed to parse multipart/form-data upload body.' }, { status: 400 })
+    }
+
     const file = formData.get('file') as File | null
     if (!file) return NextResponse.json({ ok: false, error: 'No file' }, { status: 400 })
 

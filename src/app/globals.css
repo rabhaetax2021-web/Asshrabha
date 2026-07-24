@@ -3115,6 +3115,7 @@ html {
   justify-content: center;
   padding: var(--space-4);
   background: linear-gradient(-45deg,
+  overflow-x: hidden;
     hsl(245, 58%, 20%),
     hsl(270, 60%, 25%),
     hsl(245, 58%, 30%),
@@ -3152,7 +3153,7 @@ html {
 
 .login-card {
   width: 100%;
-  max-width: 420px;
+  max-width: min(100%, 420px);
   background: var(--glass-bg);
   -webkit-backdrop-filter: blur(24px);
   backdrop-filter: blur(24px);
@@ -3161,6 +3162,17 @@ html {
   padding: var(--space-8) var(--space-7);
   box-shadow: var(--shadow-2xl);
   animation: scaleIn 500ms var(--ease-out-expo);
+  box-sizing: border-box;
+}
+
+.login-card img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.login-card .input {
+  min-width: 0;
 }
 
 [data-theme='dark'] .login-card {
@@ -3175,12 +3187,34 @@ html {
   justify-content: center;
   gap: var(--space-2);
   margin-block-end: var(--space-8);
+  flex-wrap: wrap;
 }
 
 .register-step {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+}
+
+@media (max-width: 640px) {
+  .login-card {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .login-card .btn,
+  .login-card .input,
+  .login-card select,
+  .login-card textarea {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .login-card .btn + .btn,
+  .login-card .input + .btn,
+  .login-card a {
+    min-width: 0;
+  }
 }
 
 .register-step-circle {

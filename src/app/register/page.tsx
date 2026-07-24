@@ -366,8 +366,8 @@ export default function RegisterPage() {
               {accountType === 'CUSTOMER' && (
                 <div>
                   <label className="label" htmlFor="locationAddress">{t('locationAddress')} *</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input id="locationAddress" className="input" value={locationAddress} onChange={(e) => setLocationAddress(e.target.value)} required placeholder="Street, building, apartment" />
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                    <input id="locationAddress" className="input" value={locationAddress} onChange={(e) => setLocationAddress(e.target.value)} required placeholder="Street, building, apartment" style={{ flex: 1, minWidth: 0 }} />
                     <button
                       id="customer-get-location-btn"
                       type="button"
@@ -396,7 +396,7 @@ export default function RegisterPage() {
                     </select>
                   </div>
                   {(locationUrl || locationAddress.trim()) && (
-                    <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                       <a
                         href={locationUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${locationAddress}${locationId ? `, ${locations.find((l) => l.id === locationId)?.nameEN || locationId}` : ''}`)}`}
                         target="_blank"
@@ -414,11 +414,10 @@ export default function RegisterPage() {
               {accountType === 'PROVIDER' && (
                 <div>
                   <label className="label" htmlFor="locationAddress">{t('locationAddress')} *</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input id="locationAddress" className="input" value={locationAddress} onChange={(e) => setLocationAddress(e.target.value)} required placeholder="Street, building, apartment" />
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                    <input id="locationAddress" className="input" value={locationAddress} onChange={(e) => setLocationAddress(e.target.value)} required placeholder="Street, building, apartment" style={{ flex: 1, minWidth: 0 }} />
                     <button
                       id="shop-get-location-btn"
-                      type="button"
                       className="btn btn-primary"
                       aria-label={t('useMyLocation') || 'Use my location'}
                       onClick={() => {
@@ -457,11 +456,11 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-6)' }}>
-              <button type="button" className="btn-secondary" onClick={() => { setStep('type'); setAccountType(null); }} style={{ flex: 1 }}>
+            <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-6)', flexWrap: 'wrap' }}>
+              <button type="button" className="btn-secondary" onClick={() => { setStep('type'); setAccountType(null); }} style={{ flex: 1, minWidth: 0 }}>
                 {tc('back')}
               </button>
-              <button type="submit" className="btn-primary" style={{ flex: 2 }}>
+              <button type="submit" className="btn-primary" style={{ flex: 2, minWidth: 0 }}>
                 {accountType === 'PROVIDER' ? tc('next') : tc('submit')}
               </button>
             </div>
@@ -486,8 +485,8 @@ export default function RegisterPage() {
               </div>
               <div>
                 <label className="label" htmlFor="locationAddress">{t('locationAddress')} *</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input id="locationAddress" className="input" value={locationAddress} onChange={(e) => setLocationAddress(e.target.value)} required placeholder="Street, building, apartment" />
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                  <input id="locationAddress" className="input" value={locationAddress} onChange={(e) => setLocationAddress(e.target.value)} required placeholder="Street, building, apartment" style={{ flex: 1, minWidth: 0 }} />
                   <button
                     id="shop-get-location-btn"
                     type="button"
@@ -516,7 +515,7 @@ export default function RegisterPage() {
                   </select>
                 </div>
                 {locationUrl ? (
-                  <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                     <a href={locationUrl} target="_blank" rel="noreferrer">{t('previewLocation') || 'Preview location on map'}</a>
                     <button type="button" className="btn-secondary" onClick={() => { setLocationUrl(''); setLocationLat(null); setLocationLng(null); }}>{tc('remove') || 'Remove'}</button>
                   </div>
@@ -538,11 +537,11 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-6)' }}>
-              <button type="button" className="btn-secondary" onClick={() => setStep('info')} style={{ flex: 1 }}>
+            <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-6)', flexWrap: 'wrap' }}>
+              <button type="button" className="btn-secondary" onClick={() => setStep('info')} style={{ flex: 1, minWidth: 0 }}>
                 {tc('back')}
               </button>
-              <button type="submit" className="btn-primary" disabled={loading} style={{ flex: 2 }}>
+              <button type="submit" className="btn-primary" disabled={loading} style={{ flex: 2, minWidth: 0 }}>
                 {loading ? <span className="spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }} /> : tc('submit')}
               </button>
             </div>
