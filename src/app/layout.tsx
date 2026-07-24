@@ -24,7 +24,14 @@ const jetBrainsMono = JetBrains_Mono({
   display: 'swap',
 });
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL
+  ? process.env.NEXT_PUBLIC_APP_URL
+  : process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000'
+
 export const metadata: Metadata = {
+  metadataBase: new URL(appUrl),
   title: {
     default: 'Asshrabha - أشربها | Marketplace',
     template: '%s | Asshrabha',
