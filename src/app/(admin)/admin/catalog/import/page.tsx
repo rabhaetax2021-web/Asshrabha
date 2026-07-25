@@ -175,7 +175,7 @@ export default function CatalogImportPage() {
                 {isDuplicate && <span style={{ color: '#b91c1c', fontWeight: 600 }}>{t('duplicate')}</span>}
               </div>
 
-              <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+              <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', alignItems: 'start' }}>
                 <label style={{ display: 'grid', gap: 6 }}>
                   <span>{t('productNameEN')}</span>
                   <input dir={locale === 'ar' ? 'ltr' : undefined} style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-light)' }} value={product.nameEN} onChange={(e) => updateProduct(index, 'nameEN', e.target.value)} />
@@ -211,7 +211,7 @@ export default function CatalogImportPage() {
                 </label>
               </div>
 
-              <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginTop: 16 }}>
+              <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', marginTop: 16, alignItems: 'start' }}>
                 <label style={{ display: 'grid', gap: 6 }}>
                   <span>{t('wholesaleMin')}</span>
                   <input style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-light)' }} type="number" value={product.wholesaleMinPrice} onChange={(e) => updateProduct(index, 'wholesaleMinPrice', Number(e.target.value))} />
