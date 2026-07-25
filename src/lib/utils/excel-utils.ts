@@ -505,41 +505,52 @@ export async function generateProviderProductsWorkbook(products: ProviderProduct
 // Parse XLSX file to products
 export async function parseXlsxToProducts(buffer: Buffer): Promise<{ success: ProductImportRow[]; errors: Array<{ row: number; error: string }> }> {
   const XLSX = await import('xlsx')
-  
+
   try {
     const wb = XLSX.read(buffer, { type: 'buffer' })
     const ws = wb.Sheets[wb.SheetNames[0]]
-    
+
     if (!ws) {
       return { success: [], errors: [{ row: 0, error: 'No sheet found in Excel file' }] }
     }
 
-    // Convert to array of arrays, starting from row with headers
     const data: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
-    
+
     if (data.length === 0) {
       return { success: [], errors: [{ row: 0, error: 'No data found in Excel file' }] }
     }
 
-    // Find header row - it should have all the column names
-    let headerRowIndex = 0
-    for (let i = 0; i < Math.min(100, data.length); i++) {
-      const row = data[i]
-      if (Array.isArray(row) && row.includes('categoryId')) {
-        headerRowIndex = i
-        break
+    const normalizedData = data.map((row) =>
+      Array.isArray(row)
+        ? row.map((value) => (typeof value === 'string' ? value.trim() : value))
+        : row
+    )
+
+    let headerRowIndex = -1
+    for (let i = 0; i < Math.min(100, normalizedData.length); i++) {
+      const row = normalizedData[i]
+      if (Array.isArray(row)) {
+        const normalizedHeaders = row.map((value) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
+        if (normalizedHeaders.includes('categoryid')) {
+          headerRowIndex = i
+          break
+        }
       }
     }
 
-    const headerRow = data[headerRowIndex]
-    if (!headerRow) {
+    if (headerRowIndex === -1) {
       return { success: [], errors: [{ row: 0, error: 'Header row not found' }] }
     }
 
-    // Map column indices
+    const headerRow = normalizedData[headerRowIndex]
+    if (!Array.isArray(headerRow)) {
+      return { success: [], errors: [{ row: 0, error: 'Header row not found' }] }
+    }
+
+    const normalizedHeaderRow = headerRow.map((value) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
     const columnMap: { [key: string]: number } = {}
-    CSV_HEADERS.forEach((header, idx) => {
-      const colIdx = headerRow.indexOf(header)
+    CSV_HEADERS.forEach((header) => {
+      const colIdx = normalizedHeaderRow.indexOf(header.toLowerCase())
       if (colIdx !== -1) {
         columnMap[header] = colIdx
       }
@@ -548,13 +559,12 @@ export async function parseXlsxToProducts(buffer: Buffer): Promise<{ success: Pr
     const success: ProductImportRow[] = []
     const errors: Array<{ row: number; error: string }> = []
 
-    // Parse data rows
-    const dataRows = data.slice(headerRowIndex + 1)
+    const dataRows = normalizedData.slice(headerRowIndex + 1)
     dataRows.forEach((row, idx) => {
-      const rowNum = headerRowIndex + idx + 2 // +2 for 0-based to 1-based and header row
-      
-      if (!Array.isArray(row) || row.every(v => v === undefined || v === null || v === '')) {
-        return // Skip empty rows
+      const rowNum = headerRowIndex + idx + 2
+
+      if (!Array.isArray(row) || row.every((value) => value === undefined || value === null || value === '')) {
+        return
       }
 
       try {
@@ -607,7 +617,7 @@ export async function parseXlsxToProducts(buffer: Buffer): Promise<{ success: Pr
           retailMaxPrice: retailMax,
           unitType: String(unitType).trim(),
           status: (status ? String(status).trim() : 'ACTIVE').toUpperCase(),
-          rowNumber: rowNum
+          rowNumber: rowNum,
         })
       } catch (err) {
         errors.push({ row: rowNum, error: String(err) })
