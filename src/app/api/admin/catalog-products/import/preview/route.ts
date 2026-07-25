@@ -41,12 +41,12 @@ export async function POST(request: NextRequest) {
     }
 
     const categoryIds = [...new Set(success.map((p) => p.categoryId))]
-    const [categories, existingProducts] = await Promise.all([
-      prisma.category.findMany({ where: { id: { in: categoryIds } }, select: { id: true, nameEN: true, nameAR: true } }),
+    const [allCategories, existingProducts] = await Promise.all([
+      prisma.category.findMany({ where: { isActive: true }, select: { id: true, nameEN: true, nameAR: true } }),
       prisma.catalogProduct.findMany({ select: { nameEN: true, nameAR: true } }),
     ])
 
-    const validCategoryIds = new Set(categories.map((c) => c.id))
+    const validCategoryIds = new Set(allCategories.map((c) => c.id))
     const invalidProducts = success.filter((p) => !validCategoryIds.has(p.categoryId))
 
     if (invalidProducts.length > 0) {
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
         unitType: product.unitType || 'PIECE',
         status: (product.status || 'ACTIVE').toUpperCase(),
       })),
-      categories,
+      categories: allCategories,
       duplicates,
       errors: [],
     })
