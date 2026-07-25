@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { showToast } from '@/components/ui/toast'
 import { isAndroidDevice, isIosDevice } from '@/utils/detectPlatform'
 
@@ -75,6 +76,8 @@ export function usePWAInstall() {
     }
   }, [isInstalled])
 
+  const t = useTranslations('common')
+
   const isAndroidInstallReady = isAndroid && deferredPrompt !== null
   const shouldShowInstallButton = useMemo(
     () => !hideButton && (isAndroidInstallReady || isIos),
@@ -84,7 +87,7 @@ export function usePWAInstall() {
   const handleInstallClick = useCallback(async () => {
     if (isAndroid) {
       if (!deferredPrompt) {
-        showToast('Installation unavailable.', 'error')
+        showToast(t('installationUnavailable') || 'Installation unavailable.', 'error')
         return
       }
 
@@ -93,15 +96,15 @@ export function usePWAInstall() {
         const choice = await deferredPrompt.userChoice
 
         if (choice.outcome === 'accepted') {
-          showToast('Application installed successfully.', 'success')
+          showToast(t('installationSuccessful') || 'Application installed successfully.', 'success')
           setHideButton(true)
           localStorage.setItem(PWA_INSTALL_ACCEPTED_KEY, 'true')
           setDeferredPrompt(null)
         } else {
-          showToast('Installation cancelled.', 'info')
+          showToast(t('installationCancelled') || 'Installation cancelled.', 'info')
         }
       } catch (error) {
-        showToast('Installation unavailable.', 'error')
+        showToast(t('installationUnavailable') || 'Installation unavailable.', 'error')
       }
 
       return
@@ -112,8 +115,8 @@ export function usePWAInstall() {
       return
     }
 
-    showToast('Installation unavailable.', 'error')
-  }, [deferredPrompt, isAndroid, isIos])
+    showToast(t('installationUnavailable') || 'Installation unavailable.', 'error')
+  }, [deferredPrompt, isAndroid, isIos, t])
 
   const closeIosModal = useCallback(() => {
     setShowIosModal(false)
