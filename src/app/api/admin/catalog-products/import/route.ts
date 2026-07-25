@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       const body = await request.json()
       const parsed = importProductsSchema.safeParse(body)
       if (!parsed.success) {
-        const errorMessages = parsed.error.errors.map((issue) => {
+        const errorMessages = parsed.error.issues.map((issue) => {
           const path = issue.path.length ? issue.path.join('.') : 'products'
           return `${path}: ${issue.message}`
         })
