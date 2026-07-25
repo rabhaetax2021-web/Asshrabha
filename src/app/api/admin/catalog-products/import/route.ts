@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { parseCsvToProducts } from '@/lib/utils/excel-utils'
+import { parseCsvToProducts, parseXlsxToProducts } from '@/lib/utils/excel-utils'
 
 function isAdminUser(current: Awaited<ReturnType<typeof getCurrentUser>>) {
   return !!current && ['ROOT_ADMIN', 'SUB_ADMIN'].includes(current.role) && current.status === 'APPROVED'
@@ -25,8 +25,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'file must be CSV or XLSX format' }, { status: 400 })
     }
 
-    const text = await file.text()
-    const { success, errors } = parseCsvToProducts(text)
+    let parseResult
+
+    if (file.name.endsWith('.xlsx')) {
+      const buffer = Buffer.from(await file.arrayBuffer())
+      parseResult = await parseXlsxToProducts(buffer)
+    } else {
+      const text = await file.text()
+      parseResult = parseCsvToProducts(text)
+    }
+
+    const { success, errors } = parseResult
 
     if (errors.length > 0) {
       return NextResponse.json({

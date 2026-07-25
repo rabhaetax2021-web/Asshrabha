@@ -32,33 +32,83 @@ export function generateCsvTemplate(categories: Array<{ id: string; nameEN?: str
   const header = CSV_HEADERS.join(',')
   
   // Add category reference rows as comments
-  const categoryLines = categories.map(c => `# ${c.id} - ${c.nameEN || c.nameAR || 'Unknown'}`)
+  const categoryLines = categories.map(c => `# ${c.id} | ${c.nameEN || c.nameAR || 'Unknown'}`)
   
-  // Add one example row
-  const exampleRow = [
-    categories[0]?.id || 'cat-id',
-    'Product Name EN',
-    'اسم المنتج بالعربية',
-    'English description',
-    'الوصف بالعربية',
-    '10',
-    '50',
-    '20',
-    '100',
-    'PIECE',
-    'ACTIVE'
-  ].map(v => `"${v}"`).join(',')
-  
+  // Add multiple example rows with different products
+  const examples = [
+    [
+      categories[0]?.id || 'cat-id',
+      'Organic Tea',
+      'شاي عضوي',
+      'Premium quality loose leaf tea',
+      'شاي متميز من أوراق الشاي الطبيعي',
+      '50',
+      '150',
+      '100',
+      '300',
+      'PIECE',
+      'ACTIVE'
+    ],
+    [
+      categories[1]?.id || 'cat-id',
+      'Coffee Beans',
+      'حبات القهوة',
+      'Medium roast arabica beans',
+      'حبات قهوة عربية متوسطة التحميص',
+      '100',
+      '300',
+      '200',
+      '500',
+      'KG',
+      'ACTIVE'
+    ],
+    [
+      categories[2]?.id || 'cat-id',
+      'Fresh Orange Juice',
+      'عصير برتقال طازج',
+      'Freshly squeezed daily',
+      'معصور طازج يومياً',
+      '30',
+      '80',
+      '50',
+      '120',
+      'LITER',
+      'ACTIVE'
+    ]
+  ].map(row => row.map(v => `"${v}"`).join(','))
+
   return [
-    '# Download this template, fill in your product data, and upload it',
-    '# Categories available:',
+    '# PRODUCT IMPORT TEMPLATE',
+    '# Instructions: Fill in the cells below with your product data. Do NOT modify the header row.',
+    '# Upload this file using the admin catalog import feature.',
+    '#',
+    '# ========== CATEGORIES REFERENCE ==========',
     ...categoryLines,
     '#',
-    '# Required fields: categoryId, nameEN, nameAR, wholesaleMinPrice, wholesaleMaxPrice, retailMinPrice, retailMaxPrice, unitType',
-    '# Optional fields: descriptionEN, descriptionAR, status (default: ACTIVE)',
+    '# ========== COLUMN DESCRIPTIONS ==========',
+    '# categoryId (Text/Required) - Use one of the category IDs listed above',
+    '# nameEN (Text/Required) - Product name in English',
+    '# nameAR (Text/Required) - Product name in Arabic',
+    '# descriptionEN (Text/Optional) - Product description in English',
+    '# descriptionAR (Text/Optional) - Product description in Arabic',
+    '# wholesaleMinPrice (Number/Required) - Minimum wholesale price in EGP',
+    '# wholesaleMaxPrice (Number/Required) - Maximum wholesale price in EGP',
+    '# retailMinPrice (Number/Required) - Minimum retail price in EGP',
+    '# retailMaxPrice (Number/Required) - Maximum retail price in EGP',
+    '# unitType (Text/Required) - PIECE, KG, LITER, BOX, etc.',
+    '# status (Text/Optional) - ACTIVE or ARCHIVED (default: ACTIVE)',
     '#',
+    '# ========== RULES ==========',
+    '# 1. Do NOT delete the header row (first data row)',
+    '# 2. Prices must be numbers (no currency symbols)',
+    '# 3. Wholesale prices must be: min < max',
+    '# 4. Retail prices must be: min < max',
+    '# 5. Do NOT add extra commas or quotes inside text',
+    '# 6. Delete example rows before uploading (or keep them to add multiple products)',
+    '#',
+    '# ========== DATA START HERE ==========',
     header,
-    exampleRow
+    ...examples
   ].join('\n')
 }
 
@@ -159,4 +209,282 @@ function parseCsvLine(line: string): string[] {
   
   result.push(current)
   return result
+}
+
+// XLSX-based template with better visual formatting
+export async function generateXlsxTemplate(categories: Array<{ id: string; nameEN?: string | null; nameAR?: string | null }>): Promise<Buffer> {
+  const XLSX = await import('xlsx')
+  
+  // Create data structure for Excel
+  const wsData: any[] = []
+  let rowNum = 0
+
+  // Title
+  wsData[rowNum] = ['PRODUCT IMPORT TEMPLATE - Admin Catalog']
+  rowNum++
+  
+  wsData[rowNum] = ['']
+  rowNum++
+
+  // Instructions
+  wsData[rowNum] = ['Instructions: Fill in the cells below with your product data. Do NOT modify the header row.']
+  rowNum++
+  wsData[rowNum] = ['Upload this file using the admin catalog import feature.']
+  rowNum++
+  
+  wsData[rowNum] = ['']
+  rowNum++
+
+  // Categories Reference
+  wsData[rowNum] = ['CATEGORIES REFERENCE - Copy the ID to use in your products']
+  rowNum++
+  wsData[rowNum] = ['Category ID', 'Category Name']
+  rowNum++
+  
+  categories.forEach(cat => {
+    wsData[rowNum] = [cat.id, cat.nameEN || cat.nameAR || 'Unknown']
+    rowNum++
+  })
+  
+  wsData[rowNum] = ['']
+  rowNum++
+
+  // Column Descriptions
+  wsData[rowNum] = ['COLUMN DESCRIPTIONS & DATA TYPES']
+  rowNum++
+  wsData[rowNum] = ['Column Name', 'Data Type', 'Required', 'Description']
+  rowNum++
+  
+  const columnInfo = [
+    ['categoryId', 'Text', 'YES', 'Use one of the category IDs from the reference section above'],
+    ['nameEN', 'Text', 'YES', 'Product name in English'],
+    ['nameAR', 'Text', 'YES', 'Product name in Arabic'],
+    ['descriptionEN', 'Text', 'NO', 'Product description in English'],
+    ['descriptionAR', 'Text', 'NO', 'Product description in Arabic'],
+    ['wholesaleMinPrice', 'Number', 'YES', 'Minimum wholesale price in EGP'],
+    ['wholesaleMaxPrice', 'Number', 'YES', 'Maximum wholesale price in EGP (must be >= min)'],
+    ['retailMinPrice', 'Number', 'YES', 'Minimum retail price in EGP'],
+    ['retailMaxPrice', 'Number', 'YES', 'Maximum retail price in EGP (must be >= min)'],
+    ['unitType', 'Text', 'YES', 'PIECE, KG, LITER, BOX, PACK, etc.'],
+    ['status', 'Text', 'NO', 'ACTIVE or ARCHIVED (default: ACTIVE)']
+  ]
+  
+  columnInfo.forEach(info => {
+    wsData[rowNum] = info
+    rowNum++
+  })
+  
+  wsData[rowNum] = ['']
+  rowNum++
+
+  // Rules
+  wsData[rowNum] = ['IMPORTANT RULES']
+  rowNum++
+  wsData[rowNum] = ['Rule', 'Description']
+  rowNum++
+  
+  const rules = [
+    ['Do NOT delete the header row', 'The first row with all column names must remain'],
+    ['Prices must be numbers only', 'No currency symbols or letters (e.g., 100 not 100 EGP)'],
+    ['Wholesale min < max', 'wholesaleMinPrice must be less than wholesaleMaxPrice'],
+    ['Retail min < max', 'retailMinPrice must be less than retailMaxPrice'],
+    ['No extra spaces', 'Text values should not have leading/trailing spaces'],
+    ['Category ID must be valid', 'Use exact IDs from the categories reference section'],
+    ['Delete example rows before upload', 'Remove the example products before submitting (or keep them to add multiple)']
+  ]
+  
+  rules.forEach(rule => {
+    wsData[rowNum] = rule
+    rowNum++
+  })
+  
+  wsData[rowNum] = ['']
+  rowNum++
+
+  // Data Entry Section Header
+  wsData[rowNum] = ['ENTER YOUR PRODUCTS BELOW - Start from the next row']
+  rowNum++
+  
+  const headerRow = rowNum
+  wsData[rowNum] = CSV_HEADERS
+  rowNum++
+
+  // Example rows
+  const examples = [
+    [categories[0]?.id || 'cat-id', 'Organic Tea', 'شاي عضوي', 'Premium quality loose leaf tea', 'شاي متميز من أوراق الشاي الطبيعي', 50, 150, 100, 300, 'PIECE', 'ACTIVE'],
+    [categories[1]?.id || 'cat-id', 'Coffee Beans', 'حبات القهوة', 'Medium roast arabica beans', 'حبات قهوة عربية متوسطة التحميص', 100, 300, 200, 500, 'KG', 'ACTIVE'],
+    [categories[2]?.id || 'cat-id', 'Fresh Orange Juice', 'عصير برتقال طازج', 'Freshly squeezed daily', 'معصور طازج يومياً', 30, 80, 50, 120, 'LITER', 'ACTIVE']
+  ]
+  
+  examples.forEach(example => {
+    wsData[rowNum] = example
+    rowNum++
+  })
+
+  // Create workbook and worksheet
+  const ws = XLSX.utils.aoa_to_sheet(wsData)
+  
+  // Set column widths
+  ws['!cols'] = [
+    { wch: 18 }, // categoryId
+    { wch: 25 }, // nameEN
+    { wch: 25 }, // nameAR
+    { wch: 30 }, // descriptionEN
+    { wch: 30 }, // descriptionAR
+    { wch: 18 }, // wholesaleMinPrice
+    { wch: 18 }, // wholesaleMaxPrice
+    { wch: 18 }, // retailMinPrice
+    { wch: 18 }, // retailMaxPrice
+    { wch: 15 }, // unitType
+    { wch: 12 }  // status
+  ]
+
+  // Add cell styling
+  const headerStyle = {
+    font: { bold: true, color: { rgb: 'FFFFFF' }, size: 12 },
+    fill: { fgColor: { rgb: '1F4E78' } },
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
+  }
+
+  const titleStyle = {
+    font: { bold: true, size: 14, color: { rgb: '1F4E78' } },
+    alignment: { horizontal: 'left', vertical: 'center' }
+  }
+
+  // Apply styles to header row
+  for (let col = 0; col < CSV_HEADERS.length; col++) {
+    const cellRef = XLSX.utils.encode_cell({ r: headerRow, c: col })
+    if (!ws[cellRef]) ws[cellRef] = {}
+    ws[cellRef].s = headerStyle
+  }
+
+  // Apply title style
+  ws['A1'].s = titleStyle
+
+  // Freeze panes at data section
+  ws['!freeze'] = { xSplit: 0, ySplit: headerRow + 1 }
+
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Products')
+
+  // Generate buffer
+  const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' })
+  return buf as Buffer
+}
+
+// Parse XLSX file to products
+export async function parseXlsxToProducts(buffer: Buffer): Promise<{ success: ProductImportRow[]; errors: Array<{ row: number; error: string }> }> {
+  const XLSX = await import('xlsx')
+  
+  try {
+    const wb = XLSX.read(buffer, { type: 'buffer' })
+    const ws = wb.Sheets[wb.SheetNames[0]]
+    
+    if (!ws) {
+      return { success: [], errors: [{ row: 0, error: 'No sheet found in Excel file' }] }
+    }
+
+    // Convert to array of arrays, starting from row with headers
+    const data: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
+    
+    if (data.length === 0) {
+      return { success: [], errors: [{ row: 0, error: 'No data found in Excel file' }] }
+    }
+
+    // Find header row - it should have all the column names
+    let headerRowIndex = 0
+    for (let i = 0; i < Math.min(100, data.length); i++) {
+      const row = data[i]
+      if (Array.isArray(row) && row.includes('categoryId')) {
+        headerRowIndex = i
+        break
+      }
+    }
+
+    const headerRow = data[headerRowIndex]
+    if (!headerRow) {
+      return { success: [], errors: [{ row: 0, error: 'Header row not found' }] }
+    }
+
+    // Map column indices
+    const columnMap: { [key: string]: number } = {}
+    CSV_HEADERS.forEach((header, idx) => {
+      const colIdx = headerRow.indexOf(header)
+      if (colIdx !== -1) {
+        columnMap[header] = colIdx
+      }
+    })
+
+    const success: ProductImportRow[] = []
+    const errors: Array<{ row: number; error: string }> = []
+
+    // Parse data rows
+    const dataRows = data.slice(headerRowIndex + 1)
+    dataRows.forEach((row, idx) => {
+      const rowNum = headerRowIndex + idx + 2 // +2 for 0-based to 1-based and header row
+      
+      if (!Array.isArray(row) || row.every(v => v === undefined || v === null || v === '')) {
+        return // Skip empty rows
+      }
+
+      try {
+        const categoryId = row[columnMap['categoryId']]
+        const nameEN = row[columnMap['nameEN']]
+        const nameAR = row[columnMap['nameAR']]
+        const descriptionEN = row[columnMap['descriptionEN']]
+        const descriptionAR = row[columnMap['descriptionAR']]
+        const wholesaleMinPrice = row[columnMap['wholesaleMinPrice']]
+        const wholesaleMaxPrice = row[columnMap['wholesaleMaxPrice']]
+        const retailMinPrice = row[columnMap['retailMinPrice']]
+        const retailMaxPrice = row[columnMap['retailMaxPrice']]
+        const unitType = row[columnMap['unitType']]
+        const status = row[columnMap['status']]
+
+        if (!categoryId || !nameEN || !nameAR || wholesaleMinPrice === undefined || wholesaleMaxPrice === undefined || retailMinPrice === undefined || retailMaxPrice === undefined || !unitType) {
+          errors.push({ row: rowNum, error: 'Missing required fields' })
+          return
+        }
+
+        const wholesaleMin = Number(wholesaleMinPrice)
+        const wholesaleMax = Number(wholesaleMaxPrice)
+        const retailMin = Number(retailMinPrice)
+        const retailMax = Number(retailMaxPrice)
+
+        if (isNaN(wholesaleMin) || isNaN(wholesaleMax) || isNaN(retailMin) || isNaN(retailMax)) {
+          errors.push({ row: rowNum, error: 'Invalid price values' })
+          return
+        }
+
+        if (wholesaleMin > wholesaleMax) {
+          errors.push({ row: rowNum, error: 'Wholesale min price must be <= max price' })
+          return
+        }
+
+        if (retailMin > retailMax) {
+          errors.push({ row: rowNum, error: 'Retail min price must be <= max price' })
+          return
+        }
+
+        success.push({
+          categoryId: String(categoryId).trim(),
+          nameEN: String(nameEN).trim(),
+          nameAR: String(nameAR).trim(),
+          descriptionEN: descriptionEN ? String(descriptionEN).trim() : undefined,
+          descriptionAR: descriptionAR ? String(descriptionAR).trim() : undefined,
+          wholesaleMinPrice: wholesaleMin,
+          wholesaleMaxPrice: wholesaleMax,
+          retailMinPrice: retailMin,
+          retailMaxPrice: retailMax,
+          unitType: String(unitType).trim(),
+          status: (status ? String(status).trim() : 'ACTIVE').toUpperCase()
+        })
+      } catch (err) {
+        errors.push({ row: rowNum, error: String(err) })
+      }
+    })
+
+    return { success, errors }
+  } catch (err) {
+    return { success: [], errors: [{ row: 0, error: `Excel parsing error: ${String(err)}` }] }
+  }
 }

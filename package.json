@@ -40,6 +40,7 @@
     "react-hook-form": "^7.79.0",
     "recharts": "^3.8.1",
     "web-push": "^3.6.7",
+    "xlsx": "^0.18.5",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },
@@ -50,13 +51,13 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
+    "axe-core": "^4.6.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "jsdom": "^29.1.1",
+    "node-fetch": "^2.6.13",
     "prisma": "latest",
     "typescript": "^5",
-    "vitest": "^1.2.0",
-    "axe-core": "^4.6.3",
-    "jsdom": "^29.1.1",
-    "node-fetch": "^2.6.13"
+    "vitest": "^1.2.0"
   }
 }
