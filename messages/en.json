@@ -67,6 +67,7 @@
     "error": "Error",
     "warning": "Warning",
     "info": "Info",
+    "installApp": "Install App",
     "all": "All",
     "active": "Active",
     "inactive": "Inactive",
