@@ -1077,6 +1077,92 @@ body {
   align-items: center;
 }
 
+.install-fab {
+  position: fixed;
+  left: 50%;
+  bottom: env(safe-area-inset-bottom, 18px);
+  transform: translateX(-50%);
+  z-index: 160;
+  width: min(100%, 420px);
+  max-width: calc(100% - 32px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.95rem 1.2rem;
+  border-radius: 999px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+  transition: transform 220ms ease, opacity 220ms ease;
+  animation: install-fab-enter 320ms ease;
+}
+
+.install-fab:hover {
+  transform: translateX(-50%) translateY(-1px);
+}
+
+.install-fab-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.install-modal-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.install-modal-description {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.install-modal-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.install-modal-steps li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.95rem 1rem;
+  border-radius: 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+}
+
+.install-modal-steps li span {
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+@keyframes install-fab-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@media (min-width: 768px) {
+  .install-fab {
+    display: none;
+  }
+}
+
 /* UI Table styling for primitives */
 .ui-table-wrap { background: transparent; border-radius: var(--radius-sm); }
 .ui-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
