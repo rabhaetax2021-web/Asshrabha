@@ -1,5 +1,5 @@
-import PwaInstallPage from '@/components/landing/PwaInstallPage';
+import PwaInstallPage from '@/components/landing/PwaInstallPage'
 
 export default function HomePage() {
-  return <PwaInstallPage />;
+  return <PwaInstallPage />
 }

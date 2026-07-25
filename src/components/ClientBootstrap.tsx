@@ -2,7 +2,6 @@
 
 import React, { useEffect } from 'react'
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
-import InstallButton from '@/components/InstallButton'
 
 export default function ClientBootstrap() {
   // Client-side bootstrap: service worker and accessibility helpers
@@ -20,7 +19,6 @@ export default function ClientBootstrap() {
   return (
     <>
       <ServiceWorkerRegister />
-      <InstallButton />
     </>
   )
 }
