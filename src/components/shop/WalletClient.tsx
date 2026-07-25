@@ -207,6 +207,21 @@ export default function WalletClient({ wallet, transactions }: { wallet?: any; t
                   {methods.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               </div>
+              {selectedMethod && methods.find(m => m.id === selectedMethod)?.instructions && (
+                <div style={{
+                  padding: 'var(--space-3)',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-light)',
+                  fontSize: 'var(--text-sm)',
+                  lineHeight: '1.5',
+                  color: 'var(--text-primary)',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word'
+                }}>
+                  {methods.find(m => m.id === selectedMethod)?.instructions}
+                </div>
+              )}
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                 <label style={{ flex: 1, display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
                   <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-2)', color: 'var(--text-primary)' }}>
