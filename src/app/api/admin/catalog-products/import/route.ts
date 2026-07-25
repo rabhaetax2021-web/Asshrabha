@@ -3,10 +3,16 @@ import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { parseCsvToProducts, parseXlsxToProducts } from '@/lib/utils/excel-utils'
 import { isAdmin } from '@/lib/utils/permissions'
+import { catalogProductSchema } from '@/lib/validations/catalog'
+import { z } from 'zod'
 
 function isAdminUser(current: Awaited<ReturnType<typeof getCurrentUser>>) {
   return !!current && isAdmin(current.role) && current.status === 'APPROVED'
 }
+
+const importProductsSchema = z.object({
+  products: z.array(catalogProductSchema).min(1),
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,8 +25,18 @@ export async function POST(request: NextRequest) {
     let success: Array<any> = []
 
     if (contentType.includes('application/json')) {
-      const body = await request.json() as { products?: Array<any> }
-      success = (body.products || []).filter(Boolean)
+      const body = await request.json()
+      const parsed = importProductsSchema.safeParse(body)
+      if (!parsed.success) {
+        const errorMessages = parsed.error.errors.map((issue) => {
+          const path = issue.path.length ? issue.path.join('.') : 'products'
+          return `${path}: ${issue.message}`
+        })
+
+        return NextResponse.json({ ok: false, imported: 0, errors: [{ row: 0, error: errorMessages.join('; ') }] }, { status: 400 })
+      }
+
+      success = parsed.data.products
     } else {
       const formData = await request.formData()
       const file = formData.get('file') as File | null
@@ -82,8 +98,8 @@ export async function POST(request: NextRequest) {
             retailMinPrice: Number(product.retailMinPrice),
             retailMaxPrice: Number(product.retailMaxPrice),
             images: Array.isArray(product.images) ? product.images : [],
-            unitType: product.unitType as any,
-            status: (product.status || 'ACTIVE').toUpperCase() as any,
+            unitType: product.unitType,
+            status: (product.status || 'ACTIVE').toUpperCase(),
           }
         })
       )

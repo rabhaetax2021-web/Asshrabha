@@ -83,7 +83,7 @@ export function generateCsvTemplate(categories: Array<{ id: string; nameEN?: str
       '300',
       '200',
       '500',
-      'KG',
+      'BOX',
       'ACTIVE'
     ],
     [
@@ -96,7 +96,7 @@ export function generateCsvTemplate(categories: Array<{ id: string; nameEN?: str
       '80',
       '50',
       '120',
-      'LITER',
+      'PACK',
       'ACTIVE'
     ]
   ].map(row => row.map(v => `"${v}"`).join(','))
@@ -338,7 +338,7 @@ export async function generateXlsxTemplate(categories: Array<{ id: string; nameE
     ['wholesaleMaxPrice', 'Number', 'YES', 'Maximum wholesale price in EGP (must be >= min)'],
     ['retailMinPrice', 'Number', 'YES', 'Minimum retail price in EGP'],
     ['retailMaxPrice', 'Number', 'YES', 'Maximum retail price in EGP (must be >= min)'],
-    ['unitType', 'Text', 'YES', 'PIECE, KG, LITER, BOX, PACK, etc.'],
+    ['unitType', 'Text', 'YES', 'PIECE, BOX, PACK'],
     ['status', 'Text', 'NO', 'ACTIVE or ARCHIVED (default: ACTIVE)']
   ]
   
@@ -385,8 +385,8 @@ export async function generateXlsxTemplate(categories: Array<{ id: string; nameE
   // Example rows
   const examples = [
     [categories[0]?.id || 'cat-id', 'Organic Tea', 'شاي عضوي', 'Premium quality loose leaf tea', 'شاي متميز من أوراق الشاي الطبيعي', 50, 150, 100, 300, 'PIECE', 'ACTIVE'],
-    [categories[1]?.id || 'cat-id', 'Coffee Beans', 'حبات القهوة', 'Medium roast arabica beans', 'حبات قهوة عربية متوسطة التحميص', 100, 300, 200, 500, 'KG', 'ACTIVE'],
-    [categories[2]?.id || 'cat-id', 'Fresh Orange Juice', 'عصير برتقال طازج', 'Freshly squeezed daily', 'معصور طازج يومياً', 30, 80, 50, 120, 'LITER', 'ACTIVE']
+    [categories[1]?.id || 'cat-id', 'Coffee Beans', 'حبات القهوة', 'Medium roast arabica beans', 'حبات قهوة عربية متوسطة التحميص', 100, 300, 200, 500, 'BOX', 'ACTIVE'],
+    [categories[2]?.id || 'cat-id', 'Fresh Orange Juice', 'عصير برتقال طازج', 'Freshly squeezed daily', 'معصور طازج يومياً', 30, 80, 50, 120, 'PACK', 'ACTIVE']
   ]
   
   examples.forEach(example => {
