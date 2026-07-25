@@ -346,6 +346,13 @@
     "downloadProductSheet": "تنزيل الجدول",
     "uploadProductSheet": "رفع الجدول",
     "importing": "جاري الاستيراد...",
+    "exportProducts": "تصدير Excel",
+    "exportingProducts": "جاري التصدير...",
+    "notificationsTitle": "الإشعارات",
+    "notificationsSubtitle": "سجل الإشعارات التاريخي لحساب الإدارة.",
+    "notificationsEmpty": "لا توجد إشعارات بعد.",
+    "notificationsUnread": "غير مقروء",
+    "notificationsBackToDashboard": "العودة إلى لوحة التحكم",
     "editProduct": "تعديل المنتج",
     "productName": "اسم المنتج",
     "productNameAR": "اسم المنتج (عربي)",
@@ -939,7 +946,9 @@
     "suggestionApproved": "تمت الموافقة على اقتراح منتجك",
     "suggestionRejected": "تم رفض اقتراح منتجك",
     "otpCode": "رمز التحقق الخاص بك هو: {code}",
-    "welcomeMessage": "مرحباً بك في سوق أشربها!"
+    "welcomeMessage": "مرحباً بك في سوق أشربها!",
+    "accountCreated": "تم إنشاء حسابك بنجاح.",
+    "accountPendingApproval": "حسابك في انتظار الموافقة."
   },
   "errors": {
     "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",

@@ -466,6 +466,13 @@
     "downloadProductSheet": "Download Sheet",
     "uploadProductSheet": "Upload Sheet",
     "importing": "Importing...",
+    "exportProducts": "Export Excel",
+    "exportingProducts": "Exporting...",
+    "notificationsTitle": "Notifications",
+    "notificationsSubtitle": "Historical notification history for your admin account.",
+    "notificationsEmpty": "No notifications yet.",
+    "notificationsUnread": "Unread",
+    "notificationsBackToDashboard": "Back to dashboard",
     "editProduct": "Edit Product",
     "productName": "Product Name",
     "productNameAR": "Product Name (Arabic)",
@@ -1051,7 +1058,9 @@
     "suggestionApproved": "Your product suggestion has been approved",
     "suggestionRejected": "Your product suggestion has been rejected",
     "otpCode": "Your verification code is: {code}",
-    "welcomeMessage": "Welcome to Asshrabha marketplace!"
+    "welcomeMessage": "Welcome to Asshrabha marketplace!",
+    "accountCreated": "Your account has been created successfully.",
+    "accountPendingApproval": "Your account is pending approval."
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",

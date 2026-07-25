@@ -4837,6 +4837,25 @@ html {
   border-color: var(--border-color);
 }
 
+[data-theme='dark'] .dashboard-card {
+  background: var(--bg-elevated);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-lg);
+}
+
+[data-theme='dark'] .dashboard-card--accent {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.38), rgba(129, 140, 248, 0.22));
+  border-color: rgba(255,255,255,0.12);
+}
+
+[data-theme='dark'] .dashboard-kpi .label {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .dashboard-kpi .value {
+  color: var(--text-primary);
+}
+
 [data-theme='dark'] .table-wrap th,
 [data-theme='dark'] .providers-table th,
 [data-theme='dark'] .simple-table th,

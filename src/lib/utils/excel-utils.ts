@@ -12,6 +12,30 @@ export interface ProductImportRow {
   retailMaxPrice: number
   unitType: string
   status?: string
+  rowNumber?: number
+}
+
+export interface ImportDuplicateProduct {
+  row: number
+  nameEN: string
+  nameAR: string
+  reason: 'sheet' | 'db'
+}
+
+export interface ProviderProductExportRow {
+  id: string
+  nameEN?: string | null
+  nameAR?: string | null
+  status?: string | null
+  wholesalePrice?: number | null
+  retailPrice?: number | null
+  sellingPrice?: number | null
+  stockQuantity?: number | null
+  createdAt?: Date | string | null
+  catalogProduct?: {
+    nameEN?: string | null
+    nameAR?: string | null
+  } | null
 }
 
 const CSV_HEADERS = [
@@ -172,7 +196,8 @@ export function parseCsvToProducts(csvText: string): { success: ProductImportRow
         retailMinPrice: retailMin,
         retailMaxPrice: retailMax,
         unitType: unitType.trim(),
-        status: (status?.trim() || 'ACTIVE').toUpperCase()
+        status: (status?.trim() || 'ACTIVE').toUpperCase(),
+        rowNumber: rowNum
       })
     } catch (err) {
       errors.push({ row: rowNum, error: String(err) })
@@ -209,6 +234,54 @@ function parseCsvLine(line: string): string[] {
   
   result.push(current)
   return result
+}
+
+function normalizeImportName(value?: string | null): string {
+  return (value || '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '')
+    .trim()
+}
+
+export function findDuplicateImportProducts(
+  rows: Array<Pick<ProductImportRow, 'nameEN' | 'nameAR' | 'rowNumber'>>,
+  existingProducts: Array<{ nameEN?: string | null; nameAR?: string | null }>
+): ImportDuplicateProduct[] {
+  const duplicates: ImportDuplicateProduct[] = []
+  const seenNames = new Set<string>()
+
+  const addDuplicate = (row: Pick<ProductImportRow, 'nameEN' | 'nameAR' | 'rowNumber'>, reason: 'sheet' | 'db') => {
+    if (!row.nameEN && !row.nameAR) return
+    duplicates.push({
+      row: row.rowNumber ?? 0,
+      nameEN: row.nameEN || '',
+      nameAR: row.nameAR || '',
+      reason,
+    })
+  }
+
+  rows.forEach((row) => {
+    const normalizedRowNames = [normalizeImportName(row.nameEN), normalizeImportName(row.nameAR)].filter(Boolean)
+
+    if (normalizedRowNames.some((name) => seenNames.has(name))) {
+      addDuplicate(row, 'sheet')
+    }
+
+    normalizedRowNames.forEach((name) => seenNames.add(name))
+
+    const isDuplicateInDb = existingProducts.some((product) => {
+      const existingNames = [normalizeImportName(product.nameEN), normalizeImportName(product.nameAR)].filter(Boolean)
+      return existingNames.some((name) => normalizedRowNames.includes(name))
+    })
+
+    if (isDuplicateInDb) {
+      addDuplicate(row, 'db')
+    }
+  })
+
+  return duplicates
 }
 
 // XLSX-based template with better visual formatting
@@ -372,6 +445,63 @@ export async function generateXlsxTemplate(categories: Array<{ id: string; nameE
   return buf as Buffer
 }
 
+export async function generateProviderProductsWorkbook(products: ProviderProductExportRow[]): Promise<Buffer> {
+  const XLSX = await import('xlsx')
+
+  const wsData: any[][] = [
+    ['Provider Products Export'],
+    ['Generated from your provider listings'],
+    ['Product ID', 'Product Name (EN)', 'Product Name (AR)', 'Status', 'Wholesale Price', 'Retail Price', 'Selling Price', 'Stock Quantity', 'Created At'],
+    ...products.map((product) => [
+      product.id,
+      product.catalogProduct?.nameEN || product.nameEN || '',
+      product.catalogProduct?.nameAR || product.nameAR || '',
+      product.status || '',
+      product.wholesalePrice ?? '',
+      product.retailPrice ?? '',
+      product.sellingPrice ?? '',
+      product.stockQuantity ?? '',
+      product.createdAt ? new Date(product.createdAt).toLocaleString() : '',
+    ]),
+  ]
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData)
+  ws['!cols'] = [
+    { wch: 24 },
+    { wch: 28 },
+    { wch: 28 },
+    { wch: 18 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 24 },
+  ]
+
+  const headerStyle = {
+    font: { bold: true, color: { rgb: 'FFFFFF' }, size: 11 },
+    fill: { fgColor: { rgb: '1F4E78' } },
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+  }
+
+  const titleStyle = {
+    font: { bold: true, size: 14, color: { rgb: '1F4E78' } },
+    alignment: { horizontal: 'left', vertical: 'center' },
+  }
+
+  ws['A1'].s = titleStyle
+  for (let col = 0; col < 9; col++) {
+    const cellRef = XLSX.utils.encode_cell({ r: 2, c: col })
+    ws[cellRef] = ws[cellRef] || {}
+    ws[cellRef].s = headerStyle
+  }
+
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Provider Products')
+  const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' })
+  return buf as Buffer
+}
+
 // Parse XLSX file to products
 export async function parseXlsxToProducts(buffer: Buffer): Promise<{ success: ProductImportRow[]; errors: Array<{ row: number; error: string }> }> {
   const XLSX = await import('xlsx')
@@ -476,7 +606,8 @@ export async function parseXlsxToProducts(buffer: Buffer): Promise<{ success: Pr
           retailMinPrice: retailMin,
           retailMaxPrice: retailMax,
           unitType: String(unitType).trim(),
-          status: (status ? String(status).trim() : 'ACTIVE').toUpperCase()
+          status: (status ? String(status).trim() : 'ACTIVE').toUpperCase(),
+          rowNumber: rowNum
         })
       } catch (err) {
         errors.push({ row: rowNum, error: String(err) })

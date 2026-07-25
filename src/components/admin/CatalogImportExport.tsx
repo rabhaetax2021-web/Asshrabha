@@ -19,7 +19,7 @@ export default function CatalogImportExport() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = 'products-template.csv'
+      a.download = 'products-template.xlsx'
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -39,27 +39,20 @@ export default function CatalogImportExport() {
       const formData = new FormData()
       formData.append('file', file)
 
-      const res = await fetch('/api/admin/catalog-products/import', {
-        method: 'POST',
-        body: formData
+      const reader = new FileReader()
+      const fileData = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = () => reject(reader.error)
+        reader.readAsDataURL(file)
       })
 
-      const data = await res.json()
-
-      if (res.ok) {
-        setResult({
-          imported: data.imported,
-          errors: []
-        })
-        setTimeout(() => {
-          window.location.reload()
-        }, 2000)
-      } else {
-        setResult({
-          imported: data.imported || 0,
-          errors: data.errors || [{ row: 0, error: data.error || 'Import failed' }]
-        })
-      }
+      window.sessionStorage.setItem('catalogImportFile', JSON.stringify({
+        name: file.name,
+        type: file.type,
+        lastModified: file.lastModified,
+        data: fileData,
+      }))
+      window.location.href = '/admin/catalog/import'
     } catch (err) {
       setResult({
         imported: 0,

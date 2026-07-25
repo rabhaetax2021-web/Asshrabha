@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import ProductActions from '@/components/provider/ProductActions'
+import ProviderProductsExportButton from '@/components/provider/ProviderProductsExportButton'
 
 function renderStatusBadge(status: string) {
   const normalized = String(status || '').toUpperCase()
@@ -44,7 +45,10 @@ export default async function MyProductsPage() {
       <Card>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
           <p className="text-muted">Manage your approved and pending listings.</p>
-          <Link href="/provider/products/catalog"><Button variant="outline">Browse Catalog</Button></Link>
+          <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+            <ProviderProductsExportButton />
+            <Link href="/provider/products/catalog"><Button variant="outline">Browse Catalog</Button></Link>
+          </div>
         </div>
 
         {pending.length > 0 && (
