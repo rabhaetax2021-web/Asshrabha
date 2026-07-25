@@ -78,10 +78,9 @@ export function usePWAInstall() {
 
   const t = useTranslations('common')
 
-  const isAndroidInstallReady = isAndroid && deferredPrompt !== null
   const shouldShowInstallButton = useMemo(
-    () => !hideButton && (isAndroidInstallReady || isIos),
-    [hideButton, isAndroidInstallReady, isIos]
+    () => !hideButton && (isAndroid || isIos),
+    [hideButton, isAndroid, isIos]
   )
 
   const handleInstallClick = useCallback(async () => {
