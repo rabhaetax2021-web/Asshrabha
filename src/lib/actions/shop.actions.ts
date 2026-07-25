@@ -35,10 +35,42 @@ export async function getProductById(id: string) {
   return null
 }
 
-export async function placeOrder(customerId: string, cartItems: { providerProductId: string; quantity: number; optionId?: string }[], addressId?: string, locale: string = 'en') {
+export async function placeOrder(customerId: string, cartItems: { providerProductId: string; quantity: number; optionId?: string }[], addressId?: string, paymentMethod: string = 'CASH', locale: string = 'en') {
   // Group items by provider via providerProduct -> providerId
   return await prisma.$transaction(async (tx) => {
     const orders: any[] = []
+
+    // Validate and prepare wallet payment if needed
+    let totalOrderAmount = 0
+    if (paymentMethod === 'WALLET') {
+      // First pass: calculate total order amount
+      const resolved = await Promise.all(cartItems.map(async (ci) => {
+        const pp = await tx.providerProduct.findUnique({ where: { id: ci.providerProductId }, include: { provider: true, catalogProduct: true } })
+        let option = null
+        if (ci.optionId) {
+          option = await tx.providerProductOption.findUnique({ where: { id: ci.optionId } })
+        }
+        return { ...ci, providerProduct: pp, option }
+      }))
+
+      const buyer = await tx.user.findUnique({ where: { id: customerId } })
+      const buyerIsShop = !!buyer && (buyer.role === 'PROVIDER' || buyer.customerType === 'SHOP')
+
+      for (const item of resolved) {
+        const pp = item.providerProduct
+        if (!pp) continue
+        const unitPrice = resolveProductPrice(pp, buyerIsShop, item.option?.price)
+        totalOrderAmount += item.quantity * unitPrice
+      }
+
+      // Check wallet balance
+      const wallet = await tx.wallet.findUnique({ where: { userId: customerId } })
+      if (!wallet || wallet.availableBalance < totalOrderAmount) {
+        const messageEN = 'Insufficient wallet balance. Please add money to your wallet or choose cash payment method.'
+        const messageAR = 'رصيد محفظة غير كافي. يرجى إضافة أموال إلى محفظتك أو اختيار طريقة الدفع نقدًا.'
+        throw new Error(JSON.stringify({ messageEN, messageAR, code: 'insufficient_wallet_balance' }))
+      }
+    }
 
     // Resolve provider products and group
     const resolved = await Promise.all(cartItems.map(async (ci) => {
@@ -96,6 +128,7 @@ export async function placeOrder(customerId: string, cartItems: { providerProduc
         providerId,
         addressId: addressId || undefined,
         totalAmount: subtotal,
+        paymentMethod: paymentMethod,
         platformFee: 0,
       }})
 
@@ -128,7 +161,57 @@ export async function placeOrder(customerId: string, cartItems: { providerProduc
       const totals = await calculateOrderTotals(tx as any, order.id, providerId)
       await tx.order.update({ where: { id: order.id }, data: { totalAmount: totals.totalAmount } })
       await tx.orderStatusHistory.create({ data: { orderId: order.id, status: 'PENDING' } })
-      orders.push({ ...order, totalAmount: totals.totalAmount })
+      
+      // Handle wallet payment deduction
+      if (paymentMethod === 'WALLET') {
+        const orderAmount = totals.totalAmount
+        
+        // Deduct from customer wallet
+        await tx.wallet.update({
+          where: { userId: customerId },
+          data: { availableBalance: { decrement: orderAmount } }
+        })
+        
+        // Create transaction for customer
+        await tx.walletTransaction.create({
+          data: {
+            walletId: (await tx.wallet.findUnique({ where: { userId: customerId } }))!.id,
+            amount: orderAmount,
+            type: 'ORDER_CREDIT',
+            status: 'COMPLETED',
+            reference: order.id,
+            note: `Order ${order.orderNumber} payment`
+          }
+        })
+        
+        // Get provider's wallet and add balance
+        const provider = await tx.user.findFirst({
+          where: { id: providerId },
+          include: { wallet: true }
+        })
+        
+        if (provider?.wallet) {
+          // Add to provider's pending balance
+          await tx.wallet.update({
+            where: { id: provider.wallet.id },
+            data: { pendingBalance: { increment: orderAmount } }
+          })
+          
+          // Create transaction for provider
+          await tx.walletTransaction.create({
+            data: {
+              walletId: provider.wallet.id,
+              amount: orderAmount,
+              type: 'ORDER_CREDIT',
+              status: 'COMPLETED',
+              reference: order.id,
+              note: `Order ${order.orderNumber} received`
+            }
+          })
+        }
+      }
+      
+      orders.push({ ...order, totalAmount: totals.totalAmount, paymentMethod })
     }
 
     return orders

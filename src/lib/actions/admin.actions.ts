@@ -288,7 +288,7 @@ export async function getPendingProviders() {
 
 export async function getPendingProviderProducts() {
   return await prisma.providerProduct.findMany({
-    where: { status: 'PENDING_APPROVAL' },
+    where: { status: { in: ['PENDING_APPROVAL', 'REQUIRES_ADMIN_REAPPROVAL'] } },
     include: { provider: { include: { user: true } }, catalogProduct: true },
     orderBy: { createdAt: 'desc' },
   })

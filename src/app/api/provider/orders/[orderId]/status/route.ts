@@ -3,7 +3,8 @@ import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getErrorMessage } from '@/lib/errors'
 
-const VALID_STATUSES = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED', 'REFUNDED']
+const VALID_PROVIDER_STATUSES = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'COMPLETED']
+const TERMINAL_STATUSES = ['COMPLETED', 'CANCELLED', 'REFUNDED']
 
 export async function PUT(request: NextRequest, context: { params: Promise<{ orderId: string }> }) {
   const { orderId } = await context.params
@@ -16,10 +17,12 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ ord
 
     const body = await request.json()
     const status = (body?.status || '').toString().toUpperCase()
-    if (!VALID_STATUSES.includes(status)) return NextResponse.json({ error: 'invalid status' }, { status: 400 })
+    if (!VALID_PROVIDER_STATUSES.includes(status)) return NextResponse.json({ error: 'invalid status' }, { status: 400 })
 
     const order = await prisma.order.findFirst({ where: { id: orderId, providerId: provider.id }, select: { id: true, status: true } })
     if (!order) return NextResponse.json({ error: 'not found' }, { status: 404 })
+    
+    if (TERMINAL_STATUSES.includes(order.status)) return NextResponse.json({ error: 'cannot modify terminal order' }, { status: 403 })
     if (order.status === status) return NextResponse.json({ ok: true, order })
 
     const updated = await prisma.order.update({ where: { id: orderId }, data: { status } })

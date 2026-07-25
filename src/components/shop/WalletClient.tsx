@@ -14,6 +14,8 @@ export default function WalletClient({ wallet, transactions }: { wallet?: any; t
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null)
   const [showConfirm, setShowConfirm] = useState(false)
   const [pendingAmount, setPendingAmount] = useState<number | null>(null)
+  const [proofFile, setProofFile] = useState<File | null>(null)
+  const [proofFileName, setProofFileName] = useState<string>('')
   const [walletState, setWalletState] = useState<any | null>(wallet || null)
   const [transactionsState, setTransactionsState] = useState<any[]>(transactions || [])
 
@@ -54,19 +56,27 @@ export default function WalletClient({ wallet, transactions }: { wallet?: any; t
       showToast(t('choosePaymentMethod'), 'error')
       return
     }
+    if (!proofFile) {
+      showToast(t('screenshotRequired'), 'error')
+      return
+    }
     setPendingAmount(val)
     setShowConfirm(true)
     return
   }
 
   async function confirmDeposit() {
-    if (!pendingAmount || !selectedMethod) return
+    if (!pendingAmount || !selectedMethod || !proofFile) return
     setLoading(true)
     try {
+      const formData = new FormData()
+      formData.append('amount', pendingAmount.toString())
+      formData.append('methodId', selectedMethod)
+      formData.append('proofScreenshot', proofFile)
+      
       const res = await fetch('/api/shop/wallet/deposit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: pendingAmount, methodId: selectedMethod })
+        body: formData
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || t('depositFailed'))
@@ -74,6 +84,8 @@ export default function WalletClient({ wallet, transactions }: { wallet?: any; t
       setAmount('')
       setPendingAmount(null)
       setSelectedMethod(null)
+      setProofFile(null)
+      setProofFileName('')
       setShowConfirm(false)
       window.location.reload()
     } catch (err: unknown) {
@@ -124,7 +136,7 @@ export default function WalletClient({ wallet, transactions }: { wallet?: any; t
         <button className="btn btn-primary" onClick={() => setActiveTab('deposit')}>{t('addBalance')}</button>
         {showConfirm && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
-            <div style={{ width: 520, background: 'white', borderRadius: 8, padding: 'var(--space-6)', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+            <div style={{ width: 520, background: 'white', borderRadius: 8, padding: 'var(--space-6)', boxShadow: '0 10px 30px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' }}>
               <h3 style={{ marginTop: 0, marginBottom: 'var(--space-3)' }}>{t('confirmDeposit')}</h3>
               <div style={{ marginBottom: 'var(--space-3)' }}>
                 <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{t('amount')}</div>
@@ -133,8 +145,14 @@ export default function WalletClient({ wallet, transactions }: { wallet?: any; t
               <div style={{ marginBottom: 'var(--space-4)' }}>
                 <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{t('paymentMethod')}</div>
                 <div style={{ fontWeight: 'var(--font-semibold)' }}>{methods.find(m => m.id === selectedMethod)?.name || t('selectedMethod')}</div>
-                <div style={{ marginTop: 'var(--space-2)', color: 'var(--text-muted)' }}>{methods.find(m => m.id === selectedMethod)?.instructions}</div>
+                <div style={{ marginTop: 'var(--space-2)', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>{methods.find(m => m.id === selectedMethod)?.instructions}</div>
               </div>
+              {proofFileName && (
+                <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}>
+                  <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-2)' }}>{t('uploadedFile')}</div>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)', color: 'var(--text-primary)', wordBreak: 'break-word' }}>📎 {proofFileName}</div>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                 <button className="btn btn-ghost" onClick={cancelConfirm} disabled={loading}>{t('keepEditing')}</button>
                 <button className="btn btn-primary" onClick={confirmDeposit} disabled={loading}>{loading ? t('processing') : t('confirmPayment')}</button>
@@ -170,28 +188,79 @@ export default function WalletClient({ wallet, transactions }: { wallet?: any; t
         </div>
 
         <form onSubmit={activeTab === 'deposit' ? handleDeposit : handleWithdraw}>
-          <div className="form-row" style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
-            <input
-              type="number"
-              step="0.01"
-              min="1"
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
-              placeholder={t('amountEgp')}
-              className="input"
-              style={{ flex: 1 }}
-              required
-            />
-            {activeTab === 'deposit' && (
-              <select value={selectedMethod || ''} onChange={e => setSelectedMethod(e.target.value)} style={{ width: 240 }}>
-                <option value="">{t('choosePaymentMethod')}</option>
-                {methods.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-            )}
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? t('processing') : activeTab === 'deposit' ? t('add') : t('withdraw')}
-            </button>
-          </div>
+          {activeTab === 'deposit' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="1"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  placeholder={t('amountEgp')}
+                  className="input"
+                  style={{ flex: 1 }}
+                  required
+                />
+                <select value={selectedMethod || ''} onChange={e => setSelectedMethod(e.target.value)} style={{ width: 240 }}>
+                  <option value="">{t('choosePaymentMethod')}</option>
+                  {methods.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                <label style={{ flex: 1, display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
+                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-2)', color: 'var(--text-primary)' }}>
+                    {t('paymentProofScreenshot')}
+                  </span>
+                  <div style={{
+                    padding: 'var(--space-3)',
+                    border: '2px dashed var(--border-light)',
+                    borderRadius: 'var(--radius-md)',
+                    textAlign: 'center',
+                    background: 'var(--bg-secondary)',
+                    cursor: 'pointer',
+                    transition: 'all var(--transition-fast) ease'
+                  }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => {
+                        if (e.target.files?.[0]) {
+                          setProofFile(e.target.files[0])
+                          setProofFileName(e.target.files[0].name)
+                        }
+                      }}
+                      style={{ display: 'none' }}
+                      required
+                    />
+                    <div style={{ color: proofFile ? 'var(--success-dark)' : 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+                      {proofFileName ? `📎 ${proofFileName}` : `📷 ${t('selectScreenshot')}`}
+                    </div>
+                  </div>
+                </label>
+                <button type="submit" className="btn btn-primary" disabled={loading} style={{ whiteSpace: 'nowrap' }}>
+                  {loading ? t('processing') : t('add')}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="form-row" style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+              <input
+                type="number"
+                step="0.01"
+                min="1"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                placeholder={t('amountEgp')}
+                className="input"
+                style={{ flex: 1 }}
+                required
+              />
+              <button type="submit" className="btn btn-primary" disabled={loading}>
+                {loading ? t('processing') : t('withdraw')}
+              </button>
+            </div>
+          )}
         </form>
       </div>
 

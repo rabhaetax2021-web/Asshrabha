@@ -69,7 +69,7 @@ export default async function ShopOrderDetailPage({ params }: { params: Promise<
           </div>
         </div>
 
-        <OrderDetailActions orderId={order.id} orderNumber={order.orderNumber} canCancel={canCancelOrder(order.status)} />
+        <OrderDetailActions orderId={order.id} orderNumber={order.orderNumber} canCancel={false} />
       </div>
 
       <div className="card" style={{ padding: 'var(--space-5)' }}>

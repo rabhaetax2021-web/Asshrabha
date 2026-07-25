@@ -33,11 +33,11 @@ export async function depositToWallet(userId: string, amount: number) {
   return transaction
 }
 
-export async function createDepositRequest(userId: string, amount: number, methodId?: string) {
+export async function createDepositRequest(userId: string, amount: number, methodId?: string, proofScreenshot?: string) {
   const wallet = await getOrCreateWallet(userId)
   if (!wallet) return null
   const result = await prisma.$transaction(async (tx) => {
-    const dr = await (tx as any).depositRequest.create({ data: { walletId: wallet.id, amount, methodId: methodId || undefined, status: 'PENDING' } })
+    const dr = await (tx as any).depositRequest.create({ data: { walletId: wallet.id, amount, methodId: methodId || undefined, proofScreenshot: proofScreenshot || undefined, status: 'PENDING' } })
     await tx.walletTransaction.create({ data: { walletId: wallet.id, amount, type: 'DEPOSIT', status: 'PENDING', reference: dr.id } })
     return dr
   })

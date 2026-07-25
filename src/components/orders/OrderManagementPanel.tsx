@@ -4,7 +4,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
-const STATUS_OPTIONS = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED', 'REFUNDED']
+const ADMIN_STATUS_OPTIONS = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED', 'REFUNDED']
+const PROVIDER_STATUS_OPTIONS = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'COMPLETED']
+const TERMINAL_STATUSES = ['COMPLETED', 'CANCELLED', 'REFUNDED']
 
 export default function OrderManagementPanel({ order, isAdmin = false }: { order: any; isAdmin?: boolean }) {
   const t = useTranslations(isAdmin ? 'admin' : 'provider')
@@ -15,6 +17,10 @@ export default function OrderManagementPanel({ order, isAdmin = false }: { order
   const [items, setItems] = useState(order?.items || [])
   const [editingQuantityId, setEditingQuantityId] = useState<string | null>(null)
   const [quantityDrafts, setQuantityDrafts] = useState<Record<string, string>>({})
+
+  const STATUS_OPTIONS = isAdmin ? ADMIN_STATUS_OPTIONS : PROVIDER_STATUS_OPTIONS
+  const isTerminalOrder = TERMINAL_STATUSES.includes(order?.status)
+  const canEditOrder = isAdmin || !isTerminalOrder
 
   const updateStatus = async (nextStatus: string) => {
     if (!confirm(`${tc('confirmAction')} ${t('changeStatus') || 'Change status'}?`)) return
@@ -38,6 +44,10 @@ export default function OrderManagementPanel({ order, isAdmin = false }: { order
   }
 
   const submitItemAction = async (action: string, itemId: string, quantity?: number) => {
+    if (!isAdmin && isTerminalOrder) {
+      setMessage(t('cannotModifyTerminalOrder') || 'Cannot modify cancelled, refunded, or completed orders')
+      return
+    }
     setLoading(true)
     setMessage(null)
     try {
@@ -70,20 +80,27 @@ export default function OrderManagementPanel({ order, isAdmin = false }: { order
 
       <CardSection title={isAdmin ? 'Status' : t('status')}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-          <select value={order.status} onChange={(e) => updateStatus(e.target.value)} disabled={loading} className="input">
+          <select value={order.status} onChange={(e) => updateStatus(e.target.value)} disabled={loading || (!isAdmin && isTerminalOrder)} className="input">
             {STATUS_OPTIONS.map((option) => (
               <option key={option} value={option}>{option}</option>
             ))}
           </select>
+          {!isAdmin && isTerminalOrder && <span style={{ color: 'var(--text-warning)', fontSize: 'var(--text-sm)' }}>{t('cannotModifyTerminalOrder') || 'Admin only'}</span>}
           {loading && <span>{tc('loading')}</span>}
         </div>
       </CardSection>
 
       <CardSection title={t('actions') || tc('actions')}>
+        {!isAdmin && isTerminalOrder && (
+          <div className="notice" style={{ marginBottom: 12, backgroundColor: 'var(--bg-warning)', color: 'var(--text-warning)' }}>
+            {t('cannotModifyTerminalOrder') || 'This order cannot be modified. Only admin can change its status.'}
+          </div>
+        )}
         <div className="order-actions-grid">
           {items.map((it: any) => {
             const currentQty = Number(it.quantity || 0)
             const isRemoved = currentQty === 0
+            const isDisabled = loading || isRemoved || !canEditOrder
             return (
               <div key={it.id} className="order-item-card" style={{ opacity: isRemoved ? 0.65 : 1 }}>
                 <div style={{ fontWeight: 600 }}>
@@ -92,11 +109,11 @@ export default function OrderManagementPanel({ order, isAdmin = false }: { order
                 <div>{tc('quantity')}: {isRemoved ? tc('removed') || 'Removed' : currentQty}</div>
                 <div>{tc('price')}: {Number(it.unitPrice || 0).toFixed(2)} EGP</div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-                  <button className="btn btn-outline" onClick={() => submitItemAction('MARK_UNAVAILABLE', it.id)} disabled={loading || isRemoved}>{t('markUnavailable') || 'Mark unavailable'}</button>
+                  <button className="btn btn-outline" onClick={() => submitItemAction('MARK_UNAVAILABLE', it.id)} disabled={isDisabled}>{t('markUnavailable') || 'Mark unavailable'}</button>
                   <button className="btn btn-outline" onClick={() => {
                     const q = Math.max(1, currentQty - 1)
                     submitItemAction('REDUCE_QUANTITY', it.id, q)
-                  }} disabled={loading || isRemoved}>{t('reduceQuantity') || 'Reduce by 1'}</button>
+                  }} disabled={isDisabled}>{t('reduceQuantity') || 'Reduce by 1'}</button>
                   <button className="btn btn-outline" onClick={() => {
                     const next = window.prompt(tc('enterQuantity') || 'Enter new quantity', String(currentQty || 1))
                     if (next === null) return
@@ -106,8 +123,8 @@ export default function OrderManagementPanel({ order, isAdmin = false }: { order
                       return
                     }
                     submitItemAction('REDUCE_QUANTITY', it.id, parsed)
-                  }} disabled={loading || isRemoved}>{t('setQuantity') || 'Set quantity'}</button>
-                  <button className="btn btn-danger" onClick={() => submitItemAction('REMOVE_PRODUCT', it.id)} disabled={loading || isRemoved}>{t('removeProduct') || 'Remove product'}</button>
+                  }} disabled={isDisabled}>{t('setQuantity') || 'Set quantity'}</button>
+                  <button className="btn btn-danger" onClick={() => submitItemAction('REMOVE_PRODUCT', it.id)} disabled={isDisabled}>{t('removeProduct') || 'Remove product'}</button>
                 </div>
               </div>
             )

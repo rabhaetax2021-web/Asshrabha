@@ -36,6 +36,9 @@ export default function CheckoutClient({ addresses, userId }: CheckoutClientProp
     const defaultAddr = addresses.find(a => a.isDefault)
     return defaultAddr?.id || addresses[0]?.id || ''
   })
+  const [paymentMethod, setPaymentMethod] = useState('CASH')
+  const [walletBalance, setWalletBalance] = useState<number | null>(null)
+  const [showWalletModal, setShowWalletModal] = useState(false)
 
   const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({})
   const [checkoutTotals, setCheckoutTotals] = useState({ itemsSubtotal: 0, shipping: 0, totalAmount: 0 })
@@ -114,6 +117,29 @@ export default function CheckoutClient({ addresses, userId }: CheckoutClientProp
     return () => { cancelled = true }
   }, [items, priceOverrides, selectedAddressId])
 
+  // Fetch wallet balance when payment method is WALLET
+  useEffect(() => {
+    if (paymentMethod !== 'WALLET') return
+    
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/shop/wallet-balance')
+        if (!res.ok) throw new Error('Failed to fetch wallet balance')
+        const data = await res.json()
+        if (!cancelled) {
+          setWalletBalance(data.availableBalance ?? 0)
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setWalletBalance(0)
+        }
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [paymentMethod])
+
   async function place() {
     if (items.length === 0) {
       showToast(t('cartEmpty'), 'error')
@@ -137,10 +163,18 @@ export default function CheckoutClient({ addresses, userId }: CheckoutClientProp
             optionId: i.optionId,
           })),
           addressId: selectedAddressId,
+          paymentMethod: paymentMethod,
         }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Failed to place order')
+      if (!res.ok) {
+        // Handle insufficient wallet balance specifically
+        if (data?.code === 'insufficient_wallet_balance') {
+          setShowWalletModal(true)
+          return
+        }
+        throw new Error(data?.error || 'Failed to place order')
+      }
       showToast(t('orderPlaced'), 'success')
       clear()
       window.location.href = '/shop/orders'
@@ -266,22 +300,97 @@ export default function CheckoutClient({ addresses, userId }: CheckoutClientProp
             )}
           </div>
 
+          {/* Payment Method Selection */}
+          <div className="card" style={{ padding: 'var(--space-4)' }}>
+            <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-4)', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-primary)' }}>
+              💳 {t('selectPaymentMethod')}
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              {/* Cash Payment Option */}
+              <label
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                  padding: 'var(--space-3)',
+                  borderRadius: 'var(--radius-md)',
+                  border: paymentMethod === 'CASH' ? '2px solid var(--primary)' : '1px solid var(--border-light)',
+                  background: paymentMethod === 'CASH' ? 'var(--primary-50)' : 'var(--bg-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all var(--transition-fast) ease',
+                }}
+              >
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="CASH"
+                  checked={paymentMethod === 'CASH'}
+                  onChange={() => setPaymentMethod('CASH')}
+                  style={{ accentColor: 'var(--primary)' }}
+                />
+                <div>
+                  <div style={{ fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
+                    {t('paymentMethodCash')}
+                  </div>
+                  <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    Pay when order is delivered
+                  </div>
+                </div>
+              </label>
+
+              {/* Wallet Payment Option */}
+              <label
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                  padding: 'var(--space-3)',
+                  borderRadius: 'var(--radius-md)',
+                  border: paymentMethod === 'WALLET' ? '2px solid var(--primary)' : '1px solid var(--border-light)',
+                  background: paymentMethod === 'WALLET' ? 'var(--primary-50)' : 'var(--bg-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all var(--transition-fast) ease',
+                }}
+              >
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="WALLET"
+                  checked={paymentMethod === 'WALLET'}
+                  onChange={() => setPaymentMethod('WALLET')}
+                  style={{ accentColor: 'var(--primary)' }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
+                    {t('paymentMethodWallet')}
+                  </div>
+                  {walletBalance !== null && (
+                    <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      Balance: {walletBalance.toFixed(2)} EGP
+                      {walletBalance < checkoutTotals.totalAmount && (
+                        <div style={{ color: 'var(--warning-dark)', marginTop: '2px' }}>
+                          ⚠️ Insufficient balance
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </label>
+            </div>
+          </div>
+
           {/* Place Order Button */}
           <button
-            disabled={loading || items.length === 0}
+            disabled={loading || items.length === 0 || (paymentMethod === 'WALLET' && walletBalance !== null && walletBalance < checkoutTotals.totalAmount)}
             onClick={place}
             className="btn btn-primary"
             style={{
               width: '100%', padding: 'var(--space-4)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-bold)',
               borderRadius: 'var(--radius-xl)', marginTop: 'var(--space-2)',
-              opacity: loading ? 0.6 : 1,
+              opacity: loading || (paymentMethod === 'WALLET' && walletBalance !== null && walletBalance < checkoutTotals.totalAmount) ? 0.6 : 1,
               cursor: loading ? 'not-allowed' : 'pointer',
             }}
           >
             {loading ? (
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)' }}>
                 <span className="spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }} />
-                {t('placingOrder') || 'Placing Order...'}
+                {t('placingOrder')}
               </span>
             ) : (
               `${t('placeOrder')} · ${checkoutTotals.totalAmount.toFixed(2)} EGP`
@@ -292,6 +401,35 @@ export default function CheckoutClient({ addresses, userId }: CheckoutClientProp
             <p style={{ textAlign: 'center', color: 'var(--warning-dark)', fontSize: 'var(--text-sm)' }}>
               ⚠️ {t('selectAddress')}
             </p>
+          )}
+
+          {/* Insufficient Wallet Balance Modal */}
+          {showWalletModal && (
+            <div className="modal-overlay" onClick={() => setShowWalletModal(false)}>
+              <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-bold)', marginBottom: 'var(--space-4)', color: 'var(--warning-dark)' }}>
+                  ⚠️ {t('insufficientWalletBalance')}
+                </h3>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 'var(--space-6)', lineHeight: '1.6' }}>
+                  {t('walletBalanceError')}
+                </p>
+                <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <Link href="/shop/profile/wallet" className="btn btn-primary" onClick={() => setShowWalletModal(false)}>
+                    {t('addMoneyToWallet')}
+                  </Link>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => {
+                      setShowWalletModal(false)
+                      setPaymentMethod('CASH')
+                    }}
+                  >
+                    {t('choosePaymentMethod')}
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       )}

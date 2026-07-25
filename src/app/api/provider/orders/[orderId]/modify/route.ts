@@ -26,7 +26,14 @@ export async function POST(request: NextRequest, context: { params: Promise<{ or
   })
 
   if (!result.ok) {
-    return NextResponse.json({ error: result.error || 'failed' }, { status: result.error === 'forbidden' ? 403 : result.error === 'invalid_item' ? 400 : result.error === 'invalid_quantity' ? 400 : 400 })
+    const statusMap: Record<string, number> = {
+      'forbidden': 403,
+      'invalid_item': 400,
+      'invalid_quantity': 400,
+      'cannot_modify_terminal_order': 403,
+    }
+    const status = (result.error && statusMap[result.error]) || 400
+    return NextResponse.json({ error: result.error || 'failed' }, { status })
   }
 
   return NextResponse.json({ ok: true, item: result.item })

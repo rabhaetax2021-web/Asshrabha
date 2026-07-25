@@ -11,6 +11,7 @@ const checkoutSchema = z.object({
     optionId: z.string().optional(),
   })),
   addressId: z.string().optional(),
+  paymentMethod: z.enum(['CASH', 'WALLET']).default('CASH'),
 })
 
 export async function POST(request: NextRequest) {
@@ -27,14 +28,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { items, addressId } = parsed.data
+    const { items, addressId, paymentMethod } = parsed.data
     const localeHeader = request.headers.get('accept-language') || ''
     const locale = localeHeader.toLowerCase().includes('ar') ? 'ar' : 'en'
-    const orders = await placeOrder(currentUser.id, items, addressId, locale)
+    const orders = await placeOrder(currentUser.id, items, addressId, paymentMethod, locale)
     return NextResponse.json({ ok: true, orders })
   } catch (err: unknown) {
     const msg = getErrorMessage(err)
     console.error('[checkout]', msg)
+    
+    // Check if error is an insufficient wallet balance error
+    try {
+      const parsed = JSON.parse(msg)
+      if (parsed.code === 'insufficient_wallet_balance') {
+        return NextResponse.json({
+          error: parsed.messageEN,
+          code: 'insufficient_wallet_balance'
+        }, { status: 400 })
+      }
+    } catch (e) {
+      // Not a JSON error, continue with normal error handling
+    }
+    
     const failureKeywords = ['required purchase conditions', 'did not meet', 'لم يحقق', 'الشروط المطلوبة']
     const status = failureKeywords.some((phrase) => msg.includes(phrase)) ? 400 : 500
     return NextResponse.json({ error: msg }, { status })

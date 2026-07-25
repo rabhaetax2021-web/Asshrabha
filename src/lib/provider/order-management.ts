@@ -3,6 +3,8 @@ import { calculateOrderTotals } from '@/lib/order-pricing'
 
 export type ProviderOrderModificationAction = 'REDUCE_QUANTITY' | 'REMOVE_PRODUCT' | 'MARK_UNAVAILABLE'
 
+const TERMINAL_STATUSES = ['COMPLETED', 'CANCELLED', 'REFUNDED']
+
 export async function applyProviderOrderModification(params: {
   providerId: string
   orderId: string
@@ -14,9 +16,13 @@ export async function applyProviderOrderModification(params: {
 }) {
   const { providerId, orderId, orderItemId, action, userId, newQuantity, reason } = params
 
-  const order = await prisma.order.findUnique({ where: { id: orderId }, select: { id: true, totalAmount: true, providerId: true } })
+  const order = await prisma.order.findUnique({ where: { id: orderId }, select: { id: true, totalAmount: true, providerId: true, status: true } })
   if (!order || order.providerId !== providerId) {
     return { ok: false, error: 'forbidden' }
+  }
+
+  if (TERMINAL_STATUSES.includes(order.status as string)) {
+    return { ok: false, error: 'cannot_modify_terminal_order' }
   }
 
   const item = await prisma.orderItem.findUnique({
@@ -161,7 +167,7 @@ export async function reRegisterProviderProduct(params: { providerId: string; pr
 
   const updated = await prisma.providerProduct.update({
     where: { id: providerProductId },
-    data: { status: 'ACTIVE' as any },
+    data: { status: 'REQUIRES_ADMIN_REAPPROVAL' as any },
   })
 
   await prisma.auditLog.create({
@@ -172,7 +178,7 @@ export async function reRegisterProviderProduct(params: { providerId: string; pr
       entityId: providerProductId,
       details: {
         previousStatus: product.status,
-        newStatus: 'ACTIVE',
+        newStatus: 'REQUIRES_ADMIN_REAPPROVAL',
         timestamp: new Date().toISOString(),
       },
     },

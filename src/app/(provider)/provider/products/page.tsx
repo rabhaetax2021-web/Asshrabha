@@ -13,6 +13,9 @@ function renderStatusBadge(status: string) {
   if (normalized === 'CONSUMED') {
     return <span className="badge badge-default">Consumed</span>
   }
+  if (normalized === 'REQUIRES_ADMIN_REAPPROVAL') {
+    return <span className="badge badge-warning">Awaiting Re-approval</span>
+  }
   if (normalized === 'ACTIVE') {
     return <span className="badge badge-success">Active</span>
   }
@@ -28,10 +31,10 @@ function renderStatusBadge(status: string) {
 export default async function MyProductsPage() {
   const provider = await getFirstProvider()
   const products = provider ? await getProductsByProviderId(provider.id) : []
-  const pending = products.filter((p) => p.status === 'PENDING_APPROVAL')
+  const pending = products.filter((p) => p.status === 'PENDING_APPROVAL' || p.status === 'REQUIRES_ADMIN_REAPPROVAL')
   const active = products.filter((p) => p.status === 'ACTIVE' || p.status === 'APPROVED')
   const needsReregistration = products.filter((p) => p.status === 'REQUIRES_RE_REGISTRATION' || p.status === 'CONSUMED')
-  const other = products.filter((p) => !['PENDING_APPROVAL', 'ACTIVE', 'APPROVED', 'REQUIRES_RE_REGISTRATION', 'CONSUMED'].includes(String(p.status)))
+  const other = products.filter((p) => !['PENDING_APPROVAL', 'ACTIVE', 'APPROVED', 'REQUIRES_RE_REGISTRATION', 'CONSUMED', 'REQUIRES_ADMIN_REAPPROVAL'].includes(String(p.status)))
 
   return (
     <section className="provider-products container">
