@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { uploadFileToStorage } from '@/lib/upload'
 
 type Slide = {
   id?: string

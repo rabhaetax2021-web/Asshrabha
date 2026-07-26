@@ -138,7 +138,7 @@ export default function AdsSlider({ slides }: { slides: Slide[] }) {
     <div
       ref={containerRef}
       className="hero-slider"
-      style={{ position: 'relative', overflow: 'hidden' }}
+      style={{ position: 'relative', overflow: 'hidden', contain: 'layout paint' }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

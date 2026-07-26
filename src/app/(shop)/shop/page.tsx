@@ -21,7 +21,7 @@ export default async function ShopHomePage() {
 
   const slides = await getSlides()
   const adsSlides = await getSlides('ads')
-  const categories = await prisma.category.findMany({ orderBy: { sortOrder: 'asc' } })
+  const categories = await prisma.category.findMany({ orderBy: { sortOrder: 'asc' }, take: 12 })
   const stores = await prisma.providerProfile.findMany({
     where: {
       isVisible: true,
@@ -37,7 +37,7 @@ export default async function ShopHomePage() {
     },
     include: { user: true, _count: { select: { products: true } }, products: { where: { status: 'APPROVED' }, include: { catalogProduct: true }, orderBy: { createdAt: 'desc' }, take: 6 } },
     orderBy: { createdAt: 'desc' },
-    take: 12,
+take: 6,
   })
 
   return (

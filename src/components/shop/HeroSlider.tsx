@@ -88,7 +88,7 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
   return (
     <div
       className="hero-slider"
-      style={{ position: 'relative', overflow: 'hidden' }}
+      style={{ position: 'relative', overflow: 'hidden', contain: 'layout paint' }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
