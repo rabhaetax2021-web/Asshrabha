@@ -9,7 +9,10 @@ export default function AddToCartButton({ product }: { product: any }) {
   const t = useTranslations('shop')
   const add = useCartStore(state => state.addItem)
 
-  const handle = async () => {
+  const handle = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+
     try {
       const sessionRes = await fetch('/api/auth/session')
       const data = await sessionRes.json().catch(() => ({}))
@@ -23,6 +26,13 @@ export default function AddToCartButton({ product }: { product: any }) {
   }
 
   return (
-    <button onClick={handle} className="btn btn-sm" style={{ marginLeft: 8 }}>{t('addToCart') || 'Add to Cart'}</button>
+    <button
+      type="button"
+      onClick={handle}
+      className="btn btn-sm"
+      style={{ marginLeft: 8, flexShrink: 0, minWidth: '6rem' }}
+    >
+      {t('addToCart') || 'Add to Cart'}
+    </button>
   )
 }
