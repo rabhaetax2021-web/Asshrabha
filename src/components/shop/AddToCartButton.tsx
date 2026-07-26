@@ -5,7 +5,7 @@ import { useCartStore } from '@/stores/cartStore'
 import { showToast } from '@/components/ui/toast'
 import { resolveProductPrice } from '@/lib/cart-price'
 
-export default function AddToCartButton({ product }: { product: any }) {
+export default function AddToCartButton({ product, style }: { product: any; style?: React.CSSProperties }) {
   const t = useTranslations('shop')
   const add = useCartStore(state => state.addItem)
 
@@ -30,7 +30,7 @@ export default function AddToCartButton({ product }: { product: any }) {
       type="button"
       onClick={handle}
       className="btn btn-sm"
-      style={{ marginLeft: 8, flexShrink: 0, minWidth: '6rem' }}
+      style={{ marginLeft: 8, flexShrink: 0, minWidth: '6rem', ...style }}
     >
       {t('addToCart') || 'Add to Cart'}
     </button>

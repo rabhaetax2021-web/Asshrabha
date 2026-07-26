@@ -122,11 +122,9 @@ export default async function ShopHomePage() {
                           </div>
                           <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{p.catalogProduct?.nameEN || p.catalogProduct?.nameAR}</div>
                         </Link>
-                        <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                          <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Price: {isShop ? (p.wholesalePrice ?? p.sellingPrice) : (p.retailPrice ?? p.sellingPrice)} EGP</div>
-                          <div>
-                            <AddToCartButton product={p} />
-                          </div>
+                        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                          <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', textAlign: 'center' }}>{t('price') || 'Price'}: {isShop ? (p.wholesalePrice ?? p.sellingPrice) : (p.retailPrice ?? p.sellingPrice)} EGP</div>
+                          <AddToCartButton product={p} style={{ marginLeft: 0 }} />
                         </div>
                       </div>
                     ))}

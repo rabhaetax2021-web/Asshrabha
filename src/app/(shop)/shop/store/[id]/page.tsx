@@ -152,7 +152,7 @@ export default async function StorePage({ params, searchParams }: { params: any;
                     )}
                     <div className="product-card-provider">{p.catalogProduct?.category?.nameEN || p.catalogProduct?.category?.nameAR || ''}</div>
                     <div className="product-card-footer">
-                      <div className="price" style={{ fontSize: 'var(--text-sm)' }}>Price: {isShop ? (p.wholesalePrice ?? p.sellingPrice) : (p.retailPrice ?? p.sellingPrice)} EGP / {unit}</div>
+                      <div className="price" style={{ fontSize: 'var(--text-sm)' }}>{t('price') || 'Price'}: {isShop ? (p.wholesalePrice ?? p.sellingPrice) : (p.retailPrice ?? p.sellingPrice)} EGP / {unit}</div>
                       <AddToCartButton product={p} />
                     </div>
                     <div className="product-card-condition">{p.stockQuantity > 0 ? 'In stock' : 'Out of stock'}</div>
@@ -189,7 +189,7 @@ export default async function StorePage({ params, searchParams }: { params: any;
                               <div className="product-card-description">{getLocalizedValue(p.catalogProduct, 'description')}</div>
                             )}
                             <div className="product-card-footer">
-                              <div className="price" style={{ fontSize: 'var(--text-sm)' }}>Price: {isShop ? (p.wholesalePrice ?? p.sellingPrice) : (p.retailPrice ?? p.sellingPrice)} EGP / {unit}</div>
+                              <div className="price" style={{ fontSize: 'var(--text-sm)' }}>{t('price') || 'Price'}: {isShop ? (p.wholesalePrice ?? p.sellingPrice) : (p.retailPrice ?? p.sellingPrice)} EGP / {unit}</div>
                               <AddToCartButton product={p} />
                             </div>
                             <div className="product-card-condition">{p.stockQuantity > 0 ? 'In stock' : 'Out of stock'}</div>

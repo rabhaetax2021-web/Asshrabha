@@ -6236,11 +6236,21 @@ html {
 }
 
 .product-card .product-card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
+  gap: var(--space-2);
   margin-top: auto;
   padding-top: var(--space-2);
+  text-align: center;
+  justify-items: center;
+}
+
+.product-card .product-card-footer .price {
+  width: 100%;
+}
+.product-card .product-card-footer .btn {
+  margin-left: 0 !important;
+  width: auto;
+  align-self: center;
 }
 
 /* ── Store Card (Home Page) ─────────────────────────────────────── */
