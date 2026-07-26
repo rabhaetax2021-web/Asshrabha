@@ -5,6 +5,21 @@ import { getErrorMessage } from '@/lib/errors'
 
 export const runtime = 'nodejs'
 
+export async function GET(request: NextRequest) {
+  try {
+    const current = await getCurrentUser()
+    if (!current || !['ROOT_ADMIN', 'SUB_ADMIN'].includes(current.role)) {
+      return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
+    }
+
+    const slides = await getSlides('ads')
+    return NextResponse.json({ ok: true, slides })
+  } catch (err: unknown) {
+    console.error('[api/admin/ads] GET error', getErrorMessage(err))
+    return NextResponse.json({ ok: false, error: getErrorMessage(err) }, { status: 500 })
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const current = await getCurrentUser()
@@ -49,7 +64,7 @@ export async function POST(request: NextRequest) {
       const newSlides = (body as Record<string, unknown>).slides as unknown
       if (!Array.isArray(newSlides)) return NextResponse.json({ ok: false, error: 'missing slides' }, { status: 400 })
       await saveSlides(newSlides as Record<string, unknown>[], 'ads')
-      return NextResponse.json({ ok: true, slides: newSlides })
+      return NextResponse.json({ ok: true, slides: newSlides as Record<string, unknown>[] })
     }
 
     return NextResponse.json({ ok: false, error: 'unknown action' }, { status: 400 })
