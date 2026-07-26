@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 import { getErrorMessage } from '@/lib/errors'
-import { uploadToMinIO } from '@/lib/minio'
+import { createMinioUploadSignedUrl } from '@/lib/minio'
 import path from 'path'
 
 export const runtime = 'nodejs'
@@ -17,9 +17,30 @@ export async function POST(request: NextRequest) {
   try {
     const contentType = request.headers.get('content-type') || ''
     const contentLength = request.headers.get('content-length') || 'unknown'
+
+    if (contentType.includes('application/json')) {
+      const body = await request.json().catch(() => null) as { filename?: string; contentType?: string; category?: string } | null
+      if (!body?.filename || !body?.contentType) {
+        return NextResponse.json({ ok: false, error: 'Missing filename or content type' }, { status: 400 })
+      }
+
+      const ext = path.extname(body.filename) || ''
+      const safeExt = ext.replace(/[^.a-zA-Z0-9]/g, '')
+      const filename = `${Date.now()}-${randomUUID()}${safeExt}`
+      const category = body.category || 'uploads'
+
+      try {
+        const signedUpload = await createMinioUploadSignedUrl(filename, body.contentType, category)
+        return NextResponse.json({ ok: true, path: signedUpload.publicUrl, uploadUrl: signedUpload.uploadUrl, key: signedUpload.key, publicUrl: signedUpload.publicUrl })
+      } catch (error) {
+        console.error('[upload] signed upload failed', error)
+        return NextResponse.json({ ok: false, error: 'MinIO upload is not configured for this environment.' }, { status: 500 })
+      }
+    }
+
     if (!contentType.includes('multipart/form-data')) {
       console.error('[upload] invalid content-type', { contentType, contentLength })
-      return NextResponse.json({ ok: false, error: 'Invalid upload request content type. Expected multipart/form-data.' }, { status: 400 })
+      return NextResponse.json({ ok: false, error: 'Invalid upload request content type. Expected multipart/form-data or application/json.' }, { status: 400 })
     }
 
     const uploadFile = await getUploadFile(request)
@@ -32,9 +53,13 @@ export async function POST(request: NextRequest) {
     const safeExt = ext.replace(/[^.a-zA-Z0-9]/g, '')
     const filename = `${Date.now()}-${randomUUID()}${safeExt}`
 
-    const publicPath = await uploadToMinIO(filename, uploadFile.buffer, uploadFile.contentType, 'uploads')
-
-    return NextResponse.json({ ok: true, path: publicPath, filePath: publicPath })
+    try {
+      const signedUpload = await createMinioUploadSignedUrl(filename, uploadFile.contentType, 'uploads')
+      return NextResponse.json({ ok: true, path: signedUpload.publicUrl, uploadUrl: signedUpload.uploadUrl, key: signedUpload.key, publicUrl: signedUpload.publicUrl })
+    } catch (error) {
+      console.error('[upload] signed upload failed', error)
+      return NextResponse.json({ ok: false, error: 'MinIO upload is not configured for this environment.' }, { status: 500 })
+    }
   } catch (err: unknown) {
     const msg = getErrorMessage(err)
     console.error('[upload] error', msg)

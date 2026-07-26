@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from 'react'
+import { uploadFileToStorage } from '@/lib/upload'
 
 type Slide = {
   id?: string
@@ -69,16 +70,8 @@ export default function AdminHeroPage() {
   }
 
   async function uploadFile(f: File) {
-    const fd = new FormData()
-    fd.append('file', f)
     try {
-      const r = await fetch('/api/upload', { method: 'POST', body: fd })
-      const j = await r.json().catch(() => null)
-      if (!r.ok) {
-        const err = (j && (j.error || j.message)) || (await r.text().catch(() => 'upload failed'))
-        throw new Error(String(err))
-      }
-      return j?.path || j?.data?.path || null
+      return await uploadFileToStorage(f, 'uploads')
     } catch (err) {
       console.error('upload', err)
       throw err
@@ -183,7 +176,7 @@ export default function AdminHeroPage() {
           )}
           <input placeholder="target id (for product/provider)" value={targetId} onChange={(e) => setTargetId(e.target.value)} />
           <input placeholder="caption" value={caption} onChange={(e) => setCaption(e.target.value)} />
-          <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+          <input type="file" accept="image/*,video/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
           <button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Add Slide'}</button>
           <button type="button" onClick={() => saveAll()} style={{ marginLeft: 8 }}>Save All</button>
         </div>

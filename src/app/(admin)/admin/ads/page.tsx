@@ -37,12 +37,7 @@ export default function AdminAdsPage() {
   }
 
   async function uploadFile(f: File) {
-    const fd = new FormData()
-    fd.append('file', f)
-    const res = await fetch('/api/upload', { method: 'POST', body: fd })
-    const json = await res.json().catch(() => null)
-    if (!res.ok) throw new Error((json && (json.error || json.message)) || 'upload failed')
-    return json?.path || json?.data?.path || null
+    return uploadFileToStorage(f, 'uploads')
   }
 
   async function handleAdd(e: React.FormEvent) {

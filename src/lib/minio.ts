@@ -2,6 +2,12 @@ import { Client } from 'minio'
 import fs from 'fs'
 import path from 'path'
 
+export type MinioUploadSignedUrl = {
+  uploadUrl: string
+  key: string
+  publicUrl: string
+}
+
 // Check if MinIO is properly configured
 const hasValidMinIOCredentials = () => {
   const accessKey = process.env.MINIO_ACCESS_KEY
@@ -71,6 +77,23 @@ const USE_LOCAL_STORAGE = !minioClient
  * @param category - Optional category prefix (e.g., 'avatars', 'products')
  * @returns Public URL of uploaded file
  */
+export async function createMinioUploadSignedUrl(
+  fileName: string,
+  contentType: string,
+  category?: string,
+  expiresInSeconds = 60 * 60 * 24
+): Promise<MinioUploadSignedUrl> {
+  if (!minioClient) {
+    throw new Error('MinIO is not configured')
+  }
+
+  const key = category ? `${category}/${fileName}` : fileName
+  const uploadUrl = await minioClient.presignedPutObject(BUCKET_NAME, key, expiresInSeconds)
+  const publicUrl = `${PUBLIC_URL}/${BUCKET_NAME}/${key}`
+
+  return { uploadUrl, key, publicUrl }
+}
+
 export async function uploadToMinIO(
   fileName: string,
   fileBuffer: Buffer,
