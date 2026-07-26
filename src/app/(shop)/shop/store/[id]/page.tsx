@@ -94,6 +94,25 @@ export default async function StorePage({ params, searchParams }: { params: any;
           </div>
         </div>
 
+        {/* Categories quick links (only categories this provider has products in) */}
+        <div className="dashboard-card" style={{ marginTop: 'var(--space-4)' }}>
+          <div className="dashboard-section-title">
+            <div>
+              <h2 style={{ margin: 0 }}>{t('browseCategories') || 'Browse popular categories'}</h2>
+              <p>{t('browseCategoriesSubtitle') || 'Jump into the collections your customers love.'}</p>
+            </div>
+          </div>
+          {categories.length > 0 && (
+            <div className="category-quick-links">
+              {categories.map((c: any) => (
+                <Link key={c.id} href={`/shop/store/${store.id}?category=${c.slug}`} className="category-quick-link">
+                  {c.nameEN || c.nameAR}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
       {/* Products grouped by category when no category filter, or show filtered list */}
       {products.length > 0 ? (
         categoryFilter ? (
