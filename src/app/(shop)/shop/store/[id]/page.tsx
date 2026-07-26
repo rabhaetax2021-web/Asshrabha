@@ -2,10 +2,12 @@ import React from 'react'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
+import AddToCartButton from '@/components/shop/AddToCartButton'
 
 export default async function StorePage({ params, searchParams }: { params: any; searchParams?: any }) {
   const t = await getTranslations('shop')
+  const locale = await getLocale()
   const resolvedParams = await params
   const resolvedSearch = searchParams && typeof (searchParams as any).then === 'function' ? await searchParams : searchParams
   const categoryFilter = (resolvedSearch?.category || '').toString()
@@ -42,6 +44,11 @@ export default async function StorePage({ params, searchParams }: { params: any;
 
   // Optionally filter products when a category is selected
   const products = categoryFilter ? allProducts.filter(p => p.catalogProduct?.category?.slug === categoryFilter) : allProducts
+
+  const getLocalizedValue = (item: any, field: 'name' | 'description') => {
+    if (locale === 'ar') return item?.[`${field}AR`] || item?.[`${field}EN`] || ''
+    return item?.[`${field}EN`] || item?.[`${field}AR`] || ''
+  }
 
   return (
     <section className="store-page container">
@@ -138,16 +145,17 @@ export default async function StorePage({ params, searchParams }: { params: any;
                       </span>
                     )}
                   </div>
-                  <div className="product-card-body">
-                    <div className="product-card-title">{nameEN}</div>
-                    <div className="product-card-subtitle">{nameAR}</div>
-                    {descriptionEN && <div className="product-card-description">{descriptionEN}</div>}
-                    {descriptionAR && <div className="product-card-description" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{descriptionAR}</div>}
+                          <div className="product-card-body">
+                    <div className="product-card-title">{getLocalizedValue(p.catalogProduct, 'name')}</div>
+                    {getLocalizedValue(p.catalogProduct, 'description') && (
+                      <div className="product-card-description">{getLocalizedValue(p.catalogProduct, 'description')}</div>
+                    )}
                     <div className="product-card-provider">{p.catalogProduct?.category?.nameEN || p.catalogProduct?.category?.nameAR || ''}</div>
                     <div className="product-card-footer">
                       <div className="price" style={{ fontSize: 'var(--text-sm)' }}>Price: {isShop ? (p.wholesalePrice ?? p.sellingPrice) : (p.retailPrice ?? p.sellingPrice)} EGP / {unit}</div>
-                      <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)' }}>{p.stockQuantity > 0 ? 'In stock' : 'Out of stock'}</div>
+                      <AddToCartButton product={p} />
                     </div>
+                    <div className="product-card-condition">{p.stockQuantity > 0 ? 'In stock' : 'Out of stock'}</div>
                   </div>
                 </Link>
               )
@@ -164,31 +172,25 @@ export default async function StorePage({ params, searchParams }: { params: any;
                   <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-4)' }}>{cat.nameEN || cat.nameAR}</h3>
                   <div className="product-grid">
                     {items.map((p) => {
-                      const nameEN = p.catalogProduct?.nameEN || p.catalogProduct?.nameAR || 'Product'
-                      const nameAR = p.catalogProduct?.nameAR || ''
-                      const descriptionEN = p.catalogProduct?.descriptionEN || ''
-                      const descriptionAR = p.catalogProduct?.descriptionAR || ''
                       const unit = p.wholesaleUnit || p.catalogProduct?.unitType || 'UNIT'
-                      const conditionsText = p.providerProductOptions && p.providerProductOptions.length > 0
-                        ? `Options: ${p.providerProductOptions.map((o: any) => o.unitType).join(', ')}`
-                        : 'Provider conditions will be shown on the detail page.'
 
                       return (
                         <Link key={p.id} href={`/shop/product/${p.id}`} className="product-card">
                           <div className="product-image-wrap">
                             {p.catalogProduct?.images && p.catalogProduct.images.length > 0 ? (
-                              <img src={p.catalogProduct.images[0]} alt={nameEN} className="product-image" />
+                              <img src={p.catalogProduct.images[0]} alt={getLocalizedValue(p.catalogProduct, 'name')} className="product-image" />
                             ) : (
                               <div className="product-image-placeholder">📦</div>
                             )}
                           </div>
                           <div className="product-card-body">
-                            <div className="product-card-title">{nameEN}</div>
-                            <div className="product-card-subtitle">{nameAR}</div>
-                            {descriptionEN && <div className="product-card-description">{descriptionEN}</div>}
-                            {descriptionAR && <div className="product-card-description" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{descriptionAR}</div>}
+                            <div className="product-card-title">{getLocalizedValue(p.catalogProduct, 'name')}</div>
+                            {getLocalizedValue(p.catalogProduct, 'description') && (
+                              <div className="product-card-description">{getLocalizedValue(p.catalogProduct, 'description')}</div>
+                            )}
                             <div className="product-card-footer">
                               <div className="price" style={{ fontSize: 'var(--text-sm)' }}>Price: {isShop ? (p.wholesalePrice ?? p.sellingPrice) : (p.retailPrice ?? p.sellingPrice)} EGP / {unit}</div>
+                              <AddToCartButton product={p} />
                             </div>
                             <div className="product-card-condition">{p.stockQuantity > 0 ? 'In stock' : 'Out of stock'}</div>
                           </div>
