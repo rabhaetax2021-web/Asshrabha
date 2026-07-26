@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { showToast } from '@/components/ui/toast'
 import { isAndroidDevice, isIosDevice } from '@/utils/detectPlatform'
@@ -13,7 +13,8 @@ interface BeforeInstallPromptEvent extends Event {
 const PWA_INSTALL_ACCEPTED_KEY = 'pwa-install-accepted'
 
 export function usePWAInstall() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null)
+  const [canInstallPwa, setCanInstallPwa] = useState(false)
   const [showIosModal, setShowIosModal] = useState(false)
   const [isInstalled, setIsInstalled] = useState(false)
   const [hideButton, setHideButton] = useState(false)
@@ -47,7 +48,8 @@ export function usePWAInstall() {
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault()
-      setDeferredPrompt(event as BeforeInstallPromptEvent)
+      deferredPromptRef.current = event as BeforeInstallPromptEvent
+      setCanInstallPwa(true)
     }
 
     const handleAppInstalled = () => {
@@ -79,31 +81,46 @@ export function usePWAInstall() {
   const t = useTranslations('common')
 
   const shouldShowInstallButton = useMemo(
-    () => !hideButton && (isAndroid || isIos),
-    [hideButton, isAndroid, isIos]
+    () => !hideButton && ((isAndroid && canInstallPwa) || isIos),
+    [hideButton, isAndroid, isIos, canInstallPwa]
   )
 
   const handleInstallClick = useCallback(async () => {
     if (isAndroid) {
-      if (!deferredPrompt) {
-        showToast(t('installationUnavailable') || 'Installation unavailable.', 'error')
+      const promptEvent = deferredPromptRef.current
+      if (!promptEvent) {
+        showToast(
+          t('installationUnavailable') || 'Installation unavailable.',
+          'error'
+        )
         return
       }
 
       try {
-        await deferredPrompt.prompt()
-        const choice = await deferredPrompt.userChoice
+        await promptEvent.prompt()
+        const choice = await promptEvent.userChoice
 
         if (choice.outcome === 'accepted') {
-          showToast(t('installationSuccessful') || 'Application installed successfully.', 'success')
+          showToast(
+            t('installationSuccessful') || 'Application installed successfully.',
+            'success'
+          )
           setHideButton(true)
           localStorage.setItem(PWA_INSTALL_ACCEPTED_KEY, 'true')
-          setDeferredPrompt(null)
         } else {
-          showToast(t('installationCancelled') || 'Installation cancelled.', 'info')
+          showToast(
+            t('installationCancelled') || 'Installation cancelled.',
+            'info'
+          )
         }
       } catch (error) {
-        showToast(t('installationUnavailable') || 'Installation unavailable.', 'error')
+        showToast(
+          t('installationUnavailable') || 'Installation unavailable.',
+          'error'
+        )
+      } finally {
+        deferredPromptRef.current = null
+        setCanInstallPwa(false)
       }
 
       return
@@ -114,8 +131,11 @@ export function usePWAInstall() {
       return
     }
 
-    showToast(t('installationUnavailable') || 'Installation unavailable.', 'error')
-  }, [deferredPrompt, isAndroid, isIos, t])
+    showToast(
+      t('installationUnavailable') || 'Installation unavailable.',
+      'error'
+    )
+  }, [isAndroid, isIos, t])
 
   const closeIosModal = useCallback(() => {
     setShowIosModal(false)
