@@ -25,6 +25,7 @@ export default function AdsSlider({ slides }: { slides: Slide[] }) {
   const [index, setIndex] = useState(0)
   const [dragStart, setDragStart] = useState<number | null>(null)
   const [isVisible, setIsVisible] = useState(false)
+  const [isUnmuted, setIsUnmuted] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
 
@@ -64,6 +65,7 @@ export default function AdsSlider({ slides }: { slides: Slide[] }) {
     }
 
     video.currentTime = 0
+    video.muted = !isUnmuted
     video.play().catch(() => {
       // ignore autoplay restrictions
     })
@@ -76,7 +78,7 @@ export default function AdsSlider({ slides }: { slides: Slide[] }) {
     return () => {
       video.removeEventListener('ended', handleEnded)
     }
-  }, [isVisible, index, slides.length])
+  }, [isVisible, index, slides.length, isUnmuted])
 
   if (!slides || slides.length === 0) return null
 
@@ -129,6 +131,19 @@ export default function AdsSlider({ slides }: { slides: Slide[] }) {
     event.currentTarget.setPointerCapture(event.pointerId)
   }
 
+  const handleTapToUnmute = () => {
+    if (!isUnmuted) {
+      setIsUnmuted(true)
+      const video = videoRef.current
+      if (video) {
+        video.muted = false
+        video.play().catch(() => {
+          // ignore autoplay restrictions
+        })
+      }
+    }
+  }
+
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (dragStart === null) return
     const delta = event.clientX - dragStart
@@ -160,6 +175,7 @@ export default function AdsSlider({ slides }: { slides: Slide[] }) {
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
+      onClick={handleTapToUnmute}
     >
       {href ? (
         <Link href={href} className="hero-slide" style={slideStyle} aria-label={label}>
@@ -167,7 +183,6 @@ export default function AdsSlider({ slides }: { slides: Slide[] }) {
             <video
               ref={videoRef}
               src={bg}
-              muted
               playsInline
               loop
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -180,7 +195,6 @@ export default function AdsSlider({ slides }: { slides: Slide[] }) {
             <video
               ref={videoRef}
               src={bg}
-              muted
               playsInline
               loop
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
