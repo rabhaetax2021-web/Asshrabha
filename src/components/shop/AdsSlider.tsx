@@ -43,23 +43,40 @@ export default function AdsSlider({ slides }: { slides: Slide[] }) {
 
   useEffect(() => {
     if (!isVisible || slides.length === 0) return
+
+    const currentSlide = slides[index]
+    if (isVideoUrl(currentSlide?.image)) {
+      return
+    }
+
     const timer = window.setInterval(() => {
       setIndex((i) => (i + 1) % slides.length)
     }, 5000)
     return () => window.clearInterval(timer)
-  }, [isVisible, slides.length])
+  }, [isVisible, index, slides])
 
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
-    if (isVisible) {
-      video.play().catch(() => {
-        // ignore autoplay restrictions
-      })
-    } else {
+    if (!isVisible) {
       video.pause()
+      return
     }
-  }, [isVisible, index])
+
+    video.currentTime = 0
+    video.play().catch(() => {
+      // ignore autoplay restrictions
+    })
+
+    const handleEnded = () => {
+      setIndex((i) => (i + 1) % slides.length)
+    }
+
+    video.addEventListener('ended', handleEnded)
+    return () => {
+      video.removeEventListener('ended', handleEnded)
+    }
+  }, [isVisible, index, slides.length])
 
   if (!slides || slides.length === 0) return null
 
