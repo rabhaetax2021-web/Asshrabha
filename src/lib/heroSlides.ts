@@ -32,13 +32,20 @@ export async function getSlides(type?: SlideType) {
 
 export async function saveSlides(slides: Record<string, unknown>[], type?: SlideType) {
   try {
-    const where = type === 'ads' ? { type: 'ads' } : { NOT: { type: 'ads' } }
+    const where = type === 'ads' ? { type: { startsWith: 'ads' } } : { NOT: { type: { startsWith: 'ads' } } }
     await prisma.slider.deleteMany({ where })
     if (!slides || slides.length === 0) return true
+    const seenIds = new Set<string>()
     const data = slides.map((s, idx: number) => {
       const r = s as Record<string, unknown>
+      const incomingId = (r['id'] as string) || undefined
+      const id = incomingId && !seenIds.has(incomingId) ? incomingId : undefined
+      if (incomingId && !id) {
+        console.warn('[heroSlides] duplicate slide id detected, regenerating id', incomingId)
+      }
+      if (id) seenIds.add(id)
       return {
-        id: (r['id'] as string) || undefined,
+        id,
         image: (r['image'] as string) || null,
         type: (r['type'] as string) || 'custom',
         targetId: (r['targetId'] as string) || null,

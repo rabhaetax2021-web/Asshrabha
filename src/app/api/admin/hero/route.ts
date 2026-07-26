@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
     const slides = await getSlides()
 
     if (action === 'create') {
-      const id = String(Date.now())
-      const item = { id, ...(slide || {}) }
+      const item = { ...(slide || {}) }
+      delete (item as Record<string, unknown>).id
       slides.unshift(item)
       await saveSlides(slides)
       return NextResponse.json({ ok: true, slides })
