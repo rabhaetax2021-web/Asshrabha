@@ -20,6 +20,8 @@ export interface ImportDuplicateProduct {
   nameEN: string
   nameAR: string
   reason: 'sheet' | 'db'
+  matchType: 'nameEN+nameAR'
+  duplicateOfRow?: number
 }
 
 export interface ProviderProductExportRow {
@@ -241,8 +243,12 @@ function normalizeImportName(value?: string | null): string {
     .toLowerCase()
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '')
+    .replace(/[^a-z0-9\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+/g, '')
     .trim()
+}
+
+function normalizeImportProductNames(row: Pick<ProductImportRow, 'nameEN' | 'nameAR'>): string {
+  return `${normalizeImportName(row.nameEN)}|${normalizeImportName(row.nameAR)}`
 }
 
 export function findDuplicateImportProducts(
@@ -250,30 +256,37 @@ export function findDuplicateImportProducts(
   existingProducts: Array<{ nameEN?: string | null; nameAR?: string | null }>
 ): ImportDuplicateProduct[] {
   const duplicates: ImportDuplicateProduct[] = []
-  const seenNames = new Set<string>()
+  const seenNames = new Map<string, number>()
 
-  const addDuplicate = (row: Pick<ProductImportRow, 'nameEN' | 'nameAR' | 'rowNumber'>, reason: 'sheet' | 'db') => {
+  const addDuplicate = (
+    row: Pick<ProductImportRow, 'nameEN' | 'nameAR' | 'rowNumber'>,
+    reason: 'sheet' | 'db',
+    duplicateOfRow?: number
+  ) => {
     if (!row.nameEN && !row.nameAR) return
     duplicates.push({
       row: row.rowNumber ?? 0,
       nameEN: row.nameEN || '',
       nameAR: row.nameAR || '',
       reason,
+      matchType: 'nameEN+nameAR',
+      duplicateOfRow,
     })
   }
 
   rows.forEach((row) => {
-    const normalizedRowNames = [normalizeImportName(row.nameEN), normalizeImportName(row.nameAR)].filter(Boolean)
+    const normalizedRowNamePair = normalizeImportProductNames(row)
+    const firstRowNumber = seenNames.get(normalizedRowNamePair)
 
-    if (normalizedRowNames.some((name) => seenNames.has(name))) {
-      addDuplicate(row, 'sheet')
+    if (firstRowNumber !== undefined) {
+      addDuplicate(row, 'sheet', firstRowNumber)
+    } else {
+      seenNames.set(normalizedRowNamePair, row.rowNumber ?? 0)
     }
 
-    normalizedRowNames.forEach((name) => seenNames.add(name))
-
     const isDuplicateInDb = existingProducts.some((product) => {
-      const existingNames = [normalizeImportName(product.nameEN), normalizeImportName(product.nameAR)].filter(Boolean)
-      return existingNames.some((name) => normalizedRowNames.includes(name))
+      const normalizedExistingNamePair = `${normalizeImportName(product.nameEN)}|${normalizeImportName(product.nameAR)}`
+      return normalizedExistingNamePair === normalizedRowNamePair
     })
 
     if (isDuplicateInDb) {

@@ -366,6 +366,8 @@
     "duplicateProductsDetected": "تم اكتشاف منتجات مكررة",
     "duplicateAlreadyExistsInCatalog": "موجود بالفعل في الكتالوج",
     "duplicateAlreadyAppearsInSheet": "يظهر بالفعل في هذا الجدول",
+    "duplicateAlreadyAppearsInSheetRow": "يظهر بالفعل في هذا الجدول (يطابق الصف {row})",
+    "duplicateMatchTypeNameENAR": "مطابق بالاسم الإنجليزي والعربي",
     "rowNumber": "الصف {row}",
     "productNumber": "المنتج {number}",
     "duplicate": "مكرر",

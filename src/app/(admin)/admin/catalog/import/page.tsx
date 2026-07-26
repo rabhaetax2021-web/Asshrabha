@@ -27,7 +27,7 @@ export default function CatalogImportPage() {
   const t = useTranslations('admin')
   const [products, setProducts] = useState<PreviewProduct[]>([])
   const [categories, setCategories] = useState<CategoryOption[]>([])
-  const [duplicates, setDuplicates] = useState<Array<{ row: number; nameEN: string; nameAR: string; reason: 'sheet' | 'db' }>>([])
+  const [duplicates, setDuplicates] = useState<Array<{ row: number; nameEN: string; nameAR: string; reason: 'sheet' | 'db'; matchType?: string; duplicateOfRow?: number }>>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -155,7 +155,12 @@ export default function CatalogImportPage() {
           <ul style={{ margin: 0, paddingLeft: 18 }}>
             {duplicates.map((dup) => (
               <li key={`${dup.row}-${dup.reason}`}>
-                {t('rowNumber', { row: dup.row })}: {dup.nameEN || dup.nameAR} ({dup.nameAR || dup.nameEN}) — {dup.reason === 'db' ? t('duplicateAlreadyExistsInCatalog') : t('duplicateAlreadyAppearsInSheet')}
+                {t('rowNumber', { row: dup.row })}: {dup.nameEN || dup.nameAR} ({dup.nameAR || dup.nameEN}) — {dup.reason === 'db'
+                  ? t('duplicateAlreadyExistsInCatalog')
+                  : dup.duplicateOfRow
+                    ? t('duplicateAlreadyAppearsInSheetRow', { row: dup.duplicateOfRow })
+                    : t('duplicateAlreadyAppearsInSheet')}
+                {dup.matchType === 'nameEN+nameAR' ? ` (${t('duplicateMatchTypeNameENAR')})` : ''}
               </li>
             ))}
           </ul>

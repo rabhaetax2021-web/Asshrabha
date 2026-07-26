@@ -486,6 +486,8 @@
     "duplicateProductsDetected": "Duplicate products detected",
     "duplicateAlreadyExistsInCatalog": "already exists in the catalog",
     "duplicateAlreadyAppearsInSheet": "already appears in this sheet",
+    "duplicateAlreadyAppearsInSheetRow": "already appears in this sheet (matches row {row})",
+    "duplicateMatchTypeNameENAR": "matched by English + Arabic name",
     "rowNumber": "Row {row}",
     "productNumber": "Product {number}",
     "duplicate": "Duplicate",
