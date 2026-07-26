@@ -257,6 +257,7 @@
     "clientWalletsDescription": "راجع طلبات ومحفوظات وطرق دفع عملاء المحفظة.",
     "providerWalletsDescription": "أدر أرصدة المزودين، وأضف أو اسحب الأموال، وراجع سجل المحفظة.",
     "provider": "المزود",
+    "ads": "الإعلانات",
     "addBalance": "إضافة رصيد",
     "withdraw": "سحب",
     "availableBalance": "الرصيد المتاح",

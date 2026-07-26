@@ -378,6 +378,7 @@
     "providerWallets": "Provider Wallets",
     "clientWalletsDescription": "Review customer wallet requests, history, and payment methods.",
     "providerWalletsDescription": "Manage provider balances, add or withdraw funds, and review wallet history.",
+    "ads": "Ads",
     
     "addBalance": "Add Balance",
     "withdraw": "Withdraw",

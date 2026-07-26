@@ -179,6 +179,9 @@ export default function AdminSidebar({ collapsed = false, initialLocale = 'ar' }
             <Link href="/admin/hero" className="sidebar-item">{t('hero') || 'Hero'}</Link>
           </li>
           <li>
+            <Link href="/admin/ads" className="sidebar-item">{t('ads') || 'Ads'}</Link>
+          </li>
+          <li>
             <button
               type="button"
               className="sidebar-item sidebar-collapsible"

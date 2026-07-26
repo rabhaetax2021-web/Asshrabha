@@ -3,14 +3,22 @@ import fs from 'fs'
 import path from 'path'
 import { getErrorMessage } from '@/lib/errors'
 
-export async function getSlides() {
+type SlideType = 'hero' | 'ads' | string
+
+const buildSlideWhere = (type?: SlideType) => {
+  if (!type || type === 'hero') {
+    return { NOT: { type: { startsWith: 'ads' } } }
+  }
+  return { type: { startsWith: 'ads' } }
+}
+
+export async function getSlides(type?: SlideType) {
   try {
-    // Always prefer DB result. If DB returns an empty array that's valid (means no slides).
-    const slides = await prisma.slider.findMany({ orderBy: { position: 'asc' } })
+    const where = buildSlideWhere(type)
+    const slides = await prisma.slider.findMany({ where, orderBy: { position: 'asc' } })
     return slides || []
   } catch (err: unknown) {
     console.error('[heroSlides] db read error', getErrorMessage(err))
-    // If DB is unavailable, fallback to file-based slides for dev / migration
     try {
       const FILE = path.resolve(process.cwd(), 'data', 'hero-slides.json')
       if (!fs.existsSync(FILE)) return []
@@ -22,10 +30,10 @@ export async function getSlides() {
   }
 }
 
-export async function saveSlides(slides: Record<string, unknown>[]) {
+export async function saveSlides(slides: Record<string, unknown>[], type?: SlideType) {
   try {
-    // Replace existing slides with provided array. Simpler approach: delete all and recreate.
-    await prisma.slider.deleteMany()
+    const where = type === 'ads' ? { type: 'ads' } : { NOT: { type: 'ads' } }
+    await prisma.slider.deleteMany({ where })
     if (!slides || slides.length === 0) return true
     const data = slides.map((s, idx: number) => {
       const r = s as Record<string, unknown>
@@ -40,7 +48,6 @@ export async function saveSlides(slides: Record<string, unknown>[]) {
         amount: typeof r['amount'] === 'number' ? (r['amount'] as number) : null,
       }
     })
-    // createMany supports providing ids; use it for bulk insert
     await prisma.slider.createMany({ data })
     return true
   } catch (err: unknown) {

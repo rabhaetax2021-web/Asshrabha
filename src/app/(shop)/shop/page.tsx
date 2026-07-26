@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import HeroSlider from '@/components/shop/HeroSliderClient'
+import AdsSlider from '@/components/shop/AdsSlider'
 import { getSlides } from '@/lib/heroSlides'
 import AddToCartButton from '@/components/shop/AddToCartButton'
 
@@ -19,6 +20,7 @@ export default async function ShopHomePage() {
   }
 
   const slides = await getSlides()
+  const adsSlides = await getSlides('ads')
   const categories = await prisma.category.findMany({ orderBy: { sortOrder: 'asc' } })
   const stores = await prisma.providerProfile.findMany({
     where: {
@@ -50,7 +52,7 @@ export default async function ShopHomePage() {
       </div>
 
       {slides && slides.length > 0 && (
-        <div>
+        <div className="dashboard-card hero-slider-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 'var(--space-6)' }}>
           <HeroSlider slides={slides} />
         </div>
       )}
@@ -72,6 +74,12 @@ export default async function ShopHomePage() {
           </div>
         )}
       </div>
+
+      {adsSlides && adsSlides.length > 0 && (
+        <div className="dashboard-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 'var(--space-6)' }}>
+          <AdsSlider slides={adsSlides} />
+        </div>
+      )}
 
       <div className="dashboard-card">
         <div className="dashboard-section-title">

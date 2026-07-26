@@ -52,21 +52,22 @@ export default async function StorePage({ params, searchParams }: { params: any;
 
   return (
     <section className="store-page container">
-      {/* Store Banner */}
-      {store.banner ? (
-        <div className="store-banner" style={{ backgroundImage: `url(${store.banner})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-          <div className="store-banner-overlay">
-            <h1>{store.shopNameEN || store.shopNameAR}</h1>
+      <div className="card store-banner-card" style={{ marginBottom: 'var(--space-6)', padding: 0, overflow: 'hidden' }}>
+        {/* Store Banner */}
+        {store.banner ? (
+          <div className="store-banner" style={{ backgroundImage: `url(${store.banner})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+            <div className="store-banner-overlay">
+              <h1>{store.shopNameEN || store.shopNameAR}</h1>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="store-banner-placeholder">
-          🏪
-        </div>
-      )}
+        ) : (
+          <div className="store-banner-placeholder">
+            🏪
+          </div>
+        )}
 
-      {/* Store Header Info */}
-      <div className="store-header">
+        {/* Store Header Info */}
+        <div className="store-header" style={{ padding: 'var(--space-5)' }}>
         {store.logo ? (
           <img src={store.logo} alt={store.shopNameEN || store.shopNameAR} className="provider-logo-lg" />
         ) : (
@@ -119,6 +120,7 @@ export default async function StorePage({ params, searchParams }: { params: any;
             </div>
           )}
         </div>
+      </div>
 
       {/* Products grouped by category when no category filter, or show filtered list */}
       {products.length > 0 ? (

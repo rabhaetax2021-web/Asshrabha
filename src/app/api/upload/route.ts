@@ -5,6 +5,7 @@ import { uploadToMinIO } from '@/lib/minio'
 import path from 'path'
 
 export const runtime = 'nodejs'
+export const requestSizeLimit = 100 * 1024 * 1024
 
 type UploadFilePayload = {
   buffer: Buffer

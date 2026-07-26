@@ -16,6 +16,8 @@ type Slide = {
 
 export default function HeroSlider({ slides }: { slides: Slide[] }) {
   const [index, setIndex] = useState(0)
+  const [dragStart, setDragStart] = useState<number | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -37,6 +39,40 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
     })
   }
 
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    setDragStart(event.clientX)
+    setIsDragging(true)
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (dragStart === null) return
+    const delta = event.clientX - dragStart
+    if (Math.abs(delta) > 10) {
+      setIsDragging(true)
+    }
+  }
+
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (dragStart === null) return
+    const delta = event.clientX - dragStart
+    setDragStart(null)
+    setIsDragging(false)
+    event.currentTarget.releasePointerCapture(event.pointerId)
+
+    if (delta > 40) {
+      go(-1)
+    } else if (delta < -40) {
+      go(1)
+    }
+  }
+
+  const handlePointerCancel = (event: React.PointerEvent<HTMLDivElement>) => {
+    setDragStart(null)
+    setIsDragging(false)
+    event.currentTarget.releasePointerCapture(event.pointerId)
+  }
+
   // We intentionally render only the banner image for slides and make the
   // slide container itself clickable. No inner overlay or CTA is rendered
   // to avoid obscuring the image with a dark layer.
@@ -50,7 +86,14 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
   }
 
   return (
-    <div className="hero-slider" style={{ position: 'relative', overflow: 'hidden' }}>
+    <div
+      className="hero-slider"
+      style={{ position: 'relative', overflow: 'hidden' }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
+    >
       {
         (() => {
           const rawImg = (current as any).image || ''
@@ -99,12 +142,6 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
 
       <button aria-label="prev" onClick={() => go(-1)} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', zIndex: 3 }}>‹</button>
       <button aria-label="next" onClick={() => go(1)} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', zIndex: 3 }}>›</button>
-
-      <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 8, display: 'flex', gap: 8 }}>
-        {slides.map((s, i) => (
-          <button key={s.id} onClick={() => setIndex(i)} style={{ width: 10, height: 10, borderRadius: 999, background: i === index ? 'white' : 'rgba(255,255,255,0.5)', border: 'none', zIndex: 4 }} />
-        ))}
-      </div>
     </div>
   )
 }
