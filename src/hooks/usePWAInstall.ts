@@ -17,7 +17,6 @@ export function usePWAInstall() {
   const [canInstallPwa, setCanInstallPwa] = useState(false)
   const [showIosModal, setShowIosModal] = useState(false)
   const [isInstalled, setIsInstalled] = useState(false)
-  const [hideButton, setHideButton] = useState(false)
   const [isAndroid, setIsAndroid] = useState(false)
   const [isIos, setIsIos] = useState(false)
 
@@ -32,17 +31,12 @@ export function usePWAInstall() {
       window.matchMedia('(display-mode: standalone)').matches ||
       (navigator as unknown as { standalone?: boolean }).standalone === true
 
-    const acceptedInstall = localStorage.getItem(PWA_INSTALL_ACCEPTED_KEY) === 'true'
-
     setIsInstalled(installed)
-    setHideButton(installed || acceptedInstall)
 
     const displayModeMedia = window.matchMedia('(display-mode: standalone)')
     const handleDisplayModeChange = (event: MediaQueryListEvent) => {
       if (event.matches) {
         setIsInstalled(true)
-        setHideButton(true)
-        localStorage.setItem(PWA_INSTALL_ACCEPTED_KEY, 'true')
       }
     }
 
@@ -54,8 +48,6 @@ export function usePWAInstall() {
 
     const handleAppInstalled = () => {
       setIsInstalled(true)
-      setHideButton(true)
-      localStorage.setItem(PWA_INSTALL_ACCEPTED_KEY, 'true')
     }
 
     displayModeMedia.addEventListener?.('change', handleDisplayModeChange)
@@ -71,19 +63,9 @@ export function usePWAInstall() {
     }
   }, [])
 
-  useEffect(() => {
-    if (isInstalled) {
-      setHideButton(true)
-      localStorage.setItem(PWA_INSTALL_ACCEPTED_KEY, 'true')
-    }
-  }, [isInstalled])
-
   const t = useTranslations('common')
 
-  const shouldShowInstallButton = useMemo(
-    () => !hideButton && ((isAndroid && canInstallPwa) || isIos),
-    [hideButton, isAndroid, isIos, canInstallPwa]
-  )
+  const shouldShowInstallButton = useMemo(() => true, [])
 
   const handleInstallClick = useCallback(async () => {
     if (isAndroid) {
@@ -105,8 +87,6 @@ export function usePWAInstall() {
             t('installationSuccessful') || 'Application installed successfully.',
             'success'
           )
-          setHideButton(true)
-          localStorage.setItem(PWA_INSTALL_ACCEPTED_KEY, 'true')
         } else {
           showToast(
             t('installationCancelled') || 'Installation cancelled.',
