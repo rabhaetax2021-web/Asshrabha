@@ -23,6 +23,14 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  const isNavigationRequest = req.mode === 'navigate' || req.destination === 'document'
+  if (isNavigationRequest) {
+    // Let browser navigations go directly to the network so route changes do not
+    // get stuck behind stale cached HTML in Chrome/Samsung Internet.
+    event.respondWith(fetch(req))
+    return
+  }
+
   event.respondWith(
     fetch(req)
       .then((response) => {
