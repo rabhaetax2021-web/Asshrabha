@@ -1,7 +1,10 @@
+const CACHE_VERSION = 'asshrabha-v2'
+const SHELL_CACHE = `${CACHE_VERSION}-shell`
+
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
+  self.skipWaiting()
   event.waitUntil(
-    caches.open('asshrabha-shell').then((cache) =>
+    caches.open(SHELL_CACHE).then((cache) =>
       cache.addAll([
         '/',
         '/login',
@@ -10,11 +13,19 @@ self.addEventListener('install', (event) => {
       ]).catch(() => undefined)
     )
   )
-});
+})
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
-});
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key !== SHELL_CACHE)
+          .map((key) => caches.delete(key))
+      )
+    ).then(() => self.clients.claim())
+  )
+})
 
 self.addEventListener('fetch', (event) => {
   const req = event.request
@@ -38,7 +49,7 @@ self.addEventListener('fetch', (event) => {
         // Avoid caching navigation documents at runtime, especially admin pages,
         // so stale login/html responses don't persist after approval reloads.
         if (req.destination === 'script' || req.destination === 'style' || req.destination === 'image') {
-          caches.open('asshrabha-shell').then((cache) => cache.put(req, cloned)).catch(() => undefined)
+          caches.open(SHELL_CACHE).then((cache) => cache.put(req, cloned)).catch(() => undefined)
         }
         return response
       })
