@@ -132,6 +132,9 @@ export default function NotificationBell() {
 
   useEffect(() => {
     let active = true
+    let es: EventSource | null = null
+    let intervalId: number | null = null
+
     const loadNotifications = async () => {
       try {
         setError(null)
@@ -149,11 +152,57 @@ export default function NotificationBell() {
       }
     }
 
-    loadNotifications()
-    const interval = window.setInterval(loadNotifications, 20000)
+    function startPolling() {
+      if (!active) return
+      loadNotifications()
+      intervalId = window.setInterval(loadNotifications, 20000)
+    }
+
+    function connectSSE() {
+      if (typeof window === 'undefined' || !window.EventSource) {
+        startPolling()
+        return
+      }
+
+      loadNotifications()
+      es = new EventSource('/api/notifications/stream')
+      es.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data)
+          if (payload?.type === 'notification' && payload.payload) {
+            const notification = payload.payload as NotificationItem
+            setItems((prev) => [notification, ...prev].slice(0, 20))
+            setUnreadCount((count) => count + (notification.isRead ? 0 : 1))
+            if (!notification.isRead) {
+              playNotificationSoundRef.current?.()
+            }
+          }
+          if (payload?.type === 'initial' && Array.isArray(payload.payload)) {
+            setItems(payload.payload)
+            setUnreadCount(payload.payload.filter((item: NotificationItem) => !item.isRead).length)
+          }
+        } catch {
+          // ignore malformed SSE payload
+        }
+      }
+      es.onerror = () => {
+        if (es) {
+          es.close()
+          es = null
+        }
+        if (intervalId === null) startPolling()
+        if (active) {
+          window.setTimeout(connectSSE, 5000)
+        }
+      }
+    }
+
+    connectSSE()
+
     return () => {
       active = false
-      window.clearInterval(interval)
+      if (intervalId !== null) window.clearInterval(intervalId)
+      if (es) es.close()
     }
   }, [])
 

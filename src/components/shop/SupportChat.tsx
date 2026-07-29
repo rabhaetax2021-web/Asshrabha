@@ -53,10 +53,11 @@ export default function SupportChat({ initialOrderNumber }: { initialOrderNumber
     return () => { mounted = false }
   }, [])
 
-  // Polling fallback for live chat (reliable across browsers)
   useEffect(() => {
     if (!roomId) return
     let mounted = true
+    let es: EventSource | null = null
+    let intervalId: ReturnType<typeof setInterval> | null = null
 
     async function fetchMessages() {
       if (!mounted || !roomId) return
@@ -66,36 +67,51 @@ export default function SupportChat({ initialOrderNumber }: { initialOrderNumber
         if (mounted && res.ok && Array.isArray(data.messages)) {
           addMessages(data.messages)
         }
-      } catch (e) {}
+      } catch {
+        // ignore fetch failures
+      }
     }
 
-    // Fetch immediately on mount
-    fetchMessages()
+    function startPolling() {
+      if (!mounted) return
+      fetchMessages()
+      intervalId = setInterval(fetchMessages, 2000)
+    }
 
-    // Poll every 2 seconds
-    pollRef.current = setInterval(fetchMessages, 2000)
+    function connectSSE() {
+      if (typeof window === 'undefined' || !window.EventSource) {
+        startPolling()
+        return
+      }
+
+      es = new EventSource(`/api/shop/support/${roomId}/stream`, { withCredentials: true })
+      es.onmessage = (ev) => {
+        try {
+          const data = JSON.parse(ev.data)
+          if (!mounted) return
+          if (data.type === 'initial') addMessages(data.payload || [])
+          if (data.type === 'message') addMessages([data.payload])
+        } catch {
+          // ignore malformed events
+        }
+      }
+      es.onerror = () => {
+        if (es) {
+          es.close()
+          es = null
+        }
+        if (!intervalId) startPolling()
+        if (mounted) setTimeout(connectSSE, 5000)
+      }
+    }
+
+    connectSSE()
 
     return () => {
       mounted = false
-      if (pollRef.current) clearInterval(pollRef.current)
+      if (intervalId) clearInterval(intervalId)
+      if (es) es.close()
     }
-  }, [roomId, addMessages])
-
-  // SSE for faster updates (optional enhancement)
-  useEffect(() => {
-    if (!roomId) return
-    let mounted = true
-    const es = new EventSource(`/api/shop/support/${roomId}/stream`, { withCredentials: true })
-    es.onmessage = (ev) => {
-      try {
-        const data = JSON.parse(ev.data)
-        if (!mounted) return
-        if (data.type === 'initial') addMessages(data.payload || [])
-        if (data.type === 'message') addMessages([data.payload])
-      } catch (e) {}
-    }
-    es.onerror = () => { /* keep open, browser will retry */ }
-    return () => { mounted = false; es.close() }
   }, [roomId, addMessages])
 
   useEffect(() => {

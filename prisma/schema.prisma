@@ -503,6 +503,8 @@ model Order {
   @@index([providerId])
   @@index([status])
   @@index([orderNumber])
+  @@index([customerId, createdAt])
+  @@index([providerId, status])
 }
 
 model OrderItem {
@@ -675,6 +677,7 @@ model ChatMessage {
   sender   User     @relation(fields: [senderId], references: [id])
 
   @@index([chatRoomId, createdAt])
+  @@index([chatRoomId, isRead, createdAt])
 }
 
 model Notification {
@@ -692,6 +695,7 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead, createdAt])
+  @@index([userId, createdAt])
 }
 
 model SystemSetting {

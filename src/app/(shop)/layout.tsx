@@ -5,9 +5,6 @@ import FooterTabs from '@/components/shop/FooterTabs'
 import MobileHeader from '@/components/ui/MobileHeader'
 import CartPopup from '@/components/shop/CartPopup'
 import ShopPullToRefresh from '@/components/shop/ShopPullToRefresh'
-import { getCurrentUser } from '@/lib/auth'
-
-export const dynamic = 'force-dynamic'
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -15,12 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export async function generateViewport(): Promise<Viewport | undefined> {
-  const current = await getCurrentUser()
-  const isShop = current?.role === 'PROVIDER' || current?.customerType === 'SHOP'
-
-  if (!isShop) return undefined
-
+export function generateViewport(): Viewport {
   return {
     width: 'device-width',
     initialScale: 1,

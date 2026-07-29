@@ -42,10 +42,11 @@ export default function AdminSupportRoom({ roomId }: { roomId: string }) {
     }).catch(() => {})
   }, [])
 
-  // Polling fallback for live chat (reliable across browsers)
   useEffect(() => {
     if (!roomId) return
     let mounted = true
+    let es: EventSource | null = null
+    let intervalId: ReturnType<typeof setInterval> | null = null
 
     async function fetchMessages() {
       if (!mounted || !roomId) return
@@ -55,26 +56,23 @@ export default function AdminSupportRoom({ roomId }: { roomId: string }) {
         if (mounted && res.ok && Array.isArray(data.messages)) {
           addMessages(data.messages)
         }
-      } catch (e) {}
+      } catch {
+        // ignore fetch failures
+      }
     }
 
-    fetchMessages()
-    pollRef.current = setInterval(fetchMessages, 2000)
-
-    return () => {
-      mounted = false
-      if (pollRef.current) clearInterval(pollRef.current)
-    }
-  }, [roomId, addMessages])
-
-  // SSE for faster updates
-  useEffect(() => {
-    if (!roomId) return
-    let mounted = true
-    let es: EventSource | null = null
-
-    function connect() {
+    function startPolling() {
       if (!mounted) return
+      fetchMessages()
+      intervalId = setInterval(fetchMessages, 2000)
+    }
+
+    function connectSSE() {
+      if (typeof window === 'undefined' || !window.EventSource) {
+        startPolling()
+        return
+      }
+
       es = new EventSource(`/api/admin/support/${roomId}/stream`, { withCredentials: true })
       es.onmessage = (ev) => {
         try {
@@ -82,16 +80,27 @@ export default function AdminSupportRoom({ roomId }: { roomId: string }) {
           if (!mounted) return
           if (data.type === 'initial' && Array.isArray(data.payload)) addMessages(data.payload as SupportMsg[])
           if (data.type === 'message') addMessages([data.payload as SupportMsg])
-        } catch (_) {}
+        } catch {
+          // ignore malformed events
+        }
       }
       es.onerror = () => {
-        if (es) es.close()
-        setTimeout(connect, 1500)
+        if (es) {
+          es.close()
+          es = null
+        }
+        if (!intervalId) startPolling()
+        if (mounted) setTimeout(connectSSE, 5000)
       }
     }
-    connect()
 
-    return () => { mounted = false; if (es) es.close() }
+    connectSSE()
+
+    return () => {
+      mounted = false
+      if (intervalId) clearInterval(intervalId)
+      if (es) es.close()
+    }
   }, [roomId, addMessages])
 
   useEffect(() => {
