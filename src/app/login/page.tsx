@@ -159,13 +159,15 @@ export default function LoginPage() {
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto var(--space-4)',
-              fontSize: 'var(--text-2xl)',
-              fontWeight: 'var(--font-bold)',
-              color: 'white',
+              overflow: 'hidden',
               boxShadow: 'var(--shadow-primary-lg)',
             }}
           >
-            أ
+            <img
+              src="/icons/pwa-icon-512.png"
+              alt="Asshrabha logo"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           </div>
           <h1
             style={{

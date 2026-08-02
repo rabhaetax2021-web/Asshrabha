@@ -174,7 +174,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
       </form>
       <div className="catalog-grid" style={{ maxWidth: '100%' }}>
         {products.map(p => (
-          <div key={p.id} className="catalog-card" style={{ padding: 'var(--space-4)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', minHeight: 420, display: 'flex', flexDirection: 'column', background: 'var(--bg-elevated)', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+          <div key={p.id} className="catalog-card" style={{ padding: 'var(--space-4)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', minHeight: 420, display: 'flex', flexDirection: 'column', background: 'var(--bg-elevated)', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12)' }}>
             {p.images && p.images.length > 0 ? (
               <img src={p.images[0]} alt={p.nameEN || p.nameAR} style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-3)' }} />
             ) : (
