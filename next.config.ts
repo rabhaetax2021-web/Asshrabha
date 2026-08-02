@@ -19,15 +19,6 @@ const nextConfig: NextConfig = {
   },
   // Disable Next.js dev overlay/devtools UI in development
   devIndicators: false,
-  // Serve uploaded files
-  async rewrites() {
-    return [
-      {
-        source: "/uploads/:path*",
-        destination: "/api/uploads/:path*",
-      },
-    ];
-  },
 };
 
 export default withNextIntl(nextConfig);

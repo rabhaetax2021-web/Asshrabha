@@ -64,7 +64,7 @@ if (hasValidMinIOCredentials()) {
 }
 
 const BUCKET_NAME = process.env.MINIO_BUCKET || 'ashrabha'
-const PUBLIC_URL = process.env.MINIO_PUBLIC_URL || 'http://files.marymatelier.com'
+const PUBLIC_URL = (process.env.MINIO_PUBLIC_URL || 'https://files.marymatelier.com').replace(/^http:\/\//i, 'https://')
 
 // Fallback to local filesystem if MinIO not configured
 const USE_LOCAL_STORAGE = !minioClient
