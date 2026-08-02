@@ -139,10 +139,32 @@ export async function getOrderByIdForProvider(providerId: string, orderId: strin
   })
 }
 
-export async function listCatalogProducts(filter?: Record<string, unknown>) {
+export type CatalogProductSortField = 'createdAt' | 'nameEN' | 'wholesaleMinPrice' | 'retailMinPrice'
+export type SortDirection = 'asc' | 'desc'
+
+export interface ListCatalogProductsFilter {
+  excludeCatalogProductIds?: string[]
+  categorySlug?: string
+  sortBy?: CatalogProductSortField
+  sortDir?: SortDirection
+}
+
+export async function listCatalogProducts(filter?: ListCatalogProductsFilter) {
+  const where: any = {
+    status: 'ACTIVE',
+    ...(filter?.excludeCatalogProductIds && filter.excludeCatalogProductIds.length > 0
+      ? { id: { notIn: filter.excludeCatalogProductIds } }
+      : {}),
+    ...(filter?.categorySlug ? { category: { slug: filter.categorySlug } } : {}),
+  }
+
+  const orderBy = filter?.sortBy
+    ? { [filter.sortBy]: filter.sortDir || 'asc' }
+    : { createdAt: 'desc' }
+
   return await prisma.catalogProduct.findMany({
-    where: { status: 'ACTIVE' },
-    orderBy: { createdAt: 'desc' },
+    where,
+    orderBy: orderBy as any,
     take: 100,
   })
 }

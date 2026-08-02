@@ -1,19 +1,106 @@
 import React from 'react'
 import Link from 'next/link'
-import { listCatalogProducts } from '@/lib/actions/provider.actions'
+import { getTranslations } from 'next-intl/server'
+import { getCurrentUser } from '@/lib/auth'
+import { listCatalogProducts, CatalogProductSortField } from '@/lib/actions/provider.actions'
+import { prisma } from '@/lib/prisma'
 
-export default async function CatalogPage() {
-  const products = await listCatalogProducts()
+interface CatalogPageProps {
+  searchParams?: { hideInventory?: string; category?: string; sortBy?: string; sortDir?: string }
+}
+
+const SORT_OPTIONS: { value: CatalogProductSortField; label: string }[] = [
+  { value: 'createdAt', label: 'Newest' },
+  { value: 'nameEN', label: 'Name' },
+  { value: 'wholesaleMinPrice', label: 'Wholesale price' },
+  { value: 'retailMinPrice', label: 'Retail price' },
+]
+
+export default async function CatalogPage({ searchParams }: CatalogPageProps) {
+  const hideInventory = String(searchParams?.hideInventory || '').toLowerCase() === '1'
+  const category = String(searchParams?.category || '').trim()
+  const sortBy = (String(searchParams?.sortBy || 'createdAt') || 'createdAt') as CatalogProductSortField
+  const sortDir = String(searchParams?.sortDir || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc'
+  const t = await getTranslations('provider')
+  const tc = await getTranslations('common')
+
+  const categories = await prisma.category.findMany({
+    where: { isActive: true },
+    orderBy: { sortOrder: 'asc' },
+    select: { id: true, nameEN: true, nameAR: true, slug: true },
+  })
+
+  let excludeCatalogProductIds: string[] = []
+  if (hideInventory) {
+    const currentUser = await getCurrentUser()
+    if (currentUser?.role === 'PROVIDER') {
+      const providerProfile = await prisma.providerProfile.findUnique({ where: { userId: currentUser.id } })
+      if (providerProfile) {
+        const providerProducts = await prisma.providerProduct.findMany({
+          where: {
+            providerId: providerProfile.id,
+            status: { in: ['APPROVED', 'ACTIVE'] },
+          },
+          select: { catalogProductId: true },
+        })
+        excludeCatalogProductIds = providerProducts.map((p) => p.catalogProductId)
+      }
+    }
+  }
+
+  const products = await listCatalogProducts({
+    excludeCatalogProductIds,
+    categorySlug: category || undefined,
+    sortBy,
+    sortDir,
+  })
 
   return (
     <section className="provider-catalog container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
         <div>
-          <h1>Catalog</h1>
-          <p className="text-muted">Browse catalog products and submit listings with full product context.</p>
+          <h1>{t('catalogBrowser')}</h1>
+          <p className="text-muted">{t('selectFromCatalog')}</p>
         </div>
-        <Link href="/provider/suggestions" className="btn btn-secondary">Suggest New Catalog Product</Link>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <Link href="/provider/suggestions" className="btn btn-secondary">{t('suggestProduct') || 'Suggest New Catalog Product'}</Link>
+        </div>
       </div>
+      <form method="get" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {t('categoryLabel') || tc('categoryLabel') || 'Category'}
+          <select name="category" defaultValue={category} className="input" style={{ minWidth: 180 }}>
+            <option value="">{tc('allCategories') || 'All categories'}</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.slug}>{cat.nameEN || cat.nameAR}</option>
+            ))}
+          </select>
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {tc('sortBy') || 'Sort by'}
+          <select name="sortBy" defaultValue={sortBy} className="input" style={{ minWidth: 180 }}>
+            <option value="createdAt">{t('sortNewest') || 'Newest'}</option>
+            <option value="nameEN">{t('sortName') || 'Name'}</option>
+            <option value="wholesaleMinPrice">{t('sortWholesalePrice') || 'Wholesale price'}</option>
+            <option value="retailMinPrice">{t('sortRetailPrice') || 'Retail price'}</option>
+          </select>
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {t('sortDirection') || 'Direction'}
+          <select name="sortDir" defaultValue={sortDir} className="input" style={{ minWidth: 140 }}>
+            <option value="desc">{t('sortDesc') || 'Descending'}</option>
+            <option value="asc">{t('sortAsc') || 'Ascending'}</option>
+          </select>
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 220 }}>
+          <input type="checkbox" name="hideInventory" value="1" defaultChecked={hideInventory} />
+          <span>{t('hideInventoryLabel') || 'Show only products not in my inventory'}</span>
+        </label>
+        <button type="submit" className="btn btn-primary">{tc('applyFilters') || 'Apply filters'}</button>
+        <div style={{ color: 'var(--text-muted)', marginLeft: 'auto' }}>
+          {products.length} {tc('productCount') ? tc('productCount', { count: products.length, plural: products.length === 1 ? '' : 's' }) : `product${products.length === 1 ? '' : 's'}`}
+        </div>
+      </form>
       <div className="catalog-grid">
         {products.map(p => (
           <div key={p.id} className="catalog-card" style={{ padding: 'var(--space-4)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)' }}>
