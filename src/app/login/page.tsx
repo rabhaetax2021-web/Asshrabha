@@ -92,7 +92,7 @@ export default function LoginPage() {
   const switchLocale = () => {
     const currentLocale = document.documentElement.lang;
     const newLocale = currentLocale === 'ar' ? 'en' : 'ar';
-    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`;
+    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
     window.location.reload();
   };
 

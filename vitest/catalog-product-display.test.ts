@@ -13,8 +13,16 @@ describe('catalog product display helpers', () => {
     expect(getCatalogProductTitle(product, 'ar')).toBe('عصير برتقال')
   })
 
+  it('returns the Arabic title when the locale is ar-EG', () => {
+    expect(getCatalogProductTitle(product, 'ar-EG')).toBe('عصير برتقال')
+  })
+
   it('returns the English title when the locale is en', () => {
     expect(getCatalogProductTitle(product, 'en')).toBe('Orange Juice')
+  })
+
+  it('returns the English title when the locale is en-US', () => {
+    expect(getCatalogProductTitle(product, 'en-US')).toBe('Orange Juice')
   })
 
   it('falls back to English when Arabic title is missing for ar locale', () => {

@@ -5,8 +5,12 @@ export interface CatalogProductDisplaySource {
   descriptionAR?: string | null
 }
 
+export function normalizeLocale(locale: string | undefined | null) {
+  return String(locale || '').trim().toLowerCase().split('-')[0]
+}
+
 export function isArabicLocale(locale: string | undefined | null) {
-  return String(locale || '').trim().toLowerCase().startsWith('ar')
+  return normalizeLocale(locale) === 'ar'
 }
 
 export function getCatalogProductTitle(source: CatalogProductDisplaySource, locale: string | undefined | null) {

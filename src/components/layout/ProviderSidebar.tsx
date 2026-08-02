@@ -44,7 +44,7 @@ export default function ProviderSidebar({ collapsed = false, initialLocale = 'ar
 
   const setLocale = (newLocale: 'ar'|'en') => {
     if (typeof document === 'undefined') return
-    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=${60 * 60 * 24 * 365}`
+    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`
     setLocaleState(newLocale)
     window.location.reload()
   }

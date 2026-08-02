@@ -24,7 +24,7 @@ export default function LocaleToggle({ initialLocale = 'ar' }: Props) {
 
   const switchLocale = (next: 'ar' | 'en') => {
     if (typeof document === 'undefined') return
-    document.cookie = `NEXT_LOCALE=${next}; path=/; max-age=${60 * 60 * 24 * 365}`
+    document.cookie = `NEXT_LOCALE=${next}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`
     setLocale(next)
     window.location.reload()
   }
