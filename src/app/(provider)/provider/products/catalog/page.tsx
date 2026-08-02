@@ -9,13 +9,6 @@ interface CatalogPageProps {
   searchParams?: { hideInventory?: string; category?: string; sortBy?: string; sortDir?: string }
 }
 
-const SORT_OPTIONS: { value: CatalogProductSortField; label: string }[] = [
-  { value: 'createdAt', label: 'Newest' },
-  { value: 'nameEN', label: 'Name' },
-  { value: 'wholesaleMinPrice', label: 'Wholesale price' },
-  { value: 'retailMinPrice', label: 'Retail price' },
-]
-
 export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const hideInventory = String(searchParams?.hideInventory || '').toLowerCase() === '1'
   const category = String(searchParams?.category || '').trim()
@@ -68,7 +61,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
       </div>
       <form method="get" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', marginBottom: 'var(--space-4)' }}>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {t('categoryLabel') || tc('categoryLabel') || 'Category'}
+          {t('categoryLabel') || tc('categoryLabel')}
           <select name="category" defaultValue={category} className="input" style={{ minWidth: 180 }}>
             <option value="">{tc('allCategories') || 'All categories'}</option>
             {categories.map((cat) => (
@@ -77,7 +70,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
           </select>
         </label>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {tc('sortBy') || 'Sort by'}
+          {t('sortBy') || tc('sortBy')}
           <select name="sortBy" defaultValue={sortBy} className="input" style={{ minWidth: 180 }}>
             <option value="createdAt">{t('sortNewest') || 'Newest'}</option>
             <option value="nameEN">{t('sortName') || 'Name'}</option>
@@ -110,13 +103,13 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
               <div style={{ width: '100%', height: 160, borderRadius: 'var(--radius-md)', background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-3)' }}>📦</div>
             )}
             <h3 style={{ marginBottom: 8 }}>{p.nameEN || p.nameAR}</h3>
-            <p style={{ marginBottom: 10, color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>{p.descriptionEN || p.descriptionAR || 'No description available.'}</p>
+            <p style={{ marginBottom: 10, color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>{p.descriptionEN || p.descriptionAR || t('noDescription') || 'No description available.'}</p>
             <div style={{ display: 'grid', gap: 6, marginBottom: 'var(--space-3)' }}>
-              <div><strong>Wholesale range:</strong> {p.wholesaleMinPrice} - {p.wholesaleMaxPrice} EGP</div>
-              <div><strong>Retail range:</strong> {p.retailMinPrice} - {p.retailMaxPrice} EGP</div>
-              <div><strong>Unit type:</strong> {p.unitType}</div>
+              <div><strong>{t('wholesaleRange') || 'Wholesale range:'}</strong> {p.wholesaleMinPrice} - {p.wholesaleMaxPrice} EGP</div>
+              <div><strong>{t('retailRange') || 'Retail range:'}</strong> {p.retailMinPrice} - {p.retailMaxPrice} EGP</div>
+              <div><strong>{t('unitType') || 'Unit type:'}</strong> {p.unitType}</div>
             </div>
-            <a href={`/provider/products/catalog/${p.id}`} className="btn btn-primary" style={{ display: 'inline-block', marginTop: 'var(--space-2)' }}>View details</a>
+            <a href={`/provider/products/catalog/${p.id}`} className="btn btn-primary" style={{ display: 'inline-block', marginTop: 'var(--space-2)' }}>{t('viewDetails') || 'View details'}</a>
           </div>
         ))}
       </div>
