@@ -1,6 +1,6 @@
 import React from 'react'
 import Link from 'next/link'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { getCurrentUser } from '@/lib/auth'
 import { listCatalogProducts, CatalogProductSortField } from '@/lib/actions/provider.actions'
 import { prisma } from '@/lib/prisma'
@@ -14,6 +14,8 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const category = String(searchParams?.category || '').trim()
   const sortBy = (String(searchParams?.sortBy || 'createdAt') || 'createdAt') as CatalogProductSortField
   const sortDir = String(searchParams?.sortDir || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc'
+  const locale = await getLocale()
+  const isArabic = locale === 'ar'
   const t = await getTranslations('provider')
   const tc = await getTranslations('common')
 
@@ -30,10 +32,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
       const providerProfile = await prisma.providerProfile.findUnique({ where: { userId: currentUser.id } })
       if (providerProfile) {
         const providerProducts = await prisma.providerProduct.findMany({
-          where: {
-            providerId: providerProfile.id,
-            status: { in: ['APPROVED', 'ACTIVE'] },
-          },
+          where: { providerId: providerProfile.id },
           select: { catalogProductId: true },
         })
         excludeCatalogProductIds = providerProducts.map((p) => p.catalogProductId)
@@ -102,8 +101,17 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
             ) : (
               <div style={{ width: '100%', height: 160, borderRadius: 'var(--radius-md)', background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-3)' }}>📦</div>
             )}
-            <h3 style={{ marginBottom: 8 }}>{p.nameEN || p.nameAR}</h3>
-            <p style={{ marginBottom: 10, color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>{p.descriptionEN || p.descriptionAR || t('noDescription') || 'No description available.'}</p>
+            <h3 style={{ marginBottom: 8 }}>
+              {isArabic ? p.nameAR || p.nameEN : p.nameEN || p.nameAR || t('product') || 'Untitled product'}
+            </h3>
+            {p.nameEN && p.nameAR && p.nameEN !== p.nameAR ? (
+              <div style={{ marginBottom: 8, color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+                {isArabic ? p.nameEN : p.nameAR}
+              </div>
+            ) : null}
+            <p style={{ marginBottom: 10, color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+              {isArabic ? p.descriptionAR || p.descriptionEN : p.descriptionEN || p.descriptionAR || t('noDescription') || 'No description available.'}
+            </p>
             <div style={{ display: 'grid', gap: 6, marginBottom: 'var(--space-3)' }}>
               <div><strong>{t('wholesaleRange') || 'Wholesale range:'}</strong> {p.wholesaleMinPrice} - {p.wholesaleMaxPrice} EGP</div>
               <div><strong>{t('retailRange') || 'Retail range:'}</strong> {p.retailMinPrice} - {p.retailMaxPrice} EGP</div>
