@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 import { getErrorMessage } from '@/lib/errors'
-import { createMinioUploadSignedUrl } from '@/lib/minio'
+import { createMinioUploadSignedUrl, uploadToMinIO } from '@/lib/minio'
 import path from 'path'
 
 export const runtime = 'nodejs'
@@ -11,6 +11,7 @@ type UploadFilePayload = {
   buffer: Buffer
   filename: string
   contentType: string
+  category?: string
 }
 
 export async function POST(request: NextRequest) {
@@ -52,13 +53,14 @@ export async function POST(request: NextRequest) {
     const ext = path.extname(uploadFile.filename) || ''
     const safeExt = ext.replace(/[^.a-zA-Z0-9]/g, '')
     const filename = `${Date.now()}-${randomUUID()}${safeExt}`
+    const category = uploadFile.category || 'uploads'
 
     try {
-      const signedUpload = await createMinioUploadSignedUrl(filename, uploadFile.contentType, 'uploads')
-      return NextResponse.json({ ok: true, path: signedUpload.publicUrl, uploadUrl: signedUpload.uploadUrl, key: signedUpload.key, publicUrl: signedUpload.publicUrl })
+      const publicPath = await uploadToMinIO(filename, uploadFile.buffer, uploadFile.contentType, category)
+      return NextResponse.json({ ok: true, path: publicPath, publicUrl: publicPath })
     } catch (error) {
-      console.error('[upload] signed upload failed', error)
-      return NextResponse.json({ ok: false, error: 'MinIO upload is not configured for this environment.' }, { status: 500 })
+      console.error('[upload] upload failed', error)
+      return NextResponse.json({ ok: false, error: 'Upload failed.' }, { status: 500 })
     }
   } catch (err: unknown) {
     const msg = getErrorMessage(err)
@@ -71,13 +73,14 @@ async function getUploadFile(request: Request): Promise<UploadFilePayload | null
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File | null
+    const category = typeof formData.get('category') === 'string' ? String(formData.get('category')) : undefined
     if (!file) return null
 
     const origName = file instanceof File ? file.name : 'upload'
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
     const contentType = file.type || 'application/octet-stream'
-    return { buffer, filename: origName, contentType }
+    return { buffer, filename: origName, contentType, category }
   } catch (err: unknown) {
     console.error('[upload] formData parse failure, falling back to raw multipart parse', {
       error: getErrorMessage(err),
