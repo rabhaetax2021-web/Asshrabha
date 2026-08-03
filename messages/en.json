@@ -471,6 +471,7 @@
     "createCategory": "Create Category",
     "editCategory": "Edit Category",
     "categoryName": "Category Name",
+    "categoryLabel": "Category",
     "categoryNameAR": "Category Name (Arabic)",
     "categoryNameEN": "Category Name (English)",
     "categoryIcon": "Icon",

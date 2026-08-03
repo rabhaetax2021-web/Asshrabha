@@ -351,6 +351,7 @@
     "createCategory": "إنشاء فئة",
     "editCategory": "تعديل الفئة",
     "categoryName": "اسم الفئة",
+    "categoryLabel": "الفئة",
     "categoryNameAR": "اسم الفئة (عربي)",
     "categoryNameEN": "اسم الفئة (إنجليزي)",
     "categoryIcon": "الأيقونة",
