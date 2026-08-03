@@ -10,6 +10,16 @@ const demoAccounts = [
     nameEN: 'System Admin',
   },
   {
+    key: 'admin2',
+    mobile: '01091201789',
+    password: '12345',
+    role: 'ROOT_ADMIN',
+    status: 'APPROVED',
+    customerType: 'CUSTOMER',
+    nameAR: 'مدير ثان',
+    nameEN: 'Admin 2',
+  },
+  {
     key: 'provider',
     mobile: '01094056918',
     password: '2463',

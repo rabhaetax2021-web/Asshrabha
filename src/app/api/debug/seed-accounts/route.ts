@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
+import { buildAdminOnlySeed } from '@/lib/adminSeedData'
 
 export const runtime = 'nodejs'
 
@@ -20,21 +21,16 @@ export async function POST() {
 
   const ts = Date.now().toString().slice(-6)
   const adminMobile = `900${ts}`
-  const providerMobile = `901${ts}`
   const adminPass = 'adminpass'
-  const providerPass = 'provpass'
 
   const adminHash = await bcrypt.hash(adminPass, 10)
-  const provHash = await bcrypt.hash(providerPass, 10)
   // Try using Prisma first, but if Prisma isn't available (dev/Turbopack issues),
   // fall back to direct PG queries that create minimal tables and seed the admin/provider.
   try {
     const { prisma } = await import('@/lib/prisma')
     const admin = await prisma.user.create({ data: { mobile: adminMobile, passwordHash: adminHash, nameEN: 'UIAdmin', nameAR: 'Admin', role: 'ROOT_ADMIN', status: 'APPROVED', locale: 'en' } })
-    const provUser = await prisma.user.create({ data: { mobile: providerMobile, passwordHash: provHash, nameEN: 'UIProv', nameAR: 'Prov', role: 'PROVIDER', status: 'PENDING', locale: 'en' } })
-    const profile = await prisma.providerProfile.create({ data: { userId: provUser.id, shopNameEN: 'UI Test Shop', shopNameAR: 'متجر UI', isVisible: false } })
 
-    const out = { admin: { mobile: adminMobile, password: adminPass }, provider: { mobile: providerMobile, password: providerPass, id: profile.id } }
+    const out = buildAdminOnlySeed({ mobile: adminMobile, password: adminPass, id: admin.id })
     // persist seed file for faster subsequent runs
     try {
       const fs = await import('fs')
@@ -109,19 +105,7 @@ export async function POST() {
       )
       const adminId = adminRes.rows[0].id
 
-      const provRes = await client.query(
-        `INSERT INTO "User" (id, mobile, "passwordHash", "nameEN", "nameAR", role, status, locale, "createdAt", "updatedAt") VALUES (gen_random_uuid(), $1, $2, $3, $4, 'PROVIDER', 'PENDING', 'en', now(), now()) ON CONFLICT (mobile) DO UPDATE SET "passwordHash" = EXCLUDED."passwordHash" RETURNING id`,
-        [providerMobile, provHash, 'UIProv', 'Prov']
-      )
-      const provUserId = provRes.rows[0].id
-
-      const provProfileRes = await client.query(
-        `INSERT INTO "ProviderProfile" (id, "userId", "shopNameEN", "shopNameAR", "isVisible", "createdAt", "updatedAt") VALUES (gen_random_uuid(), $1, $2, $3, false, now(), now()) ON CONFLICT ("userId") DO UPDATE SET "shopNameEN" = EXCLUDED."shopNameEN", "shopNameAR" = EXCLUDED."shopNameAR", "updatedAt" = now() RETURNING id`,
-        [provUserId, 'UI Test Shop', 'متجر UI']
-      )
-      const profileId = provProfileRes.rows[0] ? provProfileRes.rows[0].id : provUserId
-
-      const out = { admin: { mobile: adminMobile, password: adminPass }, provider: { mobile: providerMobile, password: providerPass, id: profileId } }
+      const out = buildAdminOnlySeed({ mobile: adminMobile, password: adminPass, id: adminId })
       try {
         const fs = await import('fs')
         const p = await import('path')

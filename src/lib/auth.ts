@@ -194,18 +194,38 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  trustHost: true,
   secret: process.env.NEXTAUTH_SECRET,
 });
 
 // Helper to get the current session user with typed properties
-export async function getCurrentUser() {
-  // Primary path: NextAuth server helper
-  let session = await auth().catch(() => null)
-  // Fallback: try to decode token from cookies (useful when `auth()` doesn't resolve)
+export async function getCurrentUser(request?: Request | { cookies?: { get?: (name: string) => { value?: string } | undefined } }) {
+  let session: any = null
+
+  try {
+    const { getToken } = await import('next-auth/jwt')
+
+    if (request && typeof (request as any).headers?.get === 'function') {
+      const token = await getToken({ req: request as any, secret: process.env.NEXTAUTH_SECRET } as any)
+      if (token) {
+        session = { user: token as any } as any
+      }
+    }
+  } catch {
+    // ignore request-based token fallback failures
+  }
+
+  if (!session?.user) {
+    try {
+      session = await auth().catch(() => null)
+    } catch {
+      session = null
+    }
+  }
+
   if (!session?.user) {
     try {
       const { getToken } = await import('next-auth/jwt')
-      // Provide `req: undefined` and cast to any to satisfy server-side token read in App Router
       const token = await getToken({ req: undefined, secret: process.env.NEXTAUTH_SECRET } as any)
       if (token) {
         session = { user: token as any } as any

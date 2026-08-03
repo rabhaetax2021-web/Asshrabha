@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { subscribeToNotifications } from '@/lib/notificationStream'
 
 export async function GET(request: NextRequest) {
-  const current = await getCurrentUser()
+  const current = await getCurrentUser(request)
   if (!current) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
