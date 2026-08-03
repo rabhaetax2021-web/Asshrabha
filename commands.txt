@@ -1,0 +1,10 @@
+server access
+
+
+ssh -i key.pem root@45.128.223.47
+
+
+go for folder
+
+
+cd /var/www/Asshrabha
