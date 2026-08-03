@@ -452,7 +452,7 @@ export async function verifyOTPAction(
         }
       }
 
-      if (user?.role === 'PROVIDER' && requiresApproval) {
+      if (requiresApproval && ['PROVIDER', 'CUSTOMER'].includes(user?.role ?? '')) {
         const admins = await tx.user.findMany({
           where: {
             role: { in: ['ROOT_ADMIN', 'SUB_ADMIN'] },
@@ -461,15 +461,26 @@ export async function verifyOTPAction(
           select: { id: true },
         });
 
+        const isProvider = user?.role === 'PROVIDER';
+
         await tx.notification.createMany({
           data: admins.map((admin) => ({
             userId: admin.id,
             type: 'SYSTEM' as const,
-            titleAR: 'حساب مزود جديد',
-            titleEN: 'New provider account',
-            bodyAR: 'يوجد حساب مزود جديد بانتظار الموافقة',
-            bodyEN: 'A new provider account is waiting for admin approval',
-            data: { userId, type: 'pending_account_approval', providerId: userId },
+            titleAR: isProvider ? 'حساب مزود جديد' : 'حساب عميل جديد',
+            titleEN: isProvider ? 'New provider account' : 'New customer account',
+            bodyAR: isProvider
+              ? 'يوجد حساب مزود جديد بانتظار الموافقة'
+              : 'يوجد حساب عميل جديد بانتظار الموافقة',
+            bodyEN: isProvider
+              ? 'A new provider account is waiting for admin approval'
+              : 'A new customer account is waiting for admin approval',
+            data: {
+              userId,
+              type: 'pending_account_approval',
+              providerId: userId,
+              customerId: userId,
+            },
           })),
         });
       }

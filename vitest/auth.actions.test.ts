@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { loginAction, registerAction } from '@/lib/actions/auth.actions'
+import { loginAction, registerAction, verifyOTPAction } from '@/lib/actions/auth.actions'
 import prisma from '@/lib/prisma'
 import { signIn } from '@/lib/auth'
 
@@ -20,10 +20,18 @@ const { prismaMock } = vi.hoisted(() => ({
     },
     oTPCode: {
       create: vi.fn(),
+      findFirst: vi.fn(),
+      update: vi.fn(),
     },
     notification: {
       create: vi.fn(),
       createMany: vi.fn(),
+    },
+    user: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
+      create: vi.fn(),
     },
     systemSetting: {
       findMany: vi.fn(),
@@ -105,6 +113,38 @@ describe('loginAction', () => {
     const shopCustomerCase = await loginAction('01094056916', '2463')
     expect(shopCustomerCase.success).toBe(true)
     expect(shopCustomerCase.data?.redirectTo).toBe('/shop')
+  })
+})
+
+describe('verifyOTPAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('creates an admin notification when a customer account needs approval', async () => {
+    vi.mocked(prisma.oTPCode.findFirst).mockResolvedValue({ id: 'otp-1', userId: 'customer-1' } as never)
+    vi.mocked(prisma.oTPCode.update).mockResolvedValue({ id: 'otp-1' } as never)
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ role: 'CUSTOMER' } as never)
+    vi.mocked(prisma.systemSetting.findUnique).mockResolvedValue({ value: 'true' } as never)
+    vi.mocked(prisma.user.findMany).mockResolvedValue([{ id: 'admin-1' }] as never)
+    vi.mocked(prisma.notification.createMany).mockResolvedValue({ count: 1 } as never)
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => callback(prisma))
+
+    const result = await verifyOTPAction('customer-1', '123456')
+
+    expect(result.success).toBe(true)
+    expect(prisma.notification.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          userId: 'admin-1',
+          type: 'SYSTEM',
+          data: expect.objectContaining({
+            type: 'pending_account_approval',
+            userId: 'customer-1',
+          }),
+        }),
+      ],
+    })
   })
 })
 
