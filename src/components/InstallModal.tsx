@@ -18,7 +18,7 @@ export default function InstallModal({ open, onClose }: InstallModalProps) {
         <div>
           <h2 className="install-modal-title">{t('installAppModalTitle') || 'Install App on your iPhone'}</h2>
           <p className="install-modal-description">
-            {t('installAppModalDescription') || 'Use the browser Share menu to add Asshrabha to your Home Screen.'}
+            {t('installAppModalDescription') || 'Use the browser Share menu to add Ashrabha to your Home Screen.'}
           </p>
         </div>
 

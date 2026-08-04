@@ -33,22 +33,22 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
   title: {
-    default: 'Asshrabha - أشربها | Marketplace',
-    template: '%s | Asshrabha',
+    default: 'Ashrabha - أشربها | Marketplace',
+    template: '%s | Ashrabha',
   },
-  description: 'Asshrabha - Your trusted marketplace for buying and selling products across multiple providers.',
+  description: 'Ashrabha - Your trusted marketplace for buying and selling products across multiple providers.',
   keywords: ['marketplace', 'ecommerce', 'shopping', 'providers', 'أشربها', 'سوق'],
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Asshrabha',
+    title: 'Ashrabha',
   },
   openGraph: {
-    title: 'Asshrabha - Marketplace',
+    title: 'Ashrabha - Marketplace',
     description: 'Your trusted marketplace for buying and selling products across multiple providers.',
     url: '/',
-    siteName: 'Asshrabha',
+    siteName: 'Ashrabha',
     images: [
       {
         url: '/vercel.svg',

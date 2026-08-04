@@ -8,7 +8,7 @@ import { cookies, headers } from 'next/headers'
 import '../globals.css'
 
 export const metadata = {
-  title: 'Admin - Asshrabha',
+  title: 'Admin - Ashrabha',
 }
 
 export default async function AdminRootLayout({ children }: { children: React.ReactNode }) {

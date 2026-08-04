@@ -4,7 +4,7 @@ import Topbar from '@/components/ui/Topbar'
 import { cookies, headers } from 'next/headers'
 
 export const metadata = {
-  title: "Provider - Asshrabha",
+  title: "Provider - Ashrabha",
 };
 
 export default async function ProviderRootLayout({ children }: { children: React.ReactNode }) {

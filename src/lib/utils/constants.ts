@@ -1,6 +1,6 @@
 // ─── Application Constants ────────────────────────────────────────────────────
 
-export const APP_NAME = 'Asshrabha';
+export const APP_NAME = 'Ashrabha';
 export const APP_NAME_AR = 'أشربها';
 
 // ─── Pagination ───────────────────────────────────────────────────────────────

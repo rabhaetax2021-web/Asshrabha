@@ -30,7 +30,7 @@ export default function PWAInstallPrompt() {
   return (
     <div className="pwa-install" role="dialog">
       <div className="pwa-install-inner">
-        <div>Install Asshrabha for quicker access</div>
+        <div>Install Ashrabha for quicker access</div>
         <div style={{ display: 'flex', gap: 8 }}>
           <Button className="btn-primary" onClick={install}>Install</Button>
           <Button onClick={() => setVisible(false)}>Dismiss</Button>

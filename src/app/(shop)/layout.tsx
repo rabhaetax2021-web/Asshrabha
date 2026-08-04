@@ -8,7 +8,7 @@ import ShopPullToRefresh from '@/components/shop/ShopPullToRefresh'
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: 'Shop - Asshrabha',
+    title: 'Shop - Ashrabha',
   }
 }
 

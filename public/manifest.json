@@ -1,6 +1,6 @@
 {
-  "name": "Asshrabha Marketplace",
-  "short_name": "Asshrabha",
+  "name": "Ashrabha Marketplace",
+  "short_name": "Ashrabha",
   "description": "Your trusted marketplace for buying and selling products",
   "start_url": "/login",
   "display": "standalone",

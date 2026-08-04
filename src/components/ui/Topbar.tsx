@@ -55,7 +55,7 @@ export default function Topbar({ title }: { title?: string }) {
             <path d="M0 12.5H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
         </button>
-        <Link href="/" className="logo"><strong>Asshrabha</strong></Link>
+        <Link href="/" className="logo"><strong>Ashrabha</strong></Link>
         {title && <h2 style={{ margin: 0, fontSize: 'var(--text-lg)' }}>{title}</h2>}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

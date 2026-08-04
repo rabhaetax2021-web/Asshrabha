@@ -45,7 +45,7 @@ export default async function ProductListingPage() {
       <div style={{ marginBottom: 'var(--space-6)' }}>
         <h1>{t('allProducts') || 'All Products'}</h1>
         <p style={{ color: 'var(--text-muted)', maxWidth: 640, marginTop: 'var(--space-2)' }}>
-          Browse every approved product across the Asshrabha marketplace, with clean cards, rich imagery, and fast access to store listings.
+          Browse every approved product across the Ashrabha marketplace, with clean cards, rich imagery, and fast access to store listings.
         </p>
       </div>
 
