@@ -8,3 +8,9 @@ go for folder
 
 
 cd /var/www/Asshrabha
+
+
+update to latest git
+
+
+pm2 stop Asshrabha && git pull && npm install && npm run build && pm2 restart Asshrabha
