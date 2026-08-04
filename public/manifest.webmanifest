@@ -2,7 +2,7 @@
   "name": "Ashrabha Marketplace",
   "short_name": "Ashrabha",
   "description": "Your trusted marketplace for buying and selling products",
-  "start_url": "/",
+  "start_url": "/login",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

@@ -4,6 +4,7 @@
   "description": "Your trusted marketplace for buying and selling products",
   "start_url": "/login",
   "display": "standalone",
+  "scope": "/",
   "orientation": "portrait",
   "theme_color": "#6366f1",
   "background_color": "#0f0f23",
