@@ -78,7 +78,7 @@ function FeaturePill({ icon: Icon, title, description }: { icon: LucideIcon; tit
       <div style={{ width: 48, height: 48, borderRadius: 14, display: 'grid', placeItems: 'center', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(124, 58, 237, 0.1))', color: 'var(--primary)', marginBottom: 16 }}>
         <Icon size={22} />
       </div>
-      <h3 style={{ margin: '0 0 8px', fontSize: 20, color: 'var(--text-primary)' }}>{title}</h3>
+      <h3 style={{ margin: '0 0 8px', fontSize: 20, color: '#111827' }}>{title}</h3>
       <p style={{ margin: 0, color: '#475569', lineHeight: 1.7 }}>{description}</p>
     </motion.article>
   );
@@ -204,7 +204,7 @@ export default function PwaInstallPage() {
   );
 
   return (
-    <main dir="rtl" lang="ar" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', minHeight: '100vh', overflow: 'hidden', direction: 'rtl', textAlign: 'right' }}>
+    <main className="landing-page" dir="rtl" lang="ar" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', minHeight: '100vh', overflow: 'hidden', direction: 'rtl', textAlign: 'right' }}>
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -80, left: -100, width: 260, height: 260, borderRadius: '9999px', background: 'radial-gradient(circle, rgba(99, 102, 241, 0.18), transparent 70%)' }} />
         <div style={{ position: 'absolute', top: 180, right: -90, width: 360, height: 360, borderRadius: '9999px', background: 'radial-gradient(circle, rgba(124, 58, 237, 0.16), transparent 72%)' }} />
@@ -234,7 +234,7 @@ export default function PwaInstallPage() {
       </nav>
 
       <section id="home" style={{ position: 'relative', zIndex: 1, maxWidth: 1180, margin: '0 auto', padding: '48px 20px 72px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.02fr .98fr', gap: 56, alignItems: 'center' }}>
+        <div className="landing-hero-grid" style={{ display: 'grid', gridTemplateColumns: 'var(--landing-hero-grid-columns, 1.02fr .98fr)', gap: 56, alignItems: 'center' }}>
           <motion.div {...fadeUp}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 999, background: 'rgba(99,102,241,0.08)', color: 'var(--primary)', fontWeight: 700, marginBottom: 24, flexDirection: 'row-reverse' }}>
               <Smartphone size={16} />
@@ -260,11 +260,11 @@ export default function PwaInstallPage() {
             </div>
           </motion.div>
 
-          <motion.div {...fadeUp} style={{ position: 'relative', display: 'grid', placeItems: 'center', minHeight: 560 }}>
+          <motion.div className="landing-phone-preview" {...fadeUp} style={{ position: 'relative', display: 'grid', placeItems: 'center', width: '100%', maxWidth: 320, minHeight: 560 }}>
             <motion.div
               animate={{ y: [0, -12, 0] }}
               transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut' as const }}
-              style={{ position: 'relative', width: 320, height: 620, borderRadius: 36, padding: 14, background: 'linear-gradient(160deg, #241845, #4f46e5)', boxShadow: '0 35px 80px rgba(79,70,229,0.24)' }}
+              style={{ position: 'relative', width: '100%', maxWidth: 320, aspectRatio: '320 / 620', borderRadius: 36, padding: 14, background: 'linear-gradient(160deg, #241845, #4f46e5)', boxShadow: '0 35px 80px rgba(79,70,229,0.24)' }}
             >
               <div style={{ borderRadius: 28, background: 'linear-gradient(180deg, #f8fafc, #edf9f1)', height: '100%', padding: 16, overflow: 'hidden' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
@@ -323,7 +323,7 @@ export default function PwaInstallPage() {
       </section>
 
       <section style={{ position: 'relative', zIndex: 1, maxWidth: 1180, margin: '0 auto', padding: '16px 20px 72px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 20, alignItems: 'center' }}>
+        <div className="landing-trusted-grid" style={{ display: 'grid', gridTemplateColumns: 'var(--landing-trusted-grid-columns, repeat(5, minmax(0, 1fr)))', gap: 20, alignItems: 'center' }}>
           {trustedCompanies.map((name) => (
             <div key={name} style={{ background: 'rgba(255,255,255,0.72)', border: '1px solid rgba(107,114,128,0.12)', borderRadius: 18, padding: '18px 16px', textAlign: 'center', color: '#000', fontWeight: 700, letterSpacing: 0.2 }}>
               {name}
@@ -334,7 +334,7 @@ export default function PwaInstallPage() {
 
       <section id="how-it-works" style={{ position: 'relative', zIndex: 1, maxWidth: 1180, margin: '0 auto', padding: '56px 20px 72px' }}>
         <SectionHeading eyebrow={t('sections.howItWorksEyebrow')} title={t('sections.howItWorksTitle')} text={t('sections.howItWorksText')} />
-        <div style={{ marginTop: 34, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+        <div className="landing-workflow-grid" style={{ marginTop: 34, display: 'grid', gridTemplateColumns: 'var(--landing-workflow-grid-columns, repeat(4, 1fr))', gap: 16 }}>
           {workflowSteps.map((step, index) => {
             const Icon = step.icon;
             return (
@@ -355,7 +355,7 @@ export default function PwaInstallPage() {
 
       <section id="features" style={{ position: 'relative', zIndex: 1, maxWidth: 1180, margin: '0 auto', padding: '56px 20px 72px' }}>
         <SectionHeading eyebrow={t('sections.featuresEyebrow')} title={t('sections.featuresTitle')} text={t('sections.featuresText')} />
-        <div style={{ marginTop: 34, display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 18 }}>
+        <div className="landing-features-grid" style={{ marginTop: 34, display: 'grid', gridTemplateColumns: 'var(--landing-features-grid-columns, repeat(3, minmax(0, 1fr)))', gap: 18 }}>
           {featureCards.map((feature) => (
             <FeaturePill key={feature.title} icon={feature.icon} title={feature.title} description={feature.text} />
           ))}
@@ -363,7 +363,7 @@ export default function PwaInstallPage() {
       </section>
 
       <section id="businesses" style={{ position: 'relative', zIndex: 1, maxWidth: 1180, margin: '0 auto', padding: '56px 20px 72px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: 38, alignItems: 'center' }}>
+        <div className="landing-businesses-grid" style={{ display: 'grid', gridTemplateColumns: 'var(--landing-businesses-grid-columns, 0.9fr 1.1fr)', gap: 38, alignItems: 'center' }}>
           <motion.div {...fadeUp} style={{ minHeight: 340, borderRadius: 32, background: 'linear-gradient(145deg, rgba(14,116,144,0.1), rgba(34,197,94,0.16))', border: '1px solid rgba(22,163,74,0.18)', display: 'grid', placeItems: 'center' }}>
             <div style={{ position: 'relative', width: 260, height: 260, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(22,163,74,0.4), rgba(245,158,11,0.25))', boxShadow: '0 25px 70px rgba(22,163,74,0.18)' }} />
           </motion.div>
@@ -382,10 +382,10 @@ export default function PwaInstallPage() {
       </section>
 
       <section id="customers" style={{ position: 'relative', zIndex: 1, maxWidth: 1180, margin: '0 auto', padding: '56px 20px 72px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 36, alignItems: 'center' }}>
+        <div className="landing-customers-grid" style={{ display: 'grid', gridTemplateColumns: 'var(--landing-customers-grid-columns, 1fr 1fr)', gap: 36, alignItems: 'center' }}>
           <motion.div {...fadeUp}>
             <SectionHeading eyebrow={t('sections.customerEyebrow')} title={t('sections.customerTitle')} text={t('sections.customerText')} />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginTop: 28 }}>
+            <div className="landing-customer-benefits-grid" style={{ display: 'grid', gridTemplateColumns: 'var(--landing-customer-benefits-grid-columns, repeat(2, 1fr))', gap: 12, marginTop: 28 }}>
               {customerBenefits.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -398,7 +398,7 @@ export default function PwaInstallPage() {
             </div>
           </motion.div>
           <motion.div {...fadeUp} style={{ minHeight: 420, borderRadius: 32, background: 'linear-gradient(135deg, rgba(22,163,74,0.14), rgba(245,158,11,0.12))', display: 'grid', placeItems: 'center', border: '1px solid rgba(22,163,74,0.16)' }}>
-            <div style={{ width: 330, height: 420, borderRadius: 30, background: 'linear-gradient(180deg, #ffffff, #f6fdf8)', boxShadow: '0 28px 70px rgba(17,24,39,0.12)', padding: 18 }}>
+            <div style={{ width: 'min(100%, 330px)', height: 420, borderRadius: 30, background: 'linear-gradient(180deg, #ffffff, #f6fdf8)', boxShadow: '0 28px 70px rgba(17,24,39,0.12)', padding: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
                 <div style={{ fontWeight: 800, color: '#000' }}>{t('phonePreview.nearbyMarket')}</div>
                 <div style={{ color: '#16A34A', fontWeight: 700 }}>{t('phonePreview.mins')}</div>
@@ -424,7 +424,7 @@ export default function PwaInstallPage() {
       </section>
 
       <section style={{ position: 'relative', zIndex: 1, maxWidth: 1180, margin: '0 auto', padding: '56px 20px 72px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18 }}>
+        <div className="landing-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'var(--landing-stats-grid-columns, repeat(4, 1fr))', gap: 18 }}>
           {heroStats.map((stat) => (
             <StatCard key={stat.label} value={stat.value} label={stat.label} />
           ))}
@@ -433,7 +433,7 @@ export default function PwaInstallPage() {
 
       <section style={{ position: 'relative', zIndex: 1, maxWidth: 1180, margin: '0 auto', padding: '56px 20px 72px' }}>
         <div style={{ background: 'linear-gradient(135deg, var(--primary-dark), var(--secondary-dark))', borderRadius: 36, padding: '56px 26px', color: '#fff', boxShadow: '0 24px 70px rgba(99, 102, 241, 0.28)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'center' }}>
+          <div className="landing-install-grid" style={{ display: 'grid', gridTemplateColumns: 'var(--landing-install-grid-columns, 1fr 1fr)', gap: 28, alignItems: 'center' }}>
             <motion.div {...fadeUp}>
               <div style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.4, opacity: 0.92 }}>{t('installBadge')}</div>
               <h2 style={{ margin: '10px 0 12px', fontSize: 'clamp(2.2rem, 4vw, 3.2rem)', color: '#fff' }}>{t('installTitle')}</h2>
@@ -478,7 +478,7 @@ export default function PwaInstallPage() {
 
       <section style={{ position: 'relative', zIndex: 1, maxWidth: 1180, margin: '0 auto', padding: '56px 20px 72px' }}>
         <SectionHeading eyebrow={t('sections.testimonialsEyebrow')} title={t('sections.testimonialsTitle')} text={t('sections.testimonialsText')} />
-        <div style={{ marginTop: 34, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18 }}>
+        <div className="landing-testimonials-grid" style={{ marginTop: 34, display: 'grid', gridTemplateColumns: 'var(--landing-testimonials-grid-columns, repeat(3, 1fr))', gap: 18 }}>
           {testimonials.map((person) => (
             <motion.article key={person.name} {...fadeUp} style={{ background: '#fff', borderRadius: 24, padding: 24, boxShadow: '0 18px 40px rgba(15,23,42,0.08)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>

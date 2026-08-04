@@ -449,6 +449,126 @@ h6 { font-size: var(--text-md); }
 [lang='ar'] h2,
 [lang='ar'] h3,
 
+.landing-page {
+  padding-bottom: 32px;
+  --landing-hero-grid-columns: 1.02fr .98fr;
+  --landing-trusted-grid-columns: repeat(5, minmax(0, 1fr));
+  --landing-workflow-grid-columns: repeat(4, 1fr);
+  --landing-features-grid-columns: repeat(3, minmax(0, 1fr));
+  --landing-businesses-grid-columns: 0.9fr 1.1fr;
+  --landing-customers-grid-columns: 1fr 1fr;
+  --landing-stats-grid-columns: repeat(4, 1fr);
+  --landing-install-grid-columns: 1fr 1fr;
+  --landing-testimonials-grid-columns: repeat(3, 1fr);
+  --landing-customer-benefits-grid-columns: repeat(2, 1fr);
+}
+
+.landing-page nav {
+  padding: 14px 20px;
+}
+
+.landing-page .landing-hero-grid {
+  gap: 32px;
+}
+
+@media (max-width: 900px) {
+  .landing-page {
+    --landing-hero-grid-columns: 1fr;
+    --landing-trusted-grid-columns: 1fr;
+    --landing-workflow-grid-columns: 1fr;
+    --landing-features-grid-columns: 1fr;
+    --landing-businesses-grid-columns: 1fr;
+    --landing-customers-grid-columns: 1fr;
+    --landing-stats-grid-columns: 1fr;
+    --landing-install-grid-columns: 1fr;
+    --landing-testimonials-grid-columns: 1fr;
+    --landing-customer-benefits-grid-columns: 1fr;
+  }
+
+  .landing-page nav {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .landing-page nav > div {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .landing-page section {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .landing-page {
+    padding-bottom: 24px;
+  }
+
+  .landing-page nav {
+    padding: 12px 14px;
+  }
+
+  .landing-page nav > div {
+    flex-direction: row-reverse;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .landing-page nav > div > div {
+    order: 0;
+    display: flex !important;
+    flex-direction: row-reverse !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 10px;
+    width: auto;
+  }
+
+  .landing-page nav > div > a {
+    order: 1;
+    flex: 0 1 auto;
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .landing-page nav > div > div > a,
+  .landing-page nav > div > div > button {
+    flex: 0 1 auto;
+    min-width: 0;
+    text-align: center;
+  }
+
+  .landing-page .landing-hero-grid {
+    gap: 18px;
+  }
+
+  .landing-page .landing-hero-grid > div,
+  .landing-page .landing-install-grid > div,
+  .landing-page .landing-testimonials-grid > *,
+  .landing-page .landing-businesses-grid > div,
+  .landing-page .landing-customers-grid > div,
+  .landing-page .landing-customer-benefits-grid > *,
+  .landing-page .landing-features-grid > *,
+  .landing-page .landing-stats-grid > *,
+  .landing-page .landing-trusted-grid > div {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .landing-page .landing-hero-grid {
+    justify-items: center;
+  }
+
+  .landing-page .landing-phone-preview {
+    max-width: 100%;
+  }
+}
+
 /* Hide Next.js Node.js inspector / devtools icon (dev overlay) */
 .nodejs-inspector-button,
 .error-overlay-toolbar-button-icon {
