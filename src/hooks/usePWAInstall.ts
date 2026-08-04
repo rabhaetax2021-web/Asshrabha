@@ -68,16 +68,9 @@ export function usePWAInstall() {
   const shouldShowInstallButton = useMemo(() => true, [])
 
   const handleInstallClick = useCallback(async () => {
-    if (isAndroid) {
-      const promptEvent = deferredPromptRef.current
-      if (!promptEvent) {
-        showToast(
-          t('installationUnavailable') || 'Installation unavailable.',
-          'error'
-        )
-        return
-      }
-
+    // If a beforeinstallprompt event was captured (Chrome desktop/Android), use it
+    const promptEvent = deferredPromptRef.current
+    if (promptEvent) {
       try {
         await promptEvent.prompt()
         const choice = await promptEvent.userChoice
@@ -106,16 +99,18 @@ export function usePWAInstall() {
       return
     }
 
+    // iOS: show a helper/modal explaining how to add to Home Screen
     if (isIos) {
       setShowIosModal(true)
       return
     }
 
+    // No install flow available
     showToast(
       t('installationUnavailable') || 'Installation unavailable.',
       'error'
     )
-  }, [isAndroid, isIos, t])
+  }, [isIos, t])
 
   const closeIosModal = useCallback(() => {
     setShowIosModal(false)
