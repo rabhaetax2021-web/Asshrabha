@@ -2,7 +2,8 @@ import React from 'react'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
+import { getLocalizedName } from '@/lib/i18n/catalog-product-display'
 
 export default async function ProductListingPage() {
   const current = await getCurrentUser()
@@ -39,6 +40,7 @@ export default async function ProductListingPage() {
   })
 
   const t = await getTranslations('shop')
+  const locale = await getLocale()
 
   return (
     <section className="category-page container">
@@ -65,7 +67,7 @@ export default async function ProductListingPage() {
             const nameAR = product.catalogProduct?.nameAR || 'بدون عنوان'
             const descriptionEN = product.catalogProduct?.descriptionEN || 'No details available.'
             const descriptionAR = product.catalogProduct?.descriptionAR || 'لا توجد تفاصيل.'
-            const category = product.catalogProduct?.category?.nameEN || product.catalogProduct?.category?.nameAR || ''
+            const category = getLocalizedName(product.catalogProduct?.category ?? {}, locale)
             const price = isShop ? (product.wholesalePrice ?? product.sellingPrice) : (product.retailPrice ?? product.sellingPrice)
             const unit = product.wholesaleUnit || product.catalogProduct?.unitType || 'UNIT'
 

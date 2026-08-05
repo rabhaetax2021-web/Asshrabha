@@ -13,9 +13,13 @@ export function isArabicLocale(locale: string | undefined | null) {
   return normalizeLocale(locale) === 'ar'
 }
 
-export function getCatalogProductTitle(source: CatalogProductDisplaySource, locale: string | undefined | null) {
+export function getLocalizedName(source: { nameEN?: string | null; nameAR?: string | null }, locale: string | undefined | null) {
   const arabic = isArabicLocale(locale)
   return arabic ? (source.nameAR || source.nameEN || '') : (source.nameEN || source.nameAR || '')
+}
+
+export function getCatalogProductTitle(source: CatalogProductDisplaySource, locale: string | undefined | null) {
+  return getLocalizedName(source, locale)
 }
 
 export function getCatalogProductAlternateName(source: CatalogProductDisplaySource, locale: string | undefined | null) {

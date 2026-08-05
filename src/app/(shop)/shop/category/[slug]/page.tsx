@@ -1,13 +1,15 @@
 import React from 'react'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import CategoryFilter from '@/components/shop/CategoryFilter'
 import { getCurrentUser } from '@/lib/auth'
+import { getLocalizedName } from '@/lib/i18n/catalog-product-display'
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const t = await getTranslations('shop')
+  const locale = await getLocale()
   const currentUser = await getCurrentUser()
   const isShop = !!currentUser && (currentUser.role === 'PROVIDER' || currentUser.customerType === 'SHOP')
   let preferredLocationId: string | null = null
@@ -59,7 +61,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
   return (
     <section className="category-page container">
-      <h1>{category.nameEN || category.nameAR}</h1>
+      <h1>{getLocalizedName(category, locale)}</h1>
 
       {/* Filter Bar */}
       <CategoryFilter allCategories={allCategories} providers={providers} currentSlug={slug} productCount={products.length} />

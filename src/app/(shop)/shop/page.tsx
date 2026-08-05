@@ -1,8 +1,9 @@
 import React from 'react'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import { getLocalizedName } from '@/lib/i18n/catalog-product-display'
 import HeroSlider from '@/components/shop/HeroSliderClient'
 import AdsSlider from '@/components/shop/AdsSlider'
 import { getSlides } from '@/lib/heroSlides'
@@ -11,6 +12,7 @@ import AddToCartButton from '@/components/shop/AddToCartButton'
 export default async function ShopHomePage() {
   const t = await getTranslations('shop')
   const tc = await getTranslations('common')
+  const locale = await getLocale()
   const current = await getCurrentUser()
   const isShop = !!current && (current.role === 'PROVIDER' || current.customerType === 'SHOP')
   let preferredLocationId: string | null = null
@@ -68,7 +70,7 @@ take: 6,
           <div className="category-quick-links">
             {categories.map(c => (
               <Link key={c.id} href={`/shop/category/${c.slug}`} className="category-quick-link">
-                {c.nameEN || c.nameAR}
+                {getLocalizedName(c, locale)}
               </Link>
             ))}
           </div>

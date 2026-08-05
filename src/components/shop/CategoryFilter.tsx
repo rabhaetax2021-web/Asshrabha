@@ -1,12 +1,14 @@
 "use client"
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
+import { getLocalizedName } from '@/lib/i18n/catalog-product-display'
 
 export default function CategoryFilter({ allCategories, providers, currentSlug, productCount }: any) {
   const router = useRouter()
   const t = useTranslations('shop')
+  const locale = useLocale()
   const [category, setCategory] = useState(currentSlug || (allCategories && allCategories[0]?.slug) || '')
   const [store, setStore] = useState('')
 
@@ -23,7 +25,7 @@ export default function CategoryFilter({ allCategories, providers, currentSlug, 
         {t('categoryLabel')}:
         <select className="select input" value={category} onChange={(e) => setCategory(e.target.value)}>
           {allCategories?.map((c: any) => (
-            <option key={c.id} value={c.slug}>{c.nameEN || c.nameAR}</option>
+            <option key={c.id} value={c.slug}>{getLocalizedName(c, locale)}</option>
           ))}
         </select>
       </label>

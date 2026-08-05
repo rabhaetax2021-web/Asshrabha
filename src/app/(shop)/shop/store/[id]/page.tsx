@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth'
 import { getTranslations, getLocale } from 'next-intl/server'
+import { getLocalizedName } from '@/lib/i18n/catalog-product-display'
 import AddToCartButton from '@/components/shop/AddToCartButton'
 
 export default async function StorePage({ params, searchParams }: { params: any; searchParams?: any }) {
@@ -114,7 +115,7 @@ export default async function StorePage({ params, searchParams }: { params: any;
             <div className="category-quick-links">
               {categories.map((c: any) => (
                 <Link key={c.id} href={`/shop/store/${store.id}?category=${c.slug}`} className="category-quick-link">
-                  {c.nameEN || c.nameAR}
+                  {getLocalizedName(c, locale)}
                 </Link>
               ))}
             </div>
@@ -171,7 +172,7 @@ export default async function StorePage({ params, searchParams }: { params: any;
               if (!items.length) return null
               return (
                 <section key={cat.id} style={{ marginBottom: 'var(--space-8)' }}>
-                  <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-4)' }}>{cat.nameEN || cat.nameAR}</h3>
+                  <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-4)' }}>{getLocalizedName(cat, locale)}</h3>
                   <div className="product-grid">
                     {items.map((p) => {
                       const unit = p.wholesaleUnit || p.catalogProduct?.unitType || 'UNIT'
