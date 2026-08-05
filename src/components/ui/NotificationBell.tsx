@@ -10,14 +10,28 @@ import { getVapidPublicKey } from '@/lib/notifications/vapid'
 import type { NotificationItem } from '@/types'
 
 function urlBase64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
-  const rawData = window.atob(base64)
-  const outputArray = new Uint8Array(rawData.length)
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i)
+  const normalized = base64String.trim().replace(/\s+/g, '')
+  if (!normalized) {
+    throw new Error('Empty VAPID public key')
   }
-  return outputArray
+
+  const padding = '='.repeat((4 - (normalized.length % 4)) % 4)
+  const base64 = (normalized + padding).replace(/-/g, '+').replace(/_/g, '/')
+
+  if (!/^[A-Za-z0-9+/]+=*$/.test(base64)) {
+    throw new Error(`Invalid VAPID public key format: ${normalized}`)
+  }
+
+  try {
+    const rawData = window.atob(base64)
+    const outputArray = new Uint8Array(rawData.length)
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i)
+    }
+    return outputArray
+  } catch (error) {
+    throw new Error(`Invalid VAPID public key: ${error instanceof Error ? error.message : String(error)}`)
+  }
 }
 
 export default function NotificationBell() {
@@ -315,9 +329,10 @@ export default function NotificationBell() {
         }
 
         try {
+          const applicationServerKey = urlBase64ToUint8Array(publicKey)
           subscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(publicKey),
+            applicationServerKey,
           })
         } catch (subscribeError) {
           console.error('[notifications] subscribe failed', subscribeError)
