@@ -313,21 +313,39 @@ export default function NotificationBell() {
           setError(labels.subscriptionError)
           return
         }
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey),
-        })
+
+        try {
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey),
+          })
+        } catch (subscribeError) {
+          console.error('[notifications] subscribe failed', subscribeError)
+          const message = subscribeError instanceof Error ? subscribeError.message : String(subscribeError)
+          setError(`${labels.registerError}\n${message}`)
+          return
+        }
       }
 
       setError(null)
       setLoading(true)
-      await fetch('/api/notifications/subscribe', {
+
+      const subscribeRes = await fetch('/api/notifications/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscription }),
       })
-    } catch {
-      setError(labels.registerError)
+
+      if (!subscribeRes.ok) {
+        const responseText = await subscribeRes.text()
+        console.error('[notifications] save subscription failed', responseText)
+        setError(`${labels.registerError}\n${responseText}`)
+        return
+      }
+    } catch (error) {
+      console.error('[notifications] registration failed', error)
+      const message = error instanceof Error ? error.message : String(error)
+      setError(`${labels.registerError}\n${message}`)
     } finally {
       setLoading(false)
     }
