@@ -9,12 +9,26 @@ const VAPID_ENV_KEYS = [
   'wapid_public_key',
 ]
 
+function looksLikePlaceholder(value: string) {
+  const normalized = value.trim().toLowerCase()
+  return (
+    normalized.includes('http://') ||
+    normalized.includes('https://') ||
+    normalized.includes('example') ||
+    normalized.includes('your_') ||
+    normalized.includes('replace') ||
+    normalized.includes('freesound') ||
+    normalized.includes('mp3') ||
+    normalized.includes('upload')
+  )
+}
+
 export function getVapidPublicKey(env: NodeJS.ProcessEnv = process.env) {
   if (!env) return null
 
   for (const key of VAPID_ENV_KEYS) {
     const value = env[key]
-    if (typeof value === 'string' && value.trim()) {
+    if (typeof value === 'string' && value.trim() && !looksLikePlaceholder(value)) {
       return value.trim()
     }
   }
@@ -28,7 +42,9 @@ export function getVapidPublicKey(env: NodeJS.ProcessEnv = process.env) {
 
   for (const key of VAPID_ENV_KEYS.map((item) => item.toLowerCase())) {
     const value = lowerEnv[key]
-    if (value) return value
+    if (typeof value === 'string' && value.trim() && !looksLikePlaceholder(value)) {
+      return value
+    }
   }
 
   return null

@@ -44,82 +44,14 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
-  const audioContextRef = useRef<AudioContext | null>(null)
-  const audioElementRef = useRef<HTMLAudioElement | null>(null)
-  const prepareAudioContextRef = useRef<(() => Promise<void>) | null>(null)
-
-  const prepareAudioContext = useCallback(async () => {
-    if (typeof window === 'undefined') return
-
-    if (!audioContextRef.current) {
-      const AudioCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-      if (!AudioCtor) return
-      audioContextRef.current = new AudioCtor()
-    }
-
-    if (audioContextRef.current.state === 'suspended') {
-      await audioContextRef.current.resume().catch(() => null)
-    }
-  }, [])
-
-  useEffect(() => {
-    prepareAudioContextRef.current = prepareAudioContext
-  }, [prepareAudioContext])
-
   const playNotificationSound = useCallback(async () => {
     if (typeof window === 'undefined') return
 
-    const customSoundUrl = process.env.NEXT_PUBLIC_NOTIFICATION_SOUND_URL?.trim()
-
     try {
-      if (customSoundUrl) {
-        if (!audioElementRef.current) {
-          audioElementRef.current = new Audio(customSoundUrl)
-          audioElementRef.current.preload = 'auto'
-          audioElementRef.current.volume = 1
-        }
-        await audioElementRef.current.play()
-        return
-      }
-
-      await prepareAudioContextRef.current?.()
-      const audioCtx = audioContextRef.current
-      if (!audioCtx) return
-
-      const gainNode = audioCtx.createGain()
-      const filter = audioCtx.createBiquadFilter()
-      const oscillator = audioCtx.createOscillator()
-      const oscillator2 = audioCtx.createOscillator()
-
-      const now = audioCtx.currentTime
-      gainNode.gain.setValueAtTime(0.001, now)
-      gainNode.gain.exponentialRampToValueAtTime(0.85, now + 0.03)
-      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.8)
-
-      filter.type = 'bandpass'
-      filter.frequency.setValueAtTime(880, now)
-      filter.Q.setValueAtTime(8, now)
-
-      oscillator.type = 'triangle'
-      oscillator.frequency.setValueAtTime(920, now)
-      oscillator.frequency.exponentialRampToValueAtTime(520, now + 0.45)
-
-      oscillator2.type = 'sawtooth'
-      oscillator2.frequency.setValueAtTime(1320, now)
-      oscillator2.detune.setValueAtTime(40, now)
-      oscillator2.frequency.exponentialRampToValueAtTime(660, now + 0.45)
-
-      oscillator.connect(filter)
-      oscillator2.connect(filter)
-      filter.connect(gainNode)
-      gainNode.connect(audioCtx.destination)
-
-      oscillator.start(now)
-      oscillator2.start(now)
-      oscillator.stop(now + 0.8)
-      oscillator2.stop(now + 0.8)
+      // Let the browser/device play its native notification sound.
+      // This avoids autoplay/audio context issues on mobile and desktop.
     } catch {
-      // Ignore autoplay restrictions; a later user interaction will re-enable the sound.
+      // Ignore autoplay restrictions; the browser notification itself will still appear.
     }
   }, [])
 
@@ -133,7 +65,7 @@ export default function NotificationBell() {
     if (typeof window === 'undefined') return
 
     const handleUserInteraction = () => {
-      void prepareAudioContextRef.current?.()
+      // No-op: the browser/device handles the notification sound natively.
     }
 
     window.addEventListener('pointerdown', handleUserInteraction, { once: true, passive: true })
@@ -385,7 +317,7 @@ export default function NotificationBell() {
     permissionError: 'تعذر طلب إذن الإشعارات.',
     loadError: 'تعذر تحميل الإشعارات. يرجى المحاولة مرة أخرى.',
     registerError: 'تعذر تسجيل اشتراك الإشعارات.',
-    subscriptionError: 'تعذر تهيئة اشتراك الإشعارات. يرجى توفير مفتاح VAPID في المتغيرات البيئية مثل NEXT_PUBLIC_WAPID_PUBLIC_KEY أو NEXT_PUBLIC_VAPID_PUBLIC_KEY.',
+    subscriptionError: 'تعذر تهيئة اشتراك الإشعارات. يرجى توفير مفتاح VAPID الحقيقي في المتغيرات البيئية مثل NEXT_PUBLIC_WAPID_PUBLIC_KEY أو NEXT_PUBLIC_VAPID_PUBLIC_KEY.',
     history: 'عرض السجل',
   }
 
