@@ -11,4 +11,9 @@ describe('getVapidPublicKey', () => {
     const env = { VAPID_PUBLIC_KEY: 'vapid-key' } as NodeJS.ProcessEnv
     expect(getVapidPublicKey(env)).toBe('vapid-key')
   })
+
+  it('reads lowercase deployment env names', () => {
+    const env = { next_public_vapid_public_key: 'lowercase-key' } as NodeJS.ProcessEnv
+    expect(getVapidPublicKey(env)).toBe('lowercase-key')
+  })
 })

@@ -352,7 +352,7 @@ export default function NotificationBell() {
     permissionError: 'تعذر طلب إذن الإشعارات.',
     loadError: 'تعذر تحميل الإشعارات. يرجى المحاولة مرة أخرى.',
     registerError: 'تعذر تسجيل اشتراك الإشعارات.',
-    subscriptionError: 'تعذر تهيئة اشتراك الإشعارات. يرجى توفير NEXT_PUBLIC_WAPID_PUBLIC_KEY أو NEXT_PUBLIC_VAPID_PUBLIC_KEY.',
+    subscriptionError: 'تعذر تهيئة اشتراك الإشعارات. يرجى توفير مفتاح VAPID في المتغيرات البيئية مثل NEXT_PUBLIC_WAPID_PUBLIC_KEY أو NEXT_PUBLIC_VAPID_PUBLIC_KEY.',
     history: 'عرض السجل',
   }
 
