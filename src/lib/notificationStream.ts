@@ -18,6 +18,7 @@ function getEmitter(userId: string) {
   let emitter = emitters.get(userId)
   if (!emitter) {
     emitter = new EventEmitter()
+    emitter.setMaxListeners(20)
     emitters.set(userId, emitter)
   }
   return emitter
@@ -29,6 +30,7 @@ export function subscribeToNotifications(
 ) {
   const emitter = getEmitter(userId)
   emitter.on('notification', callback)
+
   return () => {
     emitter.off('notification', callback)
     if (emitter.listenerCount('notification') === 0) {

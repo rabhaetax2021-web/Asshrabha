@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import Button from './Button'
 import Icon from './Icon'
 import { formatRelativeTime } from '@/lib/utils/helpers'
+import { getVapidPublicKey } from '@/lib/notifications/vapid'
 import type { NotificationItem } from '@/types'
 
 function urlBase64ToUint8Array(base64String: string) {
