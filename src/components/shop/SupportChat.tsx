@@ -12,7 +12,6 @@ export default function SupportChat({ initialOrderNumber }: { initialOrderNumber
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Deduplicated message setter
   const addMessages = useCallback((newMsgs: any[]) => {
@@ -72,15 +71,9 @@ export default function SupportChat({ initialOrderNumber }: { initialOrderNumber
       }
     }
 
-    function startPolling() {
-      if (!mounted) return
-      fetchMessages()
-      intervalId = setInterval(fetchMessages, 2000)
-    }
-
     function connectSSE() {
       if (typeof window === 'undefined' || !window.EventSource) {
-        startPolling()
+        void fetchMessages()
         return
       }
 
@@ -100,15 +93,28 @@ export default function SupportChat({ initialOrderNumber }: { initialOrderNumber
           es.close()
           es = null
         }
-        if (!intervalId) startPolling()
-        if (mounted) setTimeout(connectSSE, 5000)
+        if (mounted) setTimeout(() => {
+          if (mounted) connectSSE()
+        }, 15000)
       }
     }
 
     connectSSE()
 
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') void fetchMessages()
+    }
+    const handleFocus = () => {
+      void fetchMessages()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibility)
+    window.addEventListener('focus', handleFocus)
+
     return () => {
       mounted = false
+      document.removeEventListener('visibilitychange', handleVisibility)
+      window.removeEventListener('focus', handleFocus)
       if (intervalId) clearInterval(intervalId)
       if (es) es.close()
     }

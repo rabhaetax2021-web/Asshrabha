@@ -5,7 +5,11 @@ import { useEffect } from 'react'
 // unregister it to avoid stale caching and orphaned admin SW requests.
 export default function ServiceWorkerRegister() {
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
+    if (process.env.NODE_ENV !== 'production' || !('serviceWorker' in navigator)) {
+      return
+    }
+
+    {
       // Register the application's service worker to enable PWA features.
       navigator.serviceWorker
         .register('/sw.js')

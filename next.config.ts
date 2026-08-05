@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
   },
   // Disable Next.js dev overlay/devtools UI in development
   devIndicators: false,
+  experimental: {
+    cpus: 2,
+  },
 };
 
 export default withNextIntl(nextConfig);

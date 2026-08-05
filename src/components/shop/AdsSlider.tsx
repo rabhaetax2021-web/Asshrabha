@@ -50,10 +50,10 @@ export default function AdsSlider({ slides }: { slides: Slide[] }) {
       return
     }
 
-    const timer = window.setInterval(() => {
+    const timer = window.setTimeout(() => {
       setIndex((i) => (i + 1) % slides.length)
     }, 5000)
-    return () => window.clearInterval(timer)
+    return () => window.clearTimeout(timer)
   }, [isVisible, index, slides])
 
   useEffect(() => {

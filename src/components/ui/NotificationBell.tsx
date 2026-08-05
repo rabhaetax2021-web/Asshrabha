@@ -80,7 +80,6 @@ export default function NotificationBell() {
   useEffect(() => {
     let active = true
     let es: EventSource | null = null
-    let intervalId: number | null = null
 
     const loadNotifications = async () => {
       try {
@@ -99,19 +98,18 @@ export default function NotificationBell() {
       }
     }
 
-    function startPolling() {
-      if (!active) return
-      loadNotifications()
-      intervalId = window.setInterval(loadNotifications, 20000)
+    const refreshNotifications = () => {
+      if (!active || typeof document === 'undefined' || document.visibilityState === 'hidden') return
+      void loadNotifications()
     }
 
-    function connectSSE() {
+    const connectSSE = () => {
       if (typeof window === 'undefined' || !window.EventSource) {
-        startPolling()
+        refreshNotifications()
         return
       }
 
-      loadNotifications()
+      void loadNotifications()
       es = new EventSource('/api/notifications/stream')
       es.onmessage = (event) => {
         try {
@@ -137,18 +135,30 @@ export default function NotificationBell() {
           es.close()
           es = null
         }
-        if (intervalId === null) startPolling()
         if (active) {
-          window.setTimeout(connectSSE, 5000)
+          window.setTimeout(() => {
+            if (active) connectSSE()
+          }, 15000)
         }
       }
     }
 
     connectSSE()
 
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') refreshNotifications()
+    }
+    const handleFocus = () => {
+      refreshNotifications()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibility)
+    window.addEventListener('focus', handleFocus)
+
     return () => {
       active = false
-      if (intervalId !== null) window.clearInterval(intervalId)
+      document.removeEventListener('visibilitychange', handleVisibility)
+      window.removeEventListener('focus', handleFocus)
       if (es) es.close()
     }
   }, [])
@@ -160,38 +170,6 @@ export default function NotificationBell() {
       void playNotificationSound()
     }
   }, [playNotificationSound])
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.EventSource) return
-
-    const es = new EventSource('/api/notifications/stream')
-    es.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data)
-        if (payload?.type === 'notification' && payload.payload) {
-          const notification = payload.payload as NotificationItem
-          setItems((prev) => [notification, ...prev].slice(0, 20))
-          setUnreadCount((count) => count + (notification.isRead ? 0 : 1))
-          if (!notification.isRead) {
-            playNotificationSoundRef.current?.()
-          }
-        }
-        if (payload?.type === 'initial' && Array.isArray(payload.payload)) {
-          setItems(payload.payload)
-          setUnreadCount(payload.payload.filter((item: NotificationItem) => !item.isRead).length)
-        }
-      } catch {
-        // ignore malformed SSE payload
-      }
-    }
-    es.onerror = () => {
-      es.close()
-    }
-
-    return () => {
-      es.close()
-    }
-  }, [])
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {

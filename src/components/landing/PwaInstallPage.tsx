@@ -1,8 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { type ComponentProps, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { motion } from 'framer-motion';
 import {
   ArrowRight,
   BadgeCheck,
@@ -24,11 +23,29 @@ import type { LucideIcon } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import InstallModal from '@/components/InstallModal';
 
-const fadeUp = {
-  initial: { opacity: 0, y: 26 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, amount: 0.25 },
-  transition: { duration: 0.5, ease: 'easeOut' as const },
+const fadeUp = {};
+
+type MotionDivProps = ComponentProps<'div'> & {
+  initial?: unknown;
+  whileInView?: unknown;
+  viewport?: unknown;
+  transition?: unknown;
+  whileHover?: unknown;
+  animate?: unknown;
+};
+
+type MotionArticleProps = ComponentProps<'article'> & {
+  initial?: unknown;
+  whileInView?: unknown;
+  viewport?: unknown;
+  transition?: unknown;
+  whileHover?: unknown;
+  animate?: unknown;
+};
+
+const motion = {
+  div: ({ children, ...rest }: MotionDivProps) => <div {...rest}>{children}</div>,
+  article: ({ children, ...rest }: MotionArticleProps) => <article {...rest}>{children}</article>,
 };
 
 function SectionHeading({ eyebrow, title, text }: { eyebrow: string; title: string; text: string }) {
