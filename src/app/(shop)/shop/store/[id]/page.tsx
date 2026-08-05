@@ -58,7 +58,7 @@ export default async function StorePage({ params, searchParams }: { params: any;
         {store.banner ? (
           <div className="store-banner" style={{ backgroundImage: `url(${store.banner})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
             <div className="store-banner-overlay">
-              <h1>{store.shopNameEN || store.shopNameAR}</h1>
+              <h1>{getLocalizedValue(store, 'name')}</h1>
             </div>
           </div>
         ) : (
@@ -70,15 +70,15 @@ export default async function StorePage({ params, searchParams }: { params: any;
         {/* Store Header Info */}
         <div className="store-header" style={{ padding: 'var(--space-5)' }}>
         {store.logo ? (
-          <img src={store.logo} alt={store.shopNameEN || store.shopNameAR} className="provider-logo-lg" />
+          <img src={store.logo} alt={getLocalizedValue(store, 'name')} className="provider-logo-lg" />
         ) : (
           <div className="provider-logo-lg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--gradient-primary)', color: 'white', fontWeight: 'var(--font-bold)', fontSize: 'var(--text-2xl)' }}>
-            {(store.shopNameEN || store.shopNameAR)?.charAt(0).toUpperCase()}
+            {(getLocalizedValue(store, 'name') || 'S').charAt(0).toUpperCase()}
           </div>
         )}
         <div className="store-header-info">
-          <h1>{store.shopNameEN || store.shopNameAR}</h1>
-          <p>{store.descriptionEN || store.descriptionAR || 'No description available.'}</p>
+          <h1>{getLocalizedValue(store, 'name')}</h1>
+          <p>{getLocalizedValue(store, 'description') || 'No description available.'}</p>
           <div className="store-header-meta">
             {store.rating && store.rating > 0 && (
               <span>⭐ {store.rating.toFixed(1)}</span>

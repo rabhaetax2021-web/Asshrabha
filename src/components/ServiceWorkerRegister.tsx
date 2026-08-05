@@ -1,33 +1,35 @@
 "use client"
 import { useEffect } from 'react'
 
-// No service worker registration for this app. If one is already installed,
-// unregister it to avoid stale caching and orphaned admin SW requests.
 export default function ServiceWorkerRegister() {
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production' || !('serviceWorker' in navigator)) {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
       return
     }
 
-    {
-      // Register the application's service worker to enable PWA features.
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((registration) => {
-          // Optionally listen for updates
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                // You can add logic here to notify users about updates
-              })
-            }
-          })
-        })
-        .catch(() => {
-          // Ignore registration errors in dev or unsupported environments
-        })
+    const hostname = window.location.hostname
+    const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1'
+    const shouldRegister = process.env.NODE_ENV === 'production' || isLocalHost
+
+    if (!shouldRegister) {
+      return
     }
+
+    navigator.serviceWorker
+      .register('/sw.js', { scope: '/' })
+      .then((registration) => {
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              // Ignore state changes; the install flow is handled by the browser.
+            })
+          }
+        })
+      })
+      .catch(() => {
+        // Ignore registration errors in unsupported environments.
+      })
   }, [])
 
   return null
