@@ -244,28 +244,19 @@ export default function NotificationBell() {
     try {
       const registration = await navigator.serviceWorker.ready
       let subscription = await registration.pushManager.getSubscription()
-      let publicKey = getVapidPublicKey()
-
-      if (!publicKey) {
-        const keyRes = await fetch('/api/notifications/vapid-key')
-        if (keyRes.ok) {
-          const keyData = await keyRes.json()
-          publicKey = typeof keyData.publicKey === 'string' ? keyData.publicKey : undefined
-        }
-      }
+      const publicKey = getVapidPublicKey()
 
       if (!subscription) {
-        if (!publicKey) {
-          setError(labels.subscriptionError)
-          return
-        }
-
         try {
-          const applicationServerKey = urlBase64ToUint8Array(publicKey)
-          subscription = await registration.pushManager.subscribe({
+          const subscribeOptions: PushSubscriptionOptionsInit = {
             userVisibleOnly: true,
-            applicationServerKey,
-          })
+          }
+
+          if (publicKey) {
+            subscribeOptions.applicationServerKey = urlBase64ToUint8Array(publicKey)
+          }
+
+          subscription = await registration.pushManager.subscribe(subscribeOptions)
         } catch (subscribeError) {
           console.error('[notifications] subscribe failed', subscribeError)
           const message = subscribeError instanceof Error ? subscribeError.message : String(subscribeError)
@@ -317,7 +308,7 @@ export default function NotificationBell() {
     permissionError: 'تعذر طلب إذن الإشعارات.',
     loadError: 'تعذر تحميل الإشعارات. يرجى المحاولة مرة أخرى.',
     registerError: 'تعذر تسجيل اشتراك الإشعارات.',
-    subscriptionError: 'تعذر تهيئة اشتراك الإشعارات. يرجى توفير مفتاح VAPID الحقيقي في المتغيرات البيئية مثل NEXT_PUBLIC_WAPID_PUBLIC_KEY أو NEXT_PUBLIC_VAPID_PUBLIC_KEY.',
+    subscriptionError: 'تعذر تهيئة اشتراك الإشعارات. يرجى التأكد من أن المتصفح يسمح بالإشعارات.',
     history: 'عرض السجل',
   }
 
