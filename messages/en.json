@@ -888,6 +888,7 @@
     "categoryNotFound": "Category not found",
     "product": "Product",
     "provider": "Provider",
+    "price": "Price",
     "wholesale": "Wholesale",
     "retail": "Retail",
     "optionsLabel": "Options: {options}",
