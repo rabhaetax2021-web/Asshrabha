@@ -297,7 +297,7 @@ export default function NotificationBell() {
     try {
       const registration = await navigator.serviceWorker.ready
       let subscription = await registration.pushManager.getSubscription()
-      let publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+      let publicKey = getVapidPublicKey()
 
       if (!publicKey) {
         const keyRes = await fetch('/api/notifications/vapid-key')
@@ -351,7 +351,7 @@ export default function NotificationBell() {
     permissionError: 'تعذر طلب إذن الإشعارات.',
     loadError: 'تعذر تحميل الإشعارات. يرجى المحاولة مرة أخرى.',
     registerError: 'تعذر تسجيل اشتراك الإشعارات.',
-    subscriptionError: 'تعذر تهيئة اشتراك الإشعارات. يرجى توفير NEXT_PUBLIC_VAPID_PUBLIC_KEY.',
+    subscriptionError: 'تعذر تهيئة اشتراك الإشعارات. يرجى توفير NEXT_PUBLIC_WAPID_PUBLIC_KEY أو NEXT_PUBLIC_VAPID_PUBLIC_KEY.',
     history: 'عرض السجل',
   }
 

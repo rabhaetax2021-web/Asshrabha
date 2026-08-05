@@ -1,12 +1,14 @@
 import { NotificationType } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { publishNotification } from '@/lib/notificationStream'
+import { getVapidPublicKey } from '@/lib/notifications/vapid'
 
 async function sendPushNotifications(
   subscription: any,
   payload: { title: string; body?: string; data?: Record<string, unknown> }
 ) {
-  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+  const vapidPublicKey = getVapidPublicKey()
+  if (!vapidPublicKey || !process.env.VAPID_PRIVATE_KEY) {
     return
   }
 
@@ -15,7 +17,7 @@ async function sendPushNotifications(
     const webPush = await import('web-push')
     webPush.setVapidDetails(
       `mailto:${process.env.VAPID_CONTACT_EMAIL || 'support@asshrabha.com'}`,
-      process.env.VAPID_PUBLIC_KEY,
+      vapidPublicKey,
       process.env.VAPID_PRIVATE_KEY
     )
     await webPush.sendNotification(subscription, JSON.stringify(payload))
