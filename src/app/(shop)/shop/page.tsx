@@ -101,12 +101,12 @@ take: 6,
             <div key={s.id} className="store-card" style={{ textDecoration: 'none', color: 'inherit' }}>
               <Link href={`/shop/store/${s.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div className="store-card-header">
-                  {s.logo ? <img src={s.logo} alt={s.shopNameEN || s.shopNameAR} className="provider-logo" /> : (
-                    <div className="provider-logo-placeholder">{(s.shopNameEN || s.shopNameAR)?.charAt(0).toUpperCase()}</div>
+                  {s.logo ? <img src={s.logo} alt={getLocalizedName({ nameEN: s.shopNameEN, nameAR: s.shopNameAR }, locale)} className="provider-logo" /> : (
+                    <div className="provider-logo-placeholder">{(getLocalizedName({ nameEN: s.shopNameEN, nameAR: s.shopNameAR }, locale) || s.user?.nameEN || s.user?.nameAR)?.charAt(0).toUpperCase()}</div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <h3 style={{ margin: 0 }}>{s.shopNameEN || s.shopNameAR || s.user?.nameEN || s.user?.nameAR}</h3>
-                    <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>{s.user?.nameEN || s.user?.nameAR}</div>
+                    <h3 style={{ margin: 0 }}>{getLocalizedName({ nameEN: s.shopNameEN, nameAR: s.shopNameAR }, locale) || getLocalizedName({ nameEN: s.user?.nameEN, nameAR: s.user?.nameAR }, locale)}</h3>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>{getLocalizedName({ nameEN: s.user?.nameEN, nameAR: s.user?.nameAR }, locale)}</div>
                   </div>
                 </div>
               </Link>
