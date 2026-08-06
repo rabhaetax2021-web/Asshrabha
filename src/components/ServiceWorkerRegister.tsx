@@ -1,5 +1,6 @@
 "use client"
 import { useEffect } from 'react'
+import { shouldRegisterServiceWorker } from '@/lib/pwa/service-worker'
 
 export default function ServiceWorkerRegister() {
   useEffect(() => {
@@ -8,8 +9,7 @@ export default function ServiceWorkerRegister() {
     }
 
     const hostname = window.location.hostname
-    const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1'
-    const shouldRegister = process.env.NODE_ENV === 'production' || isLocalHost
+    const shouldRegister = shouldRegisterServiceWorker(hostname, process.env.NODE_ENV)
 
     if (!shouldRegister) {
       return
