@@ -79,7 +79,7 @@ export default function NotificationBell() {
 
   useEffect(() => {
     let active = true
-    let es: EventSource | null = null
+    let refreshTimer: number | null = null
 
     const loadNotifications = async () => {
       try {
@@ -103,47 +103,13 @@ export default function NotificationBell() {
       void loadNotifications()
     }
 
-    const connectSSE = () => {
-      if (typeof window === 'undefined' || !window.EventSource) {
+    refreshNotifications()
+
+    if (typeof window !== 'undefined') {
+      refreshTimer = window.setInterval(() => {
         refreshNotifications()
-        return
-      }
-
-      void loadNotifications()
-      es = new EventSource('/api/notifications/stream')
-      es.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data)
-          if (payload?.type === 'notification' && payload.payload) {
-            const notification = payload.payload as NotificationItem
-            setItems((prev) => [notification, ...prev].slice(0, 20))
-            setUnreadCount((count) => count + (notification.isRead ? 0 : 1))
-            if (!notification.isRead) {
-              playNotificationSoundRef.current?.()
-            }
-          }
-          if (payload?.type === 'initial' && Array.isArray(payload.payload)) {
-            setItems(payload.payload)
-            setUnreadCount(payload.payload.filter((item: NotificationItem) => !item.isRead).length)
-          }
-        } catch {
-          // ignore malformed SSE payload
-        }
-      }
-      es.onerror = () => {
-        if (es) {
-          es.close()
-          es = null
-        }
-        if (active) {
-          window.setTimeout(() => {
-            if (active) connectSSE()
-          }, 15000)
-        }
-      }
+      }, 60000)
     }
-
-    connectSSE()
 
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') refreshNotifications()
@@ -159,7 +125,7 @@ export default function NotificationBell() {
       active = false
       document.removeEventListener('visibilitychange', handleVisibility)
       window.removeEventListener('focus', handleFocus)
-      if (es) es.close()
+      if (refreshTimer !== null) window.clearInterval(refreshTimer)
     }
   }, [])
 

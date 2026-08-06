@@ -22,8 +22,14 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
 
   useEffect(() => {
     if (!slides || slides.length === 0) return
-    const t = setInterval(() => setIndex((i) => (i + 1) % slides.length), 5000)
-    return () => clearInterval(t)
+
+    const tick = () => {
+      if (document.visibilityState === 'hidden') return
+      setIndex((i) => (i + 1) % slides.length)
+    }
+
+    const t = window.setInterval(tick, 8000)
+    return () => window.clearInterval(t)
   }, [slides])
 
   if (!slides || slides.length === 0) return null

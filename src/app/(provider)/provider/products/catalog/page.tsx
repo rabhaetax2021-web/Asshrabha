@@ -29,7 +29,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     ? true
     : ['1', 'true', 'on', 'yes'].includes(resolveSearchValue(params.hideInventory).toLowerCase())
   const category = resolveSearchValue(params.category).trim()
-  const categorySlug = category && category !== '__all__' ? category : undefined
+  const categorySlug = category ? category : undefined
   const sortByInput = resolveSearchValue(params.sortBy || 'createdAt')
   const sortBy = ['createdAt', 'nameEN', 'wholesaleMinPrice', 'retailMinPrice'].includes(sortByInput)
     ? (sortByInput as CatalogProductSortField)
@@ -55,6 +55,9 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     orderBy: { sortOrder: 'asc' },
     select: { id: true, nameEN: true, nameAR: true, slug: true },
   })
+
+  const defaultCategorySlug = categories.length > 0 ? categories[Math.floor(Math.random() * categories.length)].slug : ''
+  const selectedCategorySlug = category || defaultCategorySlug
 
   const filterControlStyle = {
     minWidth: 180,
@@ -121,7 +124,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
 
   const products = await listCatalogProducts({
     excludeCatalogProductIds,
-    categorySlug,
+    categorySlug: selectedCategorySlug,
     sortBy,
     sortDir,
   })
@@ -140,8 +143,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
       <form method="get" style={filterFormStyle}>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 180 }}>
           {t('categoryLabel') || tc('categoryLabel')}
-          <select name="category" defaultValue={category || '__all__'} style={filterControlStyle}>
-            <option value="__all__">{t('showAllProducts') || 'Show all products'}</option>
+          <select name="category" defaultValue={selectedCategorySlug} style={filterControlStyle}>
             {categories.map((cat) => (
               <option key={cat.id} value={cat.slug}>{isArabic ? cat.nameAR || cat.nameEN : cat.nameEN || cat.nameAR}</option>
             ))}
