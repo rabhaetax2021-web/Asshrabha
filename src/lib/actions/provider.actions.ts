@@ -165,7 +165,6 @@ export async function listCatalogProducts(filter?: ListCatalogProductsFilter) {
   return await prisma.catalogProduct.findMany({
     where,
     orderBy: orderBy as any,
-    take: 100,
   })
 }
 

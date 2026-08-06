@@ -29,6 +29,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     ? true
     : ['1', 'true', 'on', 'yes'].includes(resolveSearchValue(params.hideInventory).toLowerCase())
   const category = resolveSearchValue(params.category).trim()
+  const categorySlug = category && category !== '__all__' ? category : undefined
   const sortByInput = resolveSearchValue(params.sortBy || 'createdAt')
   const sortBy = ['createdAt', 'nameEN', 'wholesaleMinPrice', 'retailMinPrice'].includes(sortByInput)
     ? (sortByInput as CatalogProductSortField)
@@ -120,7 +121,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
 
   const products = await listCatalogProducts({
     excludeCatalogProductIds,
-    categorySlug: category || undefined,
+    categorySlug,
     sortBy,
     sortDir,
   })
@@ -139,8 +140,8 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
       <form method="get" style={filterFormStyle}>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 180 }}>
           {t('categoryLabel') || tc('categoryLabel')}
-          <select name="category" defaultValue={category} style={filterControlStyle}>
-            <option value="">{tc('allCategories') || 'All categories'}</option>
+          <select name="category" defaultValue={category || '__all__'} style={filterControlStyle}>
+            <option value="__all__">{t('showAllProducts') || 'Show all products'}</option>
             {categories.map((cat) => (
               <option key={cat.id} value={cat.slug}>{isArabic ? cat.nameAR || cat.nameEN : cat.nameEN || cat.nameAR}</option>
             ))}
@@ -176,7 +177,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
         {products.map(p => (
           <div key={p.id} className="catalog-card" style={{ padding: 'var(--space-4)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', minHeight: 420, display: 'flex', flexDirection: 'column', background: 'var(--bg-elevated)', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12)' }}>
             {p.images && p.images.length > 0 ? (
-              <img src={p.images[0]} alt={p.nameEN || p.nameAR} style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-3)' }} />
+              <img src={p.images[0]} alt={p.nameEN || p.nameAR} loading="lazy" decoding="async" style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-3)' }} />
             ) : (
               <div style={{ width: '100%', height: 180, borderRadius: 'var(--radius-md)', background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-3)', color: 'var(--text-secondary)' }}>📦</div>
             )}
