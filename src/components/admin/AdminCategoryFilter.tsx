@@ -16,7 +16,9 @@ export default function AdminCategoryFilter({ allCategories, providers, currentS
     e?.preventDefault()
     if (!category) return
     const url = store ? `/admin/catalog?category=${encodeURIComponent(category)}&store=${encodeURIComponent(store)}` : `/admin/catalog?category=${encodeURIComponent(category)}`
+    // Navigate then refresh server components so the new products are fetched immediately
     router.push(url)
+    router.refresh()
   }
 
   return (
