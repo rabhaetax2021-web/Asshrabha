@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import IntlText from '@/components/IntlText'
@@ -24,6 +24,11 @@ export default function CatalogList({ products: initial }: { products: Product[]
   const [products, setProducts] = useState<Product[]>(initial || [])
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
+
+  // Keep local products state in sync when `initial` prop changes (e.g., after server navigation)
+  useEffect(() => {
+    setProducts(initial || [])
+  }, [initial])
 
   const handleArchive = async (id: string) => {
     setPendingId(id)
