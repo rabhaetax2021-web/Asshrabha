@@ -6,7 +6,7 @@ import CatalogList from '@/components/admin/CatalogList'
 import CatalogImportExport from '@/components/admin/CatalogImportExport'
 
 export default async function AdminCatalogPage() {
-  const products = await prisma.catalogProduct.findMany({ where: { status: { not: 'ARCHIVED' } }, orderBy: { createdAt: 'desc' }, take: 100 })
+  const products = await prisma.catalogProduct.findMany({ where: { status: { not: 'ARCHIVED' } }, orderBy: { createdAt: 'desc' }, })
 
   return (
     <section className="admin-catalog container">
