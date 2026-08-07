@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest) {
   const current = await getCurrentUser(request)
   if (!current) {
