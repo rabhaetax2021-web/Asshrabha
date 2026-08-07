@@ -7,7 +7,8 @@ export const runtime = 'nodejs'
 export async function POST(request: NextRequest) {
   try {
     const current = await getCurrentUser(request)
-    if (!current || !current.id) {
+    const userId = current?.id ? String(current.id).trim() : ''
+    if (!userId) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
 
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await (prisma.user as any).findUnique({
-      where: { id: current.id },
+      where: { id: userId },
       select: { pushSubscriptions: true },
     })
 
@@ -31,17 +32,13 @@ export async function POST(request: NextRequest) {
       new Map(existing.concat(subscription).map((item: any) => [item.endpoint, item])).values()
     )
 
-    try {
-      await (prisma.user as any).update({
-        where: { id: current.id },
-        data: { pushSubscriptions: unique },
-      })
-    } catch (updateError) {
-      const code = (updateError as any)?.code
-      if (code === 'P2025' || /record.*not.*found/i.test(String(updateError))) {
-        return NextResponse.json({ error: 'user_not_found' }, { status: 404 })
-      }
-      throw updateError
+    const updateResult = await (prisma.user as any).updateMany({
+      where: { id: userId },
+      data: { pushSubscriptions: unique },
+    })
+
+    if (updateResult.count === 0) {
+      return NextResponse.json({ error: 'user_not_found' }, { status: 404 })
     }
 
     return NextResponse.json({ ok: true })
