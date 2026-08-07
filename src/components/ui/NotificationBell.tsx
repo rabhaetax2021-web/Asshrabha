@@ -167,6 +167,20 @@ export default function NotificationBell() {
     updateReadState(items.filter((item) => !item.isRead).map((item) => item.id))
   }
 
+  const getClientVapidPublicKey = async () => {
+    const localKey = getVapidPublicKey()
+    if (localKey) return localKey
+
+    try {
+      const res = await fetch('/api/notifications/vapid-key', { cache: 'no-store' })
+      if (!res.ok) return null
+      const data = await res.json()
+      return typeof data.publicKey === 'string' && data.publicKey.trim() ? data.publicKey.trim() : null
+    } catch {
+      return null
+    }
+  }
+
   const requestPermission = async () => {
     if (!canPush) {
       setError(labels.unsupported)
@@ -188,16 +202,18 @@ export default function NotificationBell() {
     try {
       const registration = await navigator.serviceWorker.ready
       let subscription = await registration.pushManager.getSubscription()
-      const publicKey = getVapidPublicKey()
+      const publicKey = await getClientVapidPublicKey()
+
+      if (!publicKey) {
+        setError(labels.missingVapidKey)
+        return
+      }
 
       if (!subscription) {
         try {
           const subscribeOptions: PushSubscriptionOptionsInit = {
             userVisibleOnly: true,
-          }
-
-          if (publicKey) {
-            subscribeOptions.applicationServerKey = urlBase64ToUint8Array(publicKey)
+            applicationServerKey: urlBase64ToUint8Array(publicKey),
           }
 
           subscription = await registration.pushManager.subscribe(subscribeOptions)
@@ -252,6 +268,7 @@ export default function NotificationBell() {
     permissionError: 'تعذر طلب إذن الإشعارات.',
     loadError: 'تعذر تحميل الإشعارات. يرجى المحاولة مرة أخرى.',
     registerError: 'تعذر تسجيل اشتراك الإشعارات.',
+    missingVapidKey: 'مفتاح VAPID مفقود أو غير صالح. يرجى التحقق من إعدادات الخادم.',
     subscriptionError: 'تعذر تهيئة اشتراك الإشعارات. يرجى التأكد من أن المتصفح يسمح بالإشعارات.',
     history: 'عرض السجل',
   }
