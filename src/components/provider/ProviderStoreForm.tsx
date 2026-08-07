@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation'
 import { showToast } from '@/components/ui/toast'
 import { getErrorMessage } from '@/lib/errors'
 
 export default function ProviderStoreForm({ provider }: any) {
+  const router = useRouter()
   const [form, setForm] = useState({
     shopNameEN: provider.shopNameEN || '',
     shopNameAR: provider.shopNameAR || '',
@@ -40,7 +42,7 @@ export default function ProviderStoreForm({ provider }: any) {
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Failed')
       showToast(data?.status === 'pending-review' ? 'Your store changes were submitted for admin approval.' : 'Saved', 'success')
-      window.location.reload()
+      router.refresh()
     } catch (err: unknown) {
       showToast(getErrorMessage(err), 'error')
     } finally {
