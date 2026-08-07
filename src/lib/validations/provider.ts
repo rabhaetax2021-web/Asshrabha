@@ -29,6 +29,8 @@ export const updateStoreSchema = z.object({
   descriptionAR: z.string().optional(),
   minOrderItems: z.number().int().nonnegative().nullable().optional(),
   minOrderAmount: z.number().nonnegative().nullable().optional(),
+  logo: z.string().optional(),
+  banner: z.string().optional(),
   defaultWholesaleUnit: z.enum(['BOX', 'PACK']).optional(),
 })
 
