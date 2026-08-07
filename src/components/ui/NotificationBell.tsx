@@ -231,7 +231,7 @@ export default function NotificationBell() {
       const subscribeRes = await fetch('/api/notifications/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription }),
+        body: JSON.stringify({ subscription: subscription.toJSON() }),
       })
 
       if (!subscribeRes.ok) {
