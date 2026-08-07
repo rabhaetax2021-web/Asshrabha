@@ -20,17 +20,18 @@ export async function POST(request: NextRequest) {
     }
 
     const mobile = current?.mobile ? normalizeEgyptMobile(String(current.mobile)) : undefined
-    let user = await (prisma.user as any).findUnique({
-      where: { id: userId },
+    const normalizedIdAsMobile = normalizeEgyptMobile(userId)
+
+    let user = await (prisma.user as any).findFirst({
+      where: {
+        OR: [
+          { id: userId },
+          ...(mobile ? [{ mobile }] : []),
+          ...(normalizedIdAsMobile ? [{ mobile: normalizedIdAsMobile }] : []),
+        ],
+      },
       select: { id: true, pushSubscriptions: true },
     })
-
-    if (!user && mobile) {
-      user = await (prisma.user as any).findUnique({
-        where: { mobile },
-        select: { id: true, pushSubscriptions: true },
-      })
-    }
 
     if (!user) {
       return NextResponse.json({ error: 'user_not_found' }, { status: 404 })
