@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { normalizeEgyptMobile } from '@/lib/utils/helpers'
 
 export const runtime = 'nodejs'
 
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'invalid_subscription' }, { status: 400 })
     }
 
-    const mobile = current?.mobile ? String(current.mobile).trim() : undefined
+    const mobile = current?.mobile ? normalizeEgyptMobile(String(current.mobile)) : undefined
     let user = await (prisma.user as any).findUnique({
       where: { id: userId },
       select: { id: true, pushSubscriptions: true },
