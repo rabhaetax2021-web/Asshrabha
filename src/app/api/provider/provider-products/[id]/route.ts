@@ -53,6 +53,18 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     const newWholesale = body.wholesalePrice !== undefined ? Number(body.wholesalePrice) : prod.wholesalePrice
     const newRetail = body.retailPrice !== undefined ? Number(body.retailPrice) : prod.retailPrice
     const newSelling = body.sellingPrice !== undefined ? Number(body.sellingPrice) : prod.sellingPrice
+    const newMinPurchaseQuantity = body.minPurchaseQuantity !== undefined ? (body.minPurchaseQuantity === null ? null : Number(body.minPurchaseQuantity)) : prod.minPurchaseQuantity
+    const newMaxPurchaseQuantity = body.maxPurchaseQuantity !== undefined ? (body.maxPurchaseQuantity === null ? null : Number(body.maxPurchaseQuantity)) : prod.maxPurchaseQuantity
+
+    if (newMinPurchaseQuantity !== null && newMinPurchaseQuantity !== undefined && newMinPurchaseQuantity <= 0) {
+      return NextResponse.json({ error: 'Minimum purchase quantity must be greater than 0' }, { status: 400 })
+    }
+    if (newMaxPurchaseQuantity !== null && newMaxPurchaseQuantity !== undefined && newMaxPurchaseQuantity <= 0) {
+      return NextResponse.json({ error: 'Maximum purchase quantity must be greater than 0' }, { status: 400 })
+    }
+    if (newMinPurchaseQuantity !== undefined && newMaxPurchaseQuantity !== undefined && newMinPurchaseQuantity !== null && newMaxPurchaseQuantity !== null && newMinPurchaseQuantity > newMaxPurchaseQuantity) {
+      return NextResponse.json({ error: 'Minimum purchase quantity cannot exceed maximum purchase quantity' }, { status: 400 })
+    }
 
     if (prod.catalogProduct) {
       const catalog = prod.catalogProduct
@@ -64,11 +76,15 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       }
     }
 
-    // Determine whether the change is a price change vs a stock change
+    // Determine whether the change is a price/listing change vs a stock change
     const priceChanged = (
       (body.sellingPrice !== undefined && Number(body.sellingPrice) !== prod.sellingPrice) ||
       (body.wholesalePrice !== undefined && Number(body.wholesalePrice) !== prod.wholesalePrice) ||
       (body.retailPrice !== undefined && Number(body.retailPrice) !== prod.retailPrice)
+    )
+    const purchaseLimitChanged = (
+      (body.minPurchaseQuantity !== undefined && newMinPurchaseQuantity !== prod.minPurchaseQuantity) ||
+      (body.maxPurchaseQuantity !== undefined && newMaxPurchaseQuantity !== prod.maxPurchaseQuantity)
     )
 
     const stockChanged = (body.stockQuantity !== undefined && Number(body.stockQuantity) !== prod.stockQuantity)
@@ -76,16 +92,20 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     const data: any = {}
 
     // If prices changed on an already approved/active product, mark it pending approval
-    if (priceChanged && (prod.status === 'APPROVED' || prod.status === 'PENDING_APPROVAL' || prod.status === 'ACTIVE')) {
+    if ((priceChanged || purchaseLimitChanged) && (prod.status === 'APPROVED' || prod.status === 'PENDING_APPROVAL' || prod.status === 'ACTIVE')) {
       data.status = 'PENDING_APPROVAL'
       data.priceApproved = false
       if (body.sellingPrice !== undefined) data.sellingPrice = newSelling
       if (body.wholesalePrice !== undefined) data.wholesalePrice = newWholesale
       if (body.retailPrice !== undefined) data.retailPrice = newRetail
+      if (body.minPurchaseQuantity !== undefined) data.minPurchaseQuantity = newMinPurchaseQuantity
+      if (body.maxPurchaseQuantity !== undefined) data.maxPurchaseQuantity = newMaxPurchaseQuantity
     } else {
       if (body.sellingPrice !== undefined) data.sellingPrice = newSelling
       if (body.wholesalePrice !== undefined) data.wholesalePrice = newWholesale
       if (body.retailPrice !== undefined) data.retailPrice = newRetail
+      if (body.minPurchaseQuantity !== undefined) data.minPurchaseQuantity = newMinPurchaseQuantity
+      if (body.maxPurchaseQuantity !== undefined) data.maxPurchaseQuantity = newMaxPurchaseQuantity
     }
 
     // Stock updates apply immediately and do not affect approval status

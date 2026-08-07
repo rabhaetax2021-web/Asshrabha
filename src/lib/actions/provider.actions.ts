@@ -168,7 +168,7 @@ export async function listCatalogProducts(filter?: ListCatalogProductsFilter) {
   })
 }
 
-export async function createProviderProduct(providerId: string, catalogProductId: string, sellingPrice: number, stockQuantity: number, wholesalePrice?: number, retailPrice?: number, options?: Record<string, unknown>[], wholesaleUnit?: string) {
+export async function createProviderProduct(providerId: string, catalogProductId: string, sellingPrice: number, stockQuantity: number, wholesalePrice?: number, retailPrice?: number, options?: Record<string, unknown>[], wholesaleUnit?: string, minPurchaseQuantity?: number, maxPurchaseQuantity?: number) {
   // Avoid duplicate listings: return an existing pending approval record, otherwise fail
   const existing = await prisma.providerProduct.findFirst({ where: { providerId, catalogProductId } })
   if (existing) {
@@ -188,8 +188,10 @@ export async function createProviderProduct(providerId: string, catalogProductId
         wholesalePrice: wholesalePrice ?? sellingPrice,
         retailPrice: retailPrice ?? 0,
         stockQuantity,
+        minPurchaseQuantity: minPurchaseQuantity ?? undefined,
+        maxPurchaseQuantity: maxPurchaseQuantity ?? undefined,
         status: 'PENDING_APPROVAL',
-      },
+      } as any,
     })
 
   if (options && options.length > 0) {

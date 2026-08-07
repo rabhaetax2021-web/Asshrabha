@@ -7,6 +7,8 @@ export default function AddListingForm({ catalog }: { catalog: any }) {
   const [wholesalePrice, setWholesalePrice] = useState(String(catalog.wholesaleMinPrice || catalog.wholesalePrice || ''))
   const [retailPrice, setRetailPrice] = useState(String(catalog.retailMinPrice || catalog.retailPrice || ''))
   const [stockQuantity, setStockQuantity] = useState('0')
+  const [minPurchaseQuantity, setMinPurchaseQuantity] = useState('')
+  const [maxPurchaseQuantity, setMaxPurchaseQuantity] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -24,6 +26,11 @@ export default function AddListingForm({ catalog }: { catalog: any }) {
       if (!retailValue || retailValue <= 0) {
         throw new Error('Retail price must be greater than 0')
       }
+      const minQty = minPurchaseQuantity ? Number(minPurchaseQuantity) : undefined
+      const maxQty = maxPurchaseQuantity ? Number(maxPurchaseQuantity) : undefined
+      if (minQty !== undefined && minQty <= 0) throw new Error('Minimum purchase quantity must be greater than 0')
+      if (maxQty !== undefined && maxQty <= 0) throw new Error('Maximum purchase quantity must be greater than 0')
+      if (minQty !== undefined && maxQty !== undefined && minQty > maxQty) throw new Error('Minimum purchase quantity cannot exceed maximum purchase quantity')
 
       const payload: any = {
         catalogProductId: catalog.id,
@@ -31,6 +38,8 @@ export default function AddListingForm({ catalog }: { catalog: any }) {
         wholesalePrice: wholesaleValue,
         retailPrice: retailValue,
         stockQuantity: Number(stockQuantity),
+        minPurchaseQuantity: minQty,
+        maxPurchaseQuantity: maxQty,
       }
 
       const res = await fetch('/api/provider/provider-products', {
@@ -91,6 +100,16 @@ export default function AddListingForm({ catalog }: { catalog: any }) {
         <div className="form-row">
           <label className="label">Stock quantity</label>
           <input className="input" type="number" value={stockQuantity} onChange={e => setStockQuantity(e.target.value)} />
+        </div>
+
+        <div className="form-row">
+          <label className="label">Minimum purchase quantity</label>
+          <input className="input" type="number" min="1" step="1" value={minPurchaseQuantity} onChange={e => setMinPurchaseQuantity(e.target.value)} placeholder="Leave blank for no minimum" />
+        </div>
+
+        <div className="form-row">
+          <label className="label">Maximum purchase quantity</label>
+          <input className="input" type="number" min="1" step="1" value={maxPurchaseQuantity} onChange={e => setMaxPurchaseQuantity(e.target.value)} placeholder="Leave blank for no maximum" />
         </div>
 
         {error && <div className="form-error">{error}</div>}

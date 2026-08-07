@@ -22,10 +22,12 @@ export async function POST(request: NextRequest) {
     if (body.wholesalePrice !== undefined) body.wholesalePrice = Number(body.wholesalePrice)
     if (body.retailPrice !== undefined) body.retailPrice = Number(body.retailPrice)
     if (body.stockQuantity !== undefined) body.stockQuantity = Number(body.stockQuantity)
+    if (body.minPurchaseQuantity !== undefined) body.minPurchaseQuantity = Number(body.minPurchaseQuantity)
+    if (body.maxPurchaseQuantity !== undefined) body.maxPurchaseQuantity = Number(body.maxPurchaseQuantity)
     const parsed = createProviderProductSchema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-    const { catalogProductId, sellingPrice, wholesalePrice, retailPrice, stockQuantity, options, wholesaleUnit } = parsed.data
+    const { catalogProductId, sellingPrice, wholesalePrice, retailPrice, stockQuantity, options, wholesaleUnit, minPurchaseQuantity, maxPurchaseQuantity } = parsed.data
 
     const current = await getCurrentUser()
     if (!current || current.role !== 'PROVIDER' || current.status !== 'APPROVED') {
@@ -60,7 +62,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'This catalog product requires options and cannot be listed without them.' }, { status: 400 })
     }
 
-    const result = await createProviderProduct(provider.id, catalogProductId, sellingPrice, Number(stockQuantity || 0), wholesalePrice, retailPrice, options || [], wholesaleUnit as string | undefined)
+    const result = await createProviderProduct(provider.id, catalogProductId, sellingPrice, Number(stockQuantity || 0), wholesalePrice, retailPrice, options || [], wholesaleUnit as string | undefined, minPurchaseQuantity, maxPurchaseQuantity)
     return NextResponse.json({ ok: true, result })
   } catch (err: unknown) {
     return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })

@@ -7,6 +7,8 @@ export const createProviderProductSchema = z.object({
   wholesalePrice: z.number().nonnegative(),
   retailPrice: z.number().nonnegative(),
   stockQuantity: z.number().int().nonnegative().optional(),
+  minPurchaseQuantity: z.number().int().positive().optional(),
+  maxPurchaseQuantity: z.number().int().positive().optional(),
   options: z.array(z.object({
     unitType: z.enum(['PIECE', 'BOX', 'PACK']),
     price: z.number().nonnegative(),
@@ -14,6 +16,9 @@ export const createProviderProductSchema = z.object({
     minQuantity: z.number().int().nonnegative().optional(),
     maxQuantity: z.number().int().nonnegative().optional(),
   })).optional(),
+}).refine((data) => data.minPurchaseQuantity === undefined || data.maxPurchaseQuantity === undefined || data.minPurchaseQuantity <= data.maxPurchaseQuantity, {
+  message: 'Minimum purchase quantity must be less than or equal to maximum purchase quantity',
+  path: ['minPurchaseQuantity'],
 })
 
 export const updateStoreSchema = z.object({

@@ -7,6 +7,8 @@ export default function EditProductForm({ initial }: { initial: any }) {
   const [wholesalePrice, setWholesalePrice] = useState(String(initial.wholesalePrice || ''))
   const [retailPrice, setRetailPrice] = useState(String(initial.retailPrice || ''))
   const [stockQuantity, setStockQuantity] = useState(String(initial.stockQuantity || '0'))
+  const [minPurchaseQuantity, setMinPurchaseQuantity] = useState(String(initial.minPurchaseQuantity || ''))
+  const [maxPurchaseQuantity, setMaxPurchaseQuantity] = useState(String(initial.maxPurchaseQuantity || ''))
   const [loading, setLoading] = useState(false)
 
   const wholesaleMin = Number(initial.wholesaleMinPrice || 0)
@@ -31,8 +33,25 @@ export default function EditProductForm({ initial }: { initial: any }) {
         setLoading(false)
         return
       }
+      const minQty = minPurchaseQuantity ? Number(minPurchaseQuantity) : undefined
+      const maxQty = maxPurchaseQuantity ? Number(maxPurchaseQuantity) : undefined
+      if (minQty !== undefined && minQty <= 0) {
+        alert('Minimum purchase quantity must be greater than 0')
+        setLoading(false)
+        return
+      }
+      if (maxQty !== undefined && maxQty <= 0) {
+        alert('Maximum purchase quantity must be greater than 0')
+        setLoading(false)
+        return
+      }
+      if (minQty !== undefined && maxQty !== undefined && minQty > maxQty) {
+        alert('Minimum purchase quantity cannot exceed maximum purchase quantity')
+        setLoading(false)
+        return
+      }
 
-      const payload = { wholesalePrice: w, retailPrice: r, stockQuantity: Number(stockQuantity) }
+      const payload = { wholesalePrice: w, retailPrice: r, stockQuantity: Number(stockQuantity), minPurchaseQuantity: minQty, maxPurchaseQuantity: maxQty }
       const res = await fetch(`/api/provider/provider-products/${initial.id}`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
       const j = await res.json()
       if (!res.ok) throw new Error(j?.error || 'Failed')
@@ -72,9 +91,19 @@ export default function EditProductForm({ initial }: { initial: any }) {
         <label className="label">Stock Quantity</label>
         <input className="input" type="number" value={stockQuantity} onChange={e => setStockQuantity(e.target.value)} />
       </div>
+      <div className="form-row">
+        <label className="label">Minimum purchase quantity</label>
+        <input className="input" type="number" min="1" step="1" value={minPurchaseQuantity} onChange={e => setMinPurchaseQuantity(e.target.value)} placeholder="Leave blank for no minimum" />
+      </div>
+      <div className="form-row">
+        <label className="label">Maximum purchase quantity</label>
+        <input className="input" type="number" min="1" step="1" value={maxPurchaseQuantity} onChange={e => setMaxPurchaseQuantity(e.target.value)} placeholder="Leave blank for no maximum" />
+      </div>
       {(
         Number(wholesalePrice) !== Number(initial.wholesalePrice || 0) ||
-        Number(retailPrice) !== Number(initial.retailPrice || 0)
+        Number(retailPrice) !== Number(initial.retailPrice || 0) ||
+        Number(minPurchaseQuantity || 0) !== Number(initial.minPurchaseQuantity || 0) ||
+        Number(maxPurchaseQuantity || 0) !== Number(initial.maxPurchaseQuantity || 0)
       ) && (
         <div style={{ marginBottom: 12, color: 'var(--text-warning)' }}>
           Changing prices will submit the new prices for admin approval and may temporarily hide the listing.

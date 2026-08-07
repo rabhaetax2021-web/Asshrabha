@@ -84,6 +84,16 @@ export default async function ProductPage({ params, searchParams }: { params: un
                   <strong>{t('status')}</strong>
                   <span>{stockLabel}</span>
                 </div>
+                {(pp.minPurchaseQuantity || pp.maxPurchaseQuantity) && (
+                  <div className="product-detail-item">
+                    <strong>Purchase limits</strong>
+                    <span>
+                      {pp.minPurchaseQuantity ? `Min ${pp.minPurchaseQuantity}` : 'Min none'}
+                      {pp.minPurchaseQuantity && pp.maxPurchaseQuantity ? ' · ' : ' '}
+                      {pp.maxPurchaseQuantity ? `Max ${pp.maxPurchaseQuantity}` : 'Max none'}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <AddToCart providerProductId={pp.id} className="product-page-cart" />

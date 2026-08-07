@@ -28,6 +28,8 @@ export default async function EditProductPage({ params }: Props) {
     wholesalePrice: prod.wholesalePrice,
     retailPrice: prod.retailPrice,
     stockQuantity: prod.stockQuantity,
+    minPurchaseQuantity: prod.minPurchaseQuantity ?? '',
+    maxPurchaseQuantity: prod.maxPurchaseQuantity ?? '',
     wholesaleMinPrice: prod.catalogProduct?.wholesaleMinPrice ?? 0,
     wholesaleMaxPrice: prod.catalogProduct?.wholesaleMaxPrice ?? 0,
     retailMinPrice: prod.catalogProduct?.retailMinPrice ?? 0,

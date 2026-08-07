@@ -388,6 +388,8 @@ model ProviderProduct {
   wholesaleUnit    UnitType?
   retailPrice      Float                 @default(0)
   stockQuantity    Int                   @default(0)
+  minPurchaseQuantity Int?
+  maxPurchaseQuantity Int?
   status           ProviderProductStatus @default(PENDING_APPROVAL)
   priceApproved    Boolean               @default(false)
   createdAt        DateTime              @default(now())

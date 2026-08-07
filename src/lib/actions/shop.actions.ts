@@ -82,6 +82,21 @@ export async function placeOrder(customerId: string, cartItems: { providerProduc
       return { ...ci, providerProduct: pp, option }
     }))
 
+    for (const item of resolved) {
+      const pp = item.providerProduct
+      if (!pp) continue
+      const minQty = pp.minPurchaseQuantity ?? 0
+      const maxQty = pp.maxPurchaseQuantity ?? 0
+      if (minQty > 0 && item.quantity < minQty) {
+        const name = pp.catalogProduct?.nameEN || pp.catalogProduct?.nameAR || 'product'
+        throw new Error(`Purchase quantity for ${name} must be at least ${minQty}.`)
+      }
+      if (maxQty > 0 && item.quantity > maxQty) {
+        const name = pp.catalogProduct?.nameEN || pp.catalogProduct?.nameAR || 'product'
+        throw new Error(`Purchase quantity for ${name} must be at most ${maxQty}.`)
+      }
+    }
+
     const byProvider = new Map<string, any[]>()
     for (const item of resolved) {
       const pp = item.providerProduct
