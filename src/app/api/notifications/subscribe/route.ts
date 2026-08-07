@@ -40,8 +40,9 @@ export async function POST(request: NextRequest) {
       new Map(existing.concat(subscription).map((item: any) => [item.endpoint, item])).values()
     )
 
+    const actualUserId = String(user.id)
     const updateResult = await (prisma.user as any).updateMany({
-      where: { id: userId },
+      where: { id: actualUserId },
       data: { pushSubscriptions: unique },
     })
 
