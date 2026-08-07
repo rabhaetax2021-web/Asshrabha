@@ -27,8 +27,8 @@ export default function ProviderStoreForm({ provider }: any) {
         shopNameAR: form.shopNameAR,
         descriptionEN: form.descriptionEN,
         descriptionAR: form.descriptionAR,
-        minOrderItems: form.minOrderItems === '' ? undefined : Number(form.minOrderItems),
-        minOrderAmount: form.minOrderAmount === '' ? undefined : Number(form.minOrderAmount),
+        minOrderItems: form.minOrderItems === '' ? null : Number(form.minOrderItems),
+        minOrderAmount: form.minOrderAmount === '' ? null : Number(form.minOrderAmount),
         logo: form.logo,
         banner: form.banner,
       }

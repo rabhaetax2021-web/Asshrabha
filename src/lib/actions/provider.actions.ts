@@ -22,10 +22,27 @@ export async function getProductsByProviderId(providerId: string) {
 }
 
 export async function updateStoreProfile(providerId: string, data: Record<string, unknown>) {
-  const provider = await prisma.providerProfile.findUnique({ where: { id: providerId }, select: { id: true, userId: true, shopNameAR: true, shopNameEN: true, descriptionAR: true, descriptionEN: true, logo: true, banner: true, locationPhoto: true, defaultWholesaleUnit: true } })
+  const provider = await prisma.providerProfile.findUnique({
+    where: { id: providerId },
+    select: {
+      id: true,
+      userId: true,
+      shopNameAR: true,
+      shopNameEN: true,
+      descriptionAR: true,
+      descriptionEN: true,
+      minOrderItems: true,
+      minOrderAmount: true,
+      logo: true,
+      banner: true,
+      locationPhoto: true,
+      defaultWholesaleUnit: true,
+    },
+  })
   if (!provider) throw new Error('provider not found')
 
   const changedFields: Record<string, unknown> = {}
+  const pendingChanges: Record<string, unknown> = {}
   const knownFields = [
     ['shopNameAR', (data as any).shopNameAR],
     ['shopNameEN', (data as any).shopNameEN],
@@ -42,6 +59,7 @@ export async function updateStoreProfile(providerId: string, data: Record<string
     const currentValue = (provider as Record<string, unknown>)[field]
     if (value !== undefined && value !== currentValue) {
       changedFields[field] = value
+      pendingChanges[field] = value
     }
   }
 
@@ -53,7 +71,7 @@ export async function updateStoreProfile(providerId: string, data: Record<string
     data: {
       providerId,
       requestedBy: provider.userId,
-      changes: { providerProfile: changedFields } as Prisma.InputJsonValue,
+      changes: { providerProfile: pendingChanges } as Prisma.InputJsonValue,
       status: 'PENDING',
     },
   })
