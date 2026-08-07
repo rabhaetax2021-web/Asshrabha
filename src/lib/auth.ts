@@ -199,20 +199,57 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 });
 
 // Helper to get the current session user with typed properties
-export async function getCurrentUser(request?: Request | { cookies?: { get?: (name: string) => { value?: string } | undefined } }) {
+export async function getCurrentUser(request?: Request | { cookies?: { get?: (name: string) => { value?: string } | undefined }; headers?: { get?: (name: string) => string | null } }) {
   let session: any = null
 
-  try {
-    const { getToken } = await import('next-auth/jwt')
+  const readCookieValue = (name: string) => {
+    if (request && typeof (request as any).cookies?.get === 'function') {
+      const cookie = (request as any).cookies.get(name)
+      if (cookie?.value) return cookie.value
+    }
 
     if (request && typeof (request as any).headers?.get === 'function') {
-      const token = await getToken({ req: request as any, secret: process.env.NEXTAUTH_SECRET } as any)
-      if (token) {
-        session = { user: token as any } as any
-      }
+      const header = (request as any).headers.get('cookie')
+      if (!header) return undefined
+      const match = header.match(new RegExp(`(?:^|; )${name}=([^;]+)`))
+      return match ? decodeURIComponent(match[1]) : undefined
     }
+
+    return undefined
+  }
+
+  const tryGetToken = async (secureCookie?: boolean) => {
+    const { getToken } = await import('next-auth/jwt')
+    return await getToken({ req: request as any, secret: process.env.NEXTAUTH_SECRET, secureCookie } as any)
+  }
+
+  try {
+    const token = await tryGetToken(process.env.NODE_ENV === 'production')
+    if (token) session = { user: token as any }
   } catch {
     // ignore request-based token fallback failures
+  }
+
+  if (!session?.user) {
+    try {
+      const token = await tryGetToken(false)
+      if (token) session = { user: token as any }
+    } catch {
+      // ignore request-based token fallback failures
+    }
+  }
+
+  if (!session?.user) {
+    const token = readCookieValue('__Secure-next-auth.session-token') || readCookieValue('next-auth.session-token')
+    if (token) {
+      try {
+        const { decode } = await import('next-auth/jwt')
+        const decoded = await decode({ token, secret: process.env.NEXTAUTH_SECRET } as any)
+        if (decoded) session = { user: decoded as any }
+      } catch {
+        // ignore cookie decode failures
+      }
+    }
   }
 
   if (!session?.user) {
@@ -223,23 +260,11 @@ export async function getCurrentUser(request?: Request | { cookies?: { get?: (na
     }
   }
 
-  if (!session?.user) {
-    try {
-      const { getToken } = await import('next-auth/jwt')
-      const token = await getToken({ req: undefined, secret: process.env.NEXTAUTH_SECRET } as any)
-      if (token) {
-        session = { user: token as any } as any
-      }
-    } catch {
-      // ignore fallback failures
-    }
-  }
-
   if (!session?.user) return null;
 
   const user = session.user as any;
   return {
-    id: user.id as string,
+    id: (user.id ?? user.sub) as string,
     mobile: user.mobile as string,
     nameAR: user.nameAR as string | null,
     nameEN: user.nameEN as string | null,

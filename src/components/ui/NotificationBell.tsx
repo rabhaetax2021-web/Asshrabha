@@ -173,7 +173,7 @@ export default function NotificationBell() {
     if (localKey) return localKey
 
     try {
-      const res = await fetch('/api/notifications/vapid-key', { cache: 'no-store', credentials: 'same-origin' })
+      const res = await fetch('/api/notifications/vapid-key', { cache: 'no-store', credentials: 'include' })
       if (!res.ok) return null
       const data = await res.json()
       return typeof data.publicKey === 'string' && data.publicKey.trim() ? data.publicKey.trim() : null
@@ -231,7 +231,7 @@ export default function NotificationBell() {
 
       const subscribeRes = await fetch('/api/notifications/subscribe', {
         method: 'POST',
-        credentials: 'same-origin',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscription: subscription.toJSON() }),
       })

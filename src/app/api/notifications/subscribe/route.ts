@@ -21,14 +21,13 @@ export async function POST(request: NextRequest) {
 
     const mobile = current?.mobile ? normalizeEgyptMobile(String(current.mobile)) : undefined
     const normalizedIdAsMobile = normalizeEgyptMobile(userId)
+    const matchById = [{ id: userId }]
+    const matchByMobile = mobile ? [{ mobile }] : []
+    const matchByNormalizedId = normalizedIdAsMobile && normalizedIdAsMobile !== userId ? [{ mobile: normalizedIdAsMobile }] : []
 
     let user = await (prisma.user as any).findFirst({
       where: {
-        OR: [
-          { id: userId },
-          ...(mobile ? [{ mobile }] : []),
-          ...(normalizedIdAsMobile ? [{ mobile: normalizedIdAsMobile }] : []),
-        ],
+        OR: [...matchById, ...matchByMobile, ...matchByNormalizedId],
       },
       select: { id: true, pushSubscriptions: true },
     })
