@@ -18,10 +18,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'invalid_subscription' }, { status: 400 })
     }
 
-    const user = await (prisma.user as any).findUnique({
+    const mobile = current?.mobile ? String(current.mobile).trim() : undefined
+    let user = await (prisma.user as any).findUnique({
       where: { id: userId },
-      select: { pushSubscriptions: true },
+      select: { id: true, pushSubscriptions: true },
     })
+
+    if (!user && mobile) {
+      user = await (prisma.user as any).findUnique({
+        where: { mobile },
+        select: { id: true, pushSubscriptions: true },
+      })
+    }
 
     if (!user) {
       return NextResponse.json({ error: 'user_not_found' }, { status: 404 })
