@@ -7,7 +7,7 @@ export const runtime = 'nodejs'
 export async function POST(request: NextRequest) {
   try {
     const current = await getCurrentUser(request)
-    if (!current) {
+    if (!current || !current.id) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
 
@@ -22,15 +22,27 @@ export async function POST(request: NextRequest) {
       select: { pushSubscriptions: true },
     })
 
-    const existing = Array.isArray(user?.pushSubscriptions) ? user?.pushSubscriptions : []
+    if (!user) {
+      return NextResponse.json({ error: 'user_not_found' }, { status: 404 })
+    }
+
+    const existing = Array.isArray(user.pushSubscriptions) ? user.pushSubscriptions : []
     const unique = Array.from(
       new Map(existing.concat(subscription).map((item: any) => [item.endpoint, item])).values()
     )
 
-    await (prisma.user as any).update({
-      where: { id: current.id },
-      data: { pushSubscriptions: unique },
-    })
+    try {
+      await (prisma.user as any).update({
+        where: { id: current.id },
+        data: { pushSubscriptions: unique },
+      })
+    } catch (updateError) {
+      const code = (updateError as any)?.code
+      if (code === 'P2025' || /record.*not.*found/i.test(String(updateError))) {
+        return NextResponse.json({ error: 'user_not_found' }, { status: 404 })
+      }
+      throw updateError
+    }
 
     return NextResponse.json({ ok: true })
   } catch (error) {

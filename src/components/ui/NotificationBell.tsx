@@ -85,7 +85,7 @@ export default function NotificationBell() {
       try {
         setError(null)
         setLoading(true)
-        const res = await fetch('/api/notifications', { cache: 'no-store' })
+        const res = await fetch('/api/notifications', { cache: 'no-store', credentials: 'same-origin' })
         if (!res.ok) return
         const data = await res.json()
         if (!active) return
@@ -151,6 +151,7 @@ export default function NotificationBell() {
     try {
       const res = await fetch('/api/notifications/mark-read', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids }),
       })
@@ -172,7 +173,7 @@ export default function NotificationBell() {
     if (localKey) return localKey
 
     try {
-      const res = await fetch('/api/notifications/vapid-key', { cache: 'no-store' })
+      const res = await fetch('/api/notifications/vapid-key', { cache: 'no-store', credentials: 'same-origin' })
       if (!res.ok) return null
       const data = await res.json()
       return typeof data.publicKey === 'string' && data.publicKey.trim() ? data.publicKey.trim() : null
@@ -230,6 +231,7 @@ export default function NotificationBell() {
 
       const subscribeRes = await fetch('/api/notifications/subscribe', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscription: subscription.toJSON() }),
       })
