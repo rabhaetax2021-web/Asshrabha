@@ -23,13 +23,18 @@ export default async function CustomersPage() {
           <tbody>
             {customers.length === 0 && (
               <tr>
-                <td colSpan={4}>No customers found.</td>
+                <td colSpan={5}>No customers found.</td>
               </tr>
             )}
 
             {customers.map((c) => (
               <tr key={c.id}>
-                <td>{c.nameEN || c.nameAR || '-'}</td>
+                <td>
+                  <Link href={`/admin/accounts/customers/${c.id}`} className="btn btn-ghost" style={{ marginRight: 8 }}>
+                    Details
+                  </Link>
+                  {c.nameEN || c.nameAR || '-'}
+                </td>
                 <td>{c.mobile}</td>
                 <td>{c.status ?? 'PENDING'}</td>
                 <td className="hide-sm">{new Date(c.createdAt).toLocaleString()}</td>
