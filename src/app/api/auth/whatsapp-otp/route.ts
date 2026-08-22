@@ -33,22 +33,24 @@ export async function POST(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    if (recent && recent.expiresAt > new Date(Date.now() + (OTP_EXPIRY_MINUTES - 1) * 60 * 1000)) {
-      console.warn('[WhatsApp OTP] Rate limit: OTP already exists for user', uid)
-      return NextResponse.json({ success: false, error: 'OTP_COOLDOWN' }, { status: 429 })
+    const recentIsRateLimited = recent && recent.expiresAt > new Date(Date.now() + (OTP_EXPIRY_MINUTES - 1) * 60 * 1000)
+    const code = recentIsRateLimited ? recent.code : generateOTP(OTP_LENGTH)
+    const otpRecord = recentIsRateLimited
+      ? recent
+      : await prisma.oTPCode.create({
+          data: {
+            userId: uid,
+            code,
+            expiresAt: new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000),
+          },
+        })
+
+    if (recentIsRateLimited) {
+      console.log('[WhatsApp OTP] Reusing recent OTP for user:', uid)
+    } else {
+      console.log('[WhatsApp OTP] Generated OTP:', code, 'for user:', uid)
+      console.log('[WhatsApp OTP] OTP saved to database:', otpRecord.id)
     }
-
-    const code = generateOTP(OTP_LENGTH)
-    console.log('[WhatsApp OTP] Generated OTP:', code, 'for user:', uid)
-
-    const otpRecord = await prisma.oTPCode.create({
-      data: {
-        userId: uid,
-        code,
-        expiresAt: new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000),
-      },
-    })
-    console.log('[WhatsApp OTP] OTP saved to database:', otpRecord.id)
 
     // Get user mobile if only userId was provided
     if (!mobile) {
