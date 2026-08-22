@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
-import { isAdmin } from '@/lib/utils/permissions'
+import { hasPermission } from '@/lib/utils/permissions'
 import { prisma } from '@/lib/prisma'
 import { getErrorMessage } from '@/lib/errors'
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const current = await getCurrentUser()
-    if (!current || !isAdmin(current.role as any)) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+    if (!current || !hasPermission(current.role as any, current.permissions as any, 'MANAGE_WALLETS')) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
 
     const { id } = await params
     const amount = Number((await request.json())?.amount)

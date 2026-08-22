@@ -1,10 +1,12 @@
 "use client"
 import { useState } from 'react';
+import { useTranslations } from 'next-intl'
 import { showToast } from '@/components/ui/toast'
 import { getErrorMessage } from '@/lib/errors'
 import AdminDeleteButton from '@/components/admin/AdminDeleteButton'
 
 export default function CustomerActions({ userId, status }: { userId: string; status?: string }) {
+  const t = useTranslations('admin')
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [modalNote, setModalNote] = useState<string | undefined>(undefined)
@@ -20,7 +22,7 @@ export default function CustomerActions({ userId, status }: { userId: string; st
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Request failed')
-      showToast('Success', 'success')
+      showToast(t('success'), 'success')
       window.location.reload()
     } catch (err: unknown) {
       showToast(getErrorMessage(err), 'error')
@@ -33,13 +35,13 @@ export default function CustomerActions({ userId, status }: { userId: string; st
     <div className="customer-actions">
       {status === 'APPROVED' ? (
         <>
-          <button type="button" disabled={loading} onClick={() => { setModalAction('suspend'); setModalNote(''); setShowModal(true) }} className="btn btn-warning">Suspend</button>
+          <button type="button" disabled={loading} onClick={() => { setModalAction('suspend'); setModalNote(''); setShowModal(true) }} className="btn btn-warning">{t('suspend')}</button>
         </>
       ) : (
         <>
-          <button type="button" disabled={loading} onClick={() => postAction('approve')} className="btn btn-primary">Approve</button>
-          <button type="button" disabled={loading} onClick={() => { setModalAction('reject'); setModalNote(''); setShowModal(true) }} className="btn btn-danger">Reject</button>
-          <button type="button" disabled={loading} onClick={() => { setModalAction('suspend'); setModalNote(''); setShowModal(true) }} className="btn btn-warning">Suspend</button>
+          <button type="button" disabled={loading} onClick={() => postAction('approve')} className="btn btn-primary">{t('approve')}</button>
+          <button type="button" disabled={loading} onClick={() => { setModalAction('reject'); setModalNote(''); setShowModal(true) }} className="btn btn-danger">{t('reject')}</button>
+          <button type="button" disabled={loading} onClick={() => { setModalAction('suspend'); setModalNote(''); setShowModal(true) }} className="btn btn-warning">{t('suspend')}</button>
         </>
       )}
 
@@ -47,25 +49,25 @@ export default function CustomerActions({ userId, status }: { userId: string; st
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">
-              <h3>{modalAction === 'suspend' ? 'Suspend customer' : 'Reject customer'}</h3>
-              <button className="btn" onClick={() => setShowModal(false)}>Close</button>
+              <h3>{modalAction === 'suspend' ? t('suspendCustomer') : t('rejectCustomer')}</h3>
+              <button className="btn" onClick={() => setShowModal(false)}>{t('close')}</button>
             </div>
             <div className="modal-body">
-              <label className="label">Optional note</label>
+              <label className="label">{t('optionalNote')}</label>
               <textarea className="input" value={modalNote} onChange={e => setModalNote(e.target.value)} />
             </div>
             <div className="modal-footer">
-              <button className="btn" onClick={() => setShowModal(false)}>Cancel</button>
+              <button className="btn" onClick={() => setShowModal(false)}>{t('cancel')}</button>
               <button className="btn btn-primary" onClick={() => {
                 setShowModal(false)
                 if (modalAction) postAction(modalAction, modalNote)
-              }}>{modalAction === 'suspend' ? 'Suspend' : 'Reject'}</button>
+              }}>{modalAction === 'suspend' ? t('suspend') : t('reject')}</button>
             </div>
           </div>
         </div>
       )}
       <div style={{ marginTop: 8 }}>
-        <AdminDeleteButton userId={userId} label="Delete" />
+        <AdminDeleteButton userId={userId} label={t('delete')} />
       </div>
     </div>
   )

@@ -76,6 +76,7 @@ const ROUTE_PERMISSION_MAP: Record<string, AdminPermissionType> = {
   '/admin/approvals': 'MANAGE_APPROVALS',
   '/admin/orders': 'MANAGE_ORDERS',
   '/admin/wallet': 'MANAGE_WALLETS',
+  '/admin/wallet/add': 'MANAGE_WALLETS',
   '/admin/wallet/requests': 'MANAGE_WALLETS',
   '/admin/support': 'MANAGE_SUPPORT',
   '/admin/analytics': 'VIEW_ANALYTICS',

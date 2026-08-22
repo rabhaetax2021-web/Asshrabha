@@ -120,6 +120,7 @@ export default function AdminSidebar({ collapsed = false, initialLocale = 'ar' }
             {walletSection === 'customers' && (
               <ul className="sidebar-submenu" style={submenuListStyle}>
                 <li><Link href="/admin/accounts/customers" className="sidebar-item" style={submenuItemStyle}>• {t('customers')}</Link></li>
+                <li><Link href="/admin/wallet/add" className="sidebar-item" style={submenuItemStyle}>• {t('addCustomerWallet')}</Link></li>
                 <li><Link href="/admin/customer-profile-edits" className="sidebar-item" style={submenuItemStyle}>• {t('customerProfileEdits') || 'Customer Edits'}</Link></li>
                 <li><Link href="/admin/wallet/deposit-requests" className="sidebar-item" style={submenuItemStyle}>• {t('depositRequests')}</Link></li>
                 <li><Link href="/admin/wallet/withdraw-requests" className="sidebar-item" style={submenuItemStyle}>• {t('withdrawRequests')}</Link></li>
