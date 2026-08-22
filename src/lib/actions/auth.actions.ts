@@ -452,7 +452,7 @@ export async function verifyOTPAction(
         }
       }
 
-      if (requiresApproval && ['PROVIDER', 'CUSTOMER'].includes(user?.role ?? '')) {
+      if (['PROVIDER', 'CUSTOMER'].includes(user?.role ?? '')) {
         const admins = await tx.user.findMany({
           where: {
             role: { in: ['ROOT_ADMIN', 'SUB_ADMIN'] },
@@ -470,11 +470,11 @@ export async function verifyOTPAction(
             titleAR: isProvider ? 'حساب مزود جديد' : 'حساب عميل جديد',
             titleEN: isProvider ? 'New provider account' : 'New customer account',
             bodyAR: isProvider
-              ? 'يوجد حساب مزود جديد بانتظار الموافقة'
-              : 'يوجد حساب عميل جديد بانتظار الموافقة',
+              ? (requiresApproval ? 'يوجد حساب مزود جديد بانتظار الموافقة' : 'تم إنشاء حساب مزود جديد')
+              : (requiresApproval ? 'يوجد حساب عميل جديد بانتظار الموافقة' : 'تم إنشاء حساب عميل جديد'),
             bodyEN: isProvider
-              ? 'A new provider account is waiting for admin approval'
-              : 'A new customer account is waiting for admin approval',
+              ? (requiresApproval ? 'A new provider account is waiting for admin approval' : 'A new provider account was created')
+              : (requiresApproval ? 'A new customer account is waiting for admin approval' : 'A new customer account was created'),
             data: {
               userId,
               type: 'pending_account_approval',

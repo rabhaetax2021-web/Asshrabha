@@ -146,6 +146,29 @@ describe('verifyOTPAction', () => {
       ],
     })
   })
+
+  it('creates an admin notification when a customer account is auto-approved', async () => {
+    vi.mocked(prisma.oTPCode.findFirst).mockResolvedValue({ id: 'otp-1', userId: 'customer-1' } as never)
+    vi.mocked(prisma.oTPCode.update).mockResolvedValue({ id: 'otp-1' } as never)
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ role: 'CUSTOMER' } as never)
+    vi.mocked(prisma.systemSetting.findUnique).mockResolvedValue({ value: 'false' } as never)
+    vi.mocked(prisma.user.findMany).mockResolvedValue([{ id: 'admin-1' }] as never)
+    vi.mocked(prisma.notification.createMany).mockResolvedValue({ count: 1 } as never)
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => callback(prisma))
+
+    const result = await verifyOTPAction('customer-1', '123456')
+
+    expect(result.success).toBe(true)
+    expect(prisma.notification.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          userId: 'admin-1',
+          titleEN: 'New customer account',
+          bodyEN: 'A new customer account was created',
+        }),
+      ],
+    })
+  })
 })
 
 describe('registerAction', () => {

@@ -270,6 +270,7 @@
     "amountEgp": "المبلغ (ج.م)",
     "add": "إضافة",
     "processing": "جارٍ المعالجة...",
+    "noCustomers": "لا يوجد عملاء بعد.",
     "noTransactions": "لا توجد معاملات بعد.",
     "noRequests": "لا توجد طلبات.",
     "approve": "الموافقة",

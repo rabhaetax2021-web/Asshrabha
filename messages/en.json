@@ -392,6 +392,7 @@
     "amountEgp": "Amount (EGP)",
     "add": "Add",
     "processing": "Processing...",
+    "noCustomers": "No customers yet.",
     "noTransactions": "No transactions yet.",
     "noRequests": "No requests.",
     "balanceAdded": "Balance added",
