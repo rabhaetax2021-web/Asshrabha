@@ -123,6 +123,14 @@ export async function POST(req: NextRequest) {
                     { type: 'text', text: supportNumber },
                   ],
                 },
+                {
+                  type: 'button',
+                  sub_type: 'url',
+                  index: '0',
+                  parameters: [
+                    { type: 'text', text: code },
+                  ],
+                },
               ],
             },
           }

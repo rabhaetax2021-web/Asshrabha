@@ -59,15 +59,15 @@ async function main() {
             { type: 'text', text: env.SUPPORT_PHONE || '123-456-7890' },
           ],
         },
+        {
+          type: 'button',
+          sub_type: 'url',
+          index: '0',
+          parameters: [
             {
-              type: 'button',
-              sub_type: 'url',
-              index: '0',
-              parameters: [
-                {
-                  type: 'text',
-                  text: code,
-                },
+              type: 'text',
+              text: code,
+            },
               ],
             },
       ],
