@@ -118,6 +118,9 @@ export async function POST(req: NextRequest) {
                   type: 'body',
                   parameters: [
                     { type: 'text', text: code },
+                    { type: 'text', text: appName },
+                    { type: 'text', text: String(OTP_EXPIRY_MINUTES) },
+                    { type: 'text', text: supportNumber },
                   ],
                 },
                 {
