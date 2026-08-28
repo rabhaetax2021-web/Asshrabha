@@ -160,6 +160,18 @@ export async function POST(req: NextRequest) {
         console.log('[WhatsApp OTP] Response status:', res.status)
         console.log('[WhatsApp OTP] Response body:', responseText)
 
+        let responseData: { messages?: Array<{ id?: string; message_status?: string }> } = {}
+        try {
+          responseData = JSON.parse(responseText)
+        } catch {
+          // Keep the raw response above when Meta does not return JSON.
+        }
+        const messageIds = (responseData.messages ?? [])
+          .map((message) => message.id)
+          .filter((id): id is string => Boolean(id))
+        console.log('[WhatsApp OTP] Meta message IDs:', messageIds)
+        console.log('[WhatsApp OTP] Meta message statuses:', responseData.messages?.map((message) => message.message_status) ?? [])
+
         if (!res.ok) {
           console.error(`[WhatsApp OTP] Send failed with status ${res.status}:`, responseText)
         } else {

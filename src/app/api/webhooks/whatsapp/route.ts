@@ -32,14 +32,33 @@ export async function POST(request: NextRequest) {
       for (const change of entry.changes ?? []) {
         const value = change.value ?? {}
 
+        console.log('[WhatsApp Webhook] Event received:', {
+          entryId: entry.id,
+          field: change.field,
+          phoneNumberId: value.metadata?.phone_number_id,
+          displayPhoneNumber: value.metadata?.display_phone_number,
+          statusCount: value.statuses?.length ?? 0,
+          messageCount: value.messages?.length ?? 0,
+        })
+
         for (const status of value.statuses ?? []) {
-          console.log('[WhatsApp Webhook] Message status:', {
-            id: status.id,
-            recipient: status.recipient_id,
+          const errors = status.errors ?? []
+          const statusDetails = {
             status: status.status,
+            recipient: status.recipient_id,
+            messageId: status.id,
             timestamp: status.timestamp,
-            errors: status.errors,
-          })
+            errors,
+            errorCodes: errors.map((error: { code?: number }) => error.code),
+            errorTitles: errors.map((error: { title?: string }) => error.title),
+            errorDetails: errors.map((error: { error_data?: { details?: string }; details?: string }) => error.error_data?.details ?? error.details),
+          }
+
+          if (status.status === 'failed') {
+            console.error('[WhatsApp Webhook] Message delivery failed:', statusDetails)
+          } else {
+            console.log('[WhatsApp Webhook] Message delivery status:', statusDetails)
+          }
         }
 
         for (const message of value.messages ?? []) {
